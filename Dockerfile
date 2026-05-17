@@ -14,11 +14,12 @@ RUN apt-get update && apt-get install -y \
 # Real-ESRGAN-ncnn-vulkan Linux(Ubuntu) 버전 다운로드 및 설치
 RUN mkdir -p /opt/realesrgan && \
     curl -L https://github.com/xinntao/Real-ESRGAN-ncnn-vulkan/releases/download/v0.2.0/realesrgan-ncnn-vulkan-v0.2.0-ubuntu.zip -o /tmp/realesrgan.zip && \
-    unzip /tmp/realesrgan.zip -d /opt/realesrgan && \
-    mv /opt/realesrgan/realesrgan-ncnn-vulkan-v0.2.0-ubuntu/* /opt/realesrgan/ && \
-    rm -rf /opt/realesrgan/realesrgan-ncnn-vulkan-v0.2.0-ubuntu && \
+    unzip /tmp/realesrgan.zip -d /tmp/realesrgan_extracted && \
+    # 압축 해제된 폴더 내의 모든 파일을 /opt/realesrgan으로 이동 (폴더명이 달라도 작동하도록)
+    cp -r /tmp/realesrgan_extracted/*/* /opt/realesrgan/ || cp -r /tmp/realesrgan_extracted/* /opt/realesrgan/ && \
+    chmod +x /opt/realesrgan/realesrgan-ncnn-vulkan && \
     ln -s /opt/realesrgan/realesrgan-ncnn-vulkan /usr/local/bin/realesrgan-ncnn-vulkan && \
-    rm -rf /tmp/realesrgan.zip
+    rm -rf /tmp/realesrgan.zip /tmp/realesrgan_extracted
 
 # 2. Dependencies Image: 패키지 설치만 담당
 FROM base AS deps

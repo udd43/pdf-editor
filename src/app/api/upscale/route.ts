@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
 
     // Real-ESRGAN-ncnn-vulkan 실행
     // -n realesrgan-x4plus (기본 고품질 모델)
-    const upscaleCmd = `realesrgan-ncnn-vulkan -i "${inputPath}" -o "${outputPath}" -n realesrgan-x4plus -s ${scale}`;
+    const upscaleCmd = `/opt/realesrgan/realesrgan-ncnn-vulkan -i "${inputPath}" -o "${outputPath}" -n realesrgan-x4plus -s ${scale}`;
 
     await new Promise<void>((resolve, reject) => {
       exec(upscaleCmd, { timeout: 120000 }, (error, stdout, stderr) => {
