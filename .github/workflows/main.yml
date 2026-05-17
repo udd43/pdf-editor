@@ -29,4 +29,6 @@ jobs:
           file: ./Dockerfile
           push: true
           # DockerHub에 올라갈 이미지의 이름입니다. 'pdf-editor' 부분은 원하시는 이름으로 변경하세요.
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/pdf-editor:latest
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/pdf-editor:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/pdf-editor:${{ github.run_number }}
