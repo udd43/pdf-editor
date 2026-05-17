@@ -36,17 +36,27 @@ export async function POST(request: NextRequest) {
 
     // Real-ESRGAN-ncnn-vulkan 실행
     // -n realesrgan-x4plus (기본 고품질 모델)
-    const upscaleCmd = `/opt/realesrgan/realesrgan-ncnn-vulkan -i "${inputPath}" -o "${outputPath}" -n realesrgan-x4plus -s ${scale}`;
-
+    const { execFile } = require('child_process');
     await new Promise<void>((resolve, reject) => {
-      exec(upscaleCmd, { timeout: 120000, cwd: '/opt/realesrgan' }, (error, stdout, stderr) => {
-        if (error) {
-          console.error("Real-ESRGAN error:", stderr);
-          reject(new Error(`업스케일링 실행 실패: ${stderr || error.message}`));
-        } else {
-          resolve();
+      execFile(
+        '/opt/realesrgan/realesrgan-ncnn-vulkan',
+        [
+          '-i', inputPath,
+          '-o', outputPath,
+          '-n', 'realesrgan-x4plus',
+          '-s', String(scale),
+          '-m', '/opt/realesrgan/models'
+        ],
+        { timeout: 120000 },
+        (error: Error | null, stdout: string, stderr: string) => {
+          if (error) {
+            console.error("Real-ESRGAN error:", stderr);
+            reject(new Error(`업스케일링 실행 실패: ${stderr || error.message}`));
+          } else {
+            resolve();
+          }
         }
-      });
+      );
     });
 
     // 결과 파일 읽기
