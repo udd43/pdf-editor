@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "PDF OCR Editor MVP",
+  title: "PDF OCR Editor",
   description: "Web-based PDF OCR instant editor MVP",
 };
 
