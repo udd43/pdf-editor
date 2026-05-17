@@ -3,9 +3,10 @@ import { exec } from "child_process";
 import { writeFile, readFile, unlink, mkdir } from "fs/promises";
 import path from "path";
 import { existsSync } from "fs";
+import os from "os";
 
 export async function POST(request: NextRequest) {
-  const tmpDir = path.join(process.cwd(), "tmp-upscale");
+  const tmpDir = path.join(os.tmpdir(), "tmp-upscale");
 
   try {
     // tmp 디렉토리 생성
