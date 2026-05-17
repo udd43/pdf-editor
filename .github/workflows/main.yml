@@ -22,9 +22,16 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Extract version from package.json
-        id: package_version
-        run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+      - name: Generate version tag
+        id: generate_version
+        run: |
+          # package.json에서 버전을 가져옵니다 (예: 1.0.0)
+          base_version=$(node -p "require('./package.json').version")
+          # 앞의 메이저.마이너 버전만 추출합니다 (예: 1.0)
+          major_minor=$(echo $base_version | cut -d. -f1,2)
+          # GitHub Actions 실행 횟수(run_number)를 패치 버전에 붙여서 새 버전 생성 (예: 1.0.12)
+          final_version="$major_minor.${{ github.run_number }}"
+          echo "tag=$final_version" >> $GITHUB_OUTPUT
 
       - name: Build and Push to DockerHub
         uses: docker/build-push-action@v5
@@ -35,4 +42,4 @@ jobs:
           # DockerHub에 올라갈 이미지의 이름입니다. 'pdf-editor' 부분은 원하시는 이름으로 변경하세요.
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/pdf-editor:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/pdf-editor:${{ steps.package_version.outputs.version }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/pdf-editor:${{ steps.generate_version.outputs.tag }}
