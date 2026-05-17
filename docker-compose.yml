@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  nextjs:
+    build: .
+    container_name: pdf_editor_app
+    restart: unless-stopped
+    expose:
+      - "3000"
+    environment:
+      - NODE_ENV=production
+
+  nginx:
+    image: nginx:alpine
+    container_name: pdf_editor_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - nextjs
