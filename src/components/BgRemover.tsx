@@ -98,7 +98,7 @@ export default function BgRemover() {
   };
 
   return (
-    <div className="flex flex-col items-center w-full max-w-4xl mx-auto py-8 px-4">
+    <div className={`flex flex-col items-center w-full max-w-4xl mx-auto px-4 ${!originalSrc ? "flex-1 justify-center" : "py-8"}`}>
       {/* 업로드 영역 (이미지 없을 때) */}
       {!originalSrc && (
         <div

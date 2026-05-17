@@ -45,19 +45,20 @@ export default function PdfUploader({ onFileSelect }: PdfUploaderProps) {
   );
 
   return (
-    <div
-      className={`w-full max-w-2xl p-12 border-4 border-dashed rounded-2xl transition-all flex flex-col items-center justify-center cursor-pointer
-        ${
-          isDragging
-            ? "border-blue-500 bg-blue-50"
-            : "border-gray-300 bg-gray-50 hover:border-gray-400 hover:bg-gray-100"
-        }
-      `}
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
-      onClick={() => document.getElementById("file-upload")?.click()}
-    >
+    <div className="flex-1 flex flex-col items-center justify-center w-full max-w-4xl mx-auto px-4">
+      <div
+        className={`w-full max-w-2xl p-16 border-4 border-dashed rounded-2xl transition-all flex flex-col items-center justify-center cursor-pointer
+          ${
+            isDragging
+              ? "border-blue-500 bg-blue-50"
+              : "border-gray-300 bg-gray-50 hover:border-gray-400 hover:bg-gray-100"
+          }
+        `}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        onClick={() => document.getElementById("file-upload")?.click()}
+      >
       <UploadCloud
         className={`w-16 h-16 mb-4 ${
           isDragging ? "text-blue-500" : "text-gray-400"
@@ -74,9 +75,10 @@ export default function PdfUploader({ onFileSelect }: PdfUploaderProps) {
         className="hidden"
         onChange={handleFileChange}
       />
-      <button className="px-6 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition-colors">
-        파일 찾아보기
-      </button>
+        <button className="px-6 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition-colors">
+          파일 찾아보기
+        </button>
+      </div>
     </div>
   );
 }

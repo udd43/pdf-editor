@@ -19,6 +19,8 @@ export interface TextBox {
   fontSize: number;
   isEdited: boolean;
   isNew?: boolean;
+  isTransparent?: boolean;
+  fontFamily?: string;
 }
 
 type Status = "idle" | "rendering" | "ocr" | "done" | "error";
@@ -77,52 +79,8 @@ export default function PdfEditor({ file }: PdfEditorProps) {
         await page.render({ canvasContext: context, viewport } as any).promise;
         if (!isMounted) return;
 
-        setStatus("ocr");
-        setStatusMsg("OCR 엔진을 초기화하는 중...");
-        setOcrProgress(0);
-        const imageDataUrl = canvas.toDataURL("image/png");
-
-        const worker = await Tesseract.createWorker("kor+eng", 1, {
-          logger: (m) => {
-            if (isMounted && m.status === "recognizing text") {
-              const pct = Math.round(m.progress * 100);
-              setOcrProgress(pct);
-              setStatusMsg(`글자를 인식하는 중... ${pct}%`);
-            }
-          },
-        });
-
-        const ret = await worker.recognize(imageDataUrl, {}, { text: true, blocks: true });
-        await worker.terminate();
-        if (!isMounted) return;
-
-        const ocrBlocks: any[] = (ret.data as any)?.blocks || [];
-        const boxes: TextBox[] = [];
-        let idx = 0;
-        for (const block of ocrBlocks) {
-          for (const para of block?.paragraphs || []) {
-            for (const line of para?.lines || []) {
-              if (line.text?.trim().length > 0 && line.bbox) {
-                const h = line.bbox.y1 - line.bbox.y0;
-                boxes.push({
-                  id: `line-${idx}`, text: line.text.trim(),
-                  x: line.bbox.x0, y: line.bbox.y0,
-                  width: line.bbox.x1 - line.bbox.x0, height: h,
-                  fontSize: Math.max(10, Math.round(h * 0.75)),
-                  isEdited: false,
-                });
-                idx++;
-              }
-            }
-          }
-        }
-        if (!isMounted) return;
-        setTextBoxes(boxes);
-        setNextId(idx);
         setStatus("done");
-        setStatusMsg(boxes.length === 0
-          ? "텍스트를 감지하지 못했습니다."
-          : `${boxes.length}개의 텍스트 영역을 감지했습니다.`);
+        setStatusMsg("PDF 로딩 완료! 필요한 곳을 더블클릭하거나 상단의 '텍스트 추가' 버튼을 누르세요.");
       } catch (error: any) {
         console.error("PDF/OCR 오류:", error);
         if (isMounted) { setStatus("error"); setStatusMsg("오류 발생"); setErrorDetail(error?.message || String(error)); }
@@ -146,16 +104,83 @@ export default function PdfEditor({ file }: PdfEditorProps) {
     ));
   };
 
+  // 수동 OCR 실행 (표 내부 텍스트 인식률 향상을 위해 PSM 11 사용)
+  const handleRunOcr = async () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    try {
+      setStatus("ocr");
+      setStatusMsg("표/양식 구조를 분석하며 글자를 추출하는 중...");
+      setOcrProgress(0);
+      const imageDataUrl = canvas.toDataURL("image/png");
+
+      const worker = await Tesseract.createWorker("kor+eng", 1, {
+        logger: (m) => {
+          if (m.status === "recognizing text") {
+            const pct = Math.round(m.progress * 100);
+            setOcrProgress(pct);
+            setStatusMsg(`글자를 추출하는 중... ${pct}%`);
+          }
+        },
+      });
+      
+      // PSM 11: Sparse text (표 안의 흩어진 텍스트를 찾는데 더 유리함)
+      await worker.setParameters({
+        tessedit_pageseg_mode: "11" as any,
+      });
+
+      const ret = await worker.recognize(imageDataUrl, {}, { text: true, blocks: true });
+      await worker.terminate();
+
+      const ocrBlocks: any[] = (ret.data as any)?.blocks || [];
+      const boxes: TextBox[] = [];
+      let idx = nextId;
+      for (const block of ocrBlocks) {
+        for (const para of block?.paragraphs || []) {
+          for (const line of para?.lines || []) {
+            if (line.text?.trim().length > 0 && line.bbox) {
+              const h = line.bbox.y1 - line.bbox.y0;
+              boxes.push({
+                id: `line-${idx}`, text: line.text.trim(),
+                x: line.bbox.x0, y: line.bbox.y0,
+                width: line.bbox.x1 - line.bbox.x0, height: h,
+                fontSize: Math.max(10, Math.round(h * 0.75)),
+                isEdited: false, fontFamily: "NotoSansKR",
+              });
+              idx++;
+            }
+          }
+        }
+      }
+      
+      setTextBoxes((prev) => [...prev, ...boxes]);
+      setNextId(idx);
+      setStatus("done");
+      setStatusMsg(boxes.length === 0
+        ? "추출할 텍스트를 찾지 못했습니다."
+        : `새롭게 ${boxes.length}개의 텍스트를 추출했습니다!`);
+    } catch (error: any) {
+      console.error("OCR 오류:", error);
+      setStatus("done");
+      setStatusMsg("텍스트 추출 실패");
+      setErrorDetail(error?.message || String(error));
+    }
+  };
+
   // 텍스트 추가 버튼
-  const handleAddText = () => {
+  const handleAddText = (isTransparent: boolean = false) => {
     if (status !== "done") return;
     const newBox: TextBox = {
       id: `new-${nextId}`, text: "텍스트 입력",
       x: 100, y: 100, width: 200, height: 36,
-      fontSize: 16, isEdited: true, isNew: true,
+      fontSize: 16, isEdited: true, isNew: true, isTransparent, fontFamily: "NotoSansKR",
     };
     setTextBoxes((prev) => [...prev, newBox]);
     setNextId((prev) => prev + 1);
+  };
+
+  const handleToggleTransparent = (id: string) => {
+    setTextBoxes((prev) => prev.map((b) => b.id === id ? { ...b, isTransparent: !b.isTransparent, isEdited: true } : b));
   };
 
   // 더블클릭으로 텍스트 추가
@@ -169,7 +194,7 @@ export default function PdfEditor({ file }: PdfEditorProps) {
     const newBox: TextBox = {
       id: `new-${nextId}`, text: "텍스트 입력",
       x: x - 50, y: y - 12, width: 200, height: 36,
-      fontSize: 16, isEdited: true, isNew: true,
+      fontSize: 16, isEdited: true, isNew: true, fontFamily: "NotoSansKR",
     };
     setTextBoxes((prev) => [...prev, newBox]);
     setNextId((prev) => prev + 1);
@@ -363,6 +388,11 @@ export default function PdfEditor({ file }: PdfEditorProps) {
 
   return (
     <div className="flex flex-col items-center w-full max-w-5xl mx-auto py-8">
+      <style>{`
+        @font-face { font-family: "NotoSansKR"; src: url("/NotoSansKR-Regular.otf"); }
+        @font-face { font-family: "NanumMyeongjo"; src: url("/NanumMyeongjo.ttf"); }
+        @font-face { font-family: "Jua"; src: url("/Jua.ttf"); }
+      `}</style>
       {/* 툴바 */}
       <div className="w-full flex flex-wrap justify-between items-center mb-4 bg-white p-3 rounded-xl shadow-sm border gap-2">
         <h2 className="text-lg font-bold text-gray-800 truncate max-w-xs">{file.name}</h2>
@@ -372,9 +402,18 @@ export default function PdfEditor({ file }: PdfEditorProps) {
           <button onClick={() => setScale((s) => Math.min(3, s + 0.2))}
             className="px-3 py-1.5 bg-gray-100 rounded-lg hover:bg-gray-200 text-sm">확대</button>
           <div className="w-px bg-gray-200 mx-1" />
-          <button onClick={handleAddText} disabled={status !== "done"}
+          <button onClick={handleRunOcr} disabled={status !== "done"}
+            className="flex items-center gap-1 px-3 py-1.5 bg-blue-50 text-blue-700 text-sm font-medium rounded-lg hover:bg-blue-100 disabled:opacity-50"
+            title="문서 내의 글자를 자동으로 인식하여 편집 가능한 박스로 만듭니다">
+            📝 텍스트 자동 추출
+          </button>
+          <button onClick={() => handleAddText(false)} disabled={status !== "done"}
             className="flex items-center gap-1 px-3 py-1.5 bg-green-50 text-green-700 text-sm font-medium rounded-lg hover:bg-green-100 disabled:opacity-50">
-            <Plus className="w-4 h-4" /> 텍스트 추가
+            <Plus className="w-4 h-4" /> 텍스트 추가(흰배경)
+          </button>
+          <button onClick={() => handleAddText(true)} disabled={status !== "done"}
+            className="flex items-center gap-1 px-3 py-1.5 bg-emerald-50 text-emerald-700 text-sm font-medium rounded-lg hover:bg-emerald-100 disabled:opacity-50">
+            <Plus className="w-4 h-4" /> 텍스트 추가(투명)
           </button>
           <button onClick={() => imageInputRef.current?.click()} disabled={status !== "done"}
             className="flex items-center gap-1 px-3 py-1.5 bg-purple-50 text-purple-700 text-sm font-medium rounded-lg hover:bg-purple-100 disabled:opacity-50">
@@ -450,6 +489,7 @@ export default function PdfEditor({ file }: PdfEditorProps) {
         {/* 텍스트 오버레이 */}
         {status === "done" && textBoxes.map((box) => (
           <div key={box.id} className="absolute group"
+            onDoubleClick={(e) => e.stopPropagation()}
             style={{
               left: `${box.x}px`, top: `${box.y}px`,
               width: `${box.width}px`, height: `${box.height}px`,
@@ -463,6 +503,22 @@ export default function PdfEditor({ file }: PdfEditorProps) {
                 className="p-1 text-gray-500 hover:bg-gray-100 rounded cursor-grab active:cursor-grabbing" title="이동">
                 <Move className="w-3.5 h-3.5" />
               </div>
+              {/* 폰트 변경 */}
+              <select 
+                value={box.fontFamily || "NotoSansKR"}
+                onChange={(e) => setTextBoxes(prev => prev.map(b => b.id === box.id ? { ...b, fontFamily: e.target.value, isEdited: true } : b))}
+                className="text-[11px] font-medium border-r bg-transparent outline-none px-1.5 py-0.5 text-gray-600 hover:bg-gray-50 cursor-pointer"
+                title="폰트 변경"
+              >
+                <option value="NotoSansKR">기본고딕</option>
+                <option value="NanumMyeongjo">명조체</option>
+                <option value="Jua">주아체(둥근)</option>
+              </select>
+              {/* 배경 토글 */}
+              <button onClick={() => handleToggleTransparent(box.id)}
+                className="p-1 text-gray-500 hover:bg-gray-100 rounded text-[10px]" title="배경 토글">
+                {box.isTransparent ? "🔳" : "⬜"}
+              </button>
               {/* 폰트 축소 */}
               <button onClick={() => handleFontSizeChange(box.id, -2)}
                 className="p-1 text-gray-500 hover:bg-gray-100 rounded" title="폰트 축소">
@@ -488,9 +544,9 @@ export default function PdfEditor({ file }: PdfEditorProps) {
               className="w-full h-full resize-none overflow-hidden p-1 m-0 leading-snug cursor-pointer focus:cursor-text rounded-sm"
               style={{
                 fontSize: `${box.fontSize}px`,
-                fontFamily: "sans-serif",
+                fontFamily: box.fontFamily || "NotoSansKR",
                 whiteSpace: "pre-wrap",
-                backgroundColor: "#fff",
+                backgroundColor: box.isTransparent ? "transparent" : "#fff",
                 color: "#000",
                 border: box.isNew
                   ? "2px solid rgba(34,197,94,0.6)"
