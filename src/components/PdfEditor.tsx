@@ -316,7 +316,7 @@ export default function PdfEditor({ file }: PdfEditorProps) {
     if (!imgFile) return;
     e.target.value = "";
     setIsUpscaling(true);
-    setStatusMsg("Real-ESRGAN 모델 불러오는 중... (최대 2분 소요)");
+    setStatusMsg("Real-ESRGAN 초고속 모델 불러오는 중... (최대 10~30초 소요)");
     try {
       const formData = new FormData();
       formData.append("image", imgFile);

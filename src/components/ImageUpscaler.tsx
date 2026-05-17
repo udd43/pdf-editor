@@ -47,7 +47,7 @@ export default function ImageUpscaler() {
       formData.append("scale", String(scale));
       formData.append("noise", String(noise));
 
-      setProgress("Real-ESRGAN 모델 불러오는 중... (최대 2분 소요)");
+      setProgress("Real-ESRGAN 초고속 모델 불러오는 중... (최대 10~30초 소요)");
 
       const res = await fetch("/api/upscale", {
         method: "POST",
@@ -107,7 +107,7 @@ export default function ImageUpscaler() {
         >
           <ZoomIn className="w-16 h-16 text-indigo-400 mb-4" />
           <h3 className="text-xl font-semibold text-gray-700 mb-2">이미지를 업로드하세요</h3>
-          <p className="text-gray-500 mb-6">Real-ESRGAN AI로 고품질 업스케일링</p>
+          <p className="text-gray-500 mb-6">Real-ESRGAN AI로 빠른 고품질 업스케일링</p>
           <button className="px-6 py-2.5 bg-indigo-500 text-white rounded-lg shadow hover:bg-indigo-600 transition-colors font-medium">
             <Upload className="w-4 h-4 inline mr-2" />
             이미지 선택

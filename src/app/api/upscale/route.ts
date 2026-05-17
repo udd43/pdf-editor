@@ -37,24 +37,15 @@ export async function POST(request: NextRequest) {
     // Real-ESRGAN-ncnn-vulkan 실행
     // -n realesrgan-x4plus (기본 고품질 모델)
     const { execFile } = require('child_process');
-    const { existsSync, readdirSync } = require('fs');
-
-    const binPath = '/opt/realesrgan/realesrgan-ncnn-vulkan';
-    if (!existsSync(binPath)) {
-      let optContents = 'unknown';
-      let optRealContents = 'unknown';
-      try { optContents = readdirSync('/opt').join(', '); } catch (e) {}
-      try { optRealContents = readdirSync('/opt/realesrgan').join(', '); } catch (e) {}
-      throw new Error(`바이너리가 존재하지 않습니다. /opt: [${optContents}], /opt/realesrgan: [${optRealContents}]`);
-    }
-
+    
+    // 더 빠른 경량 모델(realesr-animevideov3)로 변경 (기본값: realesrgan-x4plus)
     await new Promise<void>((resolve, reject) => {
       execFile(
-        binPath,
+        '/opt/realesrgan/realesrgan-ncnn-vulkan',
         [
           '-i', inputPath,
           '-o', outputPath,
-          '-n', 'realesrgan-x4plus',
+          '-n', 'realesr-animevideov3',
           '-s', String(scale),
           '-m', '/opt/realesrgan/models'
         ],
