@@ -11,13 +11,14 @@ RUN apt-get update && apt-get install -y \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# waifu2x-ncnn-vulkan Linux(Ubuntu) 버전 다운로드 및 설치
-RUN mkdir -p /opt/waifu2x && \
-    curl -L https://github.com/nihui/waifu2x-ncnn-vulkan/releases/download/20220728/waifu2x-ncnn-vulkan-20220728-ubuntu.zip -o /tmp/waifu2x.zip && \
-    unzip /tmp/waifu2x.zip -d /tmp/waifu2x_extracted && \
-    mv /tmp/waifu2x_extracted/waifu2x-ncnn-vulkan-20220728-ubuntu/* /opt/waifu2x/ && \
-    ln -s /opt/waifu2x/waifu2x-ncnn-vulkan /usr/local/bin/waifu2x-ncnn-vulkan && \
-    rm -rf /tmp/waifu2x.zip /tmp/waifu2x_extracted
+# Real-ESRGAN-ncnn-vulkan Linux(Ubuntu) 버전 다운로드 및 설치
+RUN mkdir -p /opt/realesrgan && \
+    curl -L https://github.com/xinntao/Real-ESRGAN-ncnn-vulkan/releases/download/v0.2.0/realesrgan-ncnn-vulkan-v0.2.0-ubuntu.zip -o /tmp/realesrgan.zip && \
+    unzip /tmp/realesrgan.zip -d /opt/realesrgan && \
+    mv /opt/realesrgan/realesrgan-ncnn-vulkan-v0.2.0-ubuntu/* /opt/realesrgan/ && \
+    rm -rf /opt/realesrgan/realesrgan-ncnn-vulkan-v0.2.0-ubuntu && \
+    ln -s /opt/realesrgan/realesrgan-ncnn-vulkan /usr/local/bin/realesrgan-ncnn-vulkan && \
+    rm -rf /tmp/realesrgan.zip
 
 # 2. Dependencies Image: 패키지 설치만 담당
 FROM base AS deps

@@ -33,14 +33,15 @@ export async function POST(request: NextRequest) {
     const buffer = Buffer.from(await file.arrayBuffer());
     await writeFile(inputPath, buffer);
 
-    // waifu2x-ncnn-vulkan 실행
-    const waifu2xCmd = `waifu2x-ncnn-vulkan -i "${inputPath}" -o "${outputPath}" -s ${scale} -n ${noise}`;
+    // Real-ESRGAN-ncnn-vulkan 실행
+    // -n realesrgan-x4plus (기본 고품질 모델)
+    const upscaleCmd = `realesrgan-ncnn-vulkan -i "${inputPath}" -o "${outputPath}" -n realesrgan-x4plus -s ${scale}`;
 
     await new Promise<void>((resolve, reject) => {
-      exec(waifu2xCmd, { timeout: 120000 }, (error, stdout, stderr) => {
+      exec(upscaleCmd, { timeout: 120000 }, (error, stdout, stderr) => {
         if (error) {
-          console.error("waifu2x error:", stderr);
-          reject(new Error(`waifu2x 실행 실패: ${stderr || error.message}`));
+          console.error("Real-ESRGAN error:", stderr);
+          reject(new Error(`업스케일링 실행 실패: ${stderr || error.message}`));
         } else {
           resolve();
         }
