@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
     const upscaleCmd = `/opt/realesrgan/realesrgan-ncnn-vulkan -i "${inputPath}" -o "${outputPath}" -n realesrgan-x4plus -s ${scale}`;
 
     await new Promise<void>((resolve, reject) => {
-      exec(upscaleCmd, { timeout: 120000 }, (error, stdout, stderr) => {
+      exec(upscaleCmd, { timeout: 120000, cwd: '/opt/realesrgan' }, (error, stdout, stderr) => {
         if (error) {
           console.error("Real-ESRGAN error:", stderr);
           reject(new Error(`업스케일링 실행 실패: ${stderr || error.message}`));
