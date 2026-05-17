@@ -1,5 +1,5 @@
 # 1. Base Image: OS 환경 및 시스템 의존성 설정
-FROM node:20-bookworm-slim AS base
+FROM --platform=linux/amd64 node:20-bookworm-slim AS base
 
 # 시스템 패키지 업데이트 및 설치 (Vulkan 라이브러리 등)
 # node:20-bookworm-slim은 Debian 기반이므로 apt-get을 사용합니다.
