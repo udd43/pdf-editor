@@ -39,6 +39,7 @@ export default function PdfEditor({ file }: PdfEditorProps) {
   const [statusMsg, setStatusMsg] = useState("PDF를 렌더링하는 중...");
   const [errorDetail, setErrorDetail] = useState("");
   const [textBoxes, setTextBoxes] = useState<TextBox[]>([]);
+  const [extractedTexts, setExtractedTexts] = useState<string[]>([]);
   const [imageOverlays, setImageOverlays] = useState<ImageOverlayData[]>([]);
   const [selectedImageId, setSelectedImageId] = useState<string | null>(null);
   const [draggingTextId, setDraggingTextId] = useState<string | null>(null);
@@ -133,32 +134,22 @@ export default function PdfEditor({ file }: PdfEditorProps) {
       await worker.terminate();
 
       const ocrBlocks: any[] = (ret.data as any)?.blocks || [];
-      const boxes: TextBox[] = [];
-      let idx = nextId;
+      const texts: string[] = [];
       for (const block of ocrBlocks) {
         for (const para of block?.paragraphs || []) {
           for (const line of para?.lines || []) {
-            if (line.text?.trim().length > 0 && line.bbox) {
-              const h = line.bbox.y1 - line.bbox.y0;
-              boxes.push({
-                id: `line-${idx}`, text: line.text.trim(),
-                x: line.bbox.x0, y: line.bbox.y0,
-                width: line.bbox.x1 - line.bbox.x0, height: h,
-                fontSize: Math.max(10, Math.round(h * 0.75)),
-                isEdited: false, fontFamily: "NotoSansKR",
-              });
-              idx++;
+            if (line.text?.trim().length > 0) {
+              texts.push(line.text.trim());
             }
           }
         }
       }
       
-      setTextBoxes((prev) => [...prev, ...boxes]);
-      setNextId(idx);
+      setExtractedTexts(texts);
       setStatus("done");
-      setStatusMsg(boxes.length === 0
+      setStatusMsg(texts.length === 0
         ? "추출할 텍스트를 찾지 못했습니다."
-        : `새롭게 ${boxes.length}개의 텍스트를 추출했습니다!`);
+        : `새롭게 ${texts.length}개의 텍스트 줄을 추출했습니다! (우측 패널 확인)`);
     } catch (error: any) {
       console.error("OCR 오류:", error);
       setStatus("done");
@@ -168,11 +159,13 @@ export default function PdfEditor({ file }: PdfEditorProps) {
   };
 
   // 텍스트 추가 버튼
-  const handleAddText = (isTransparent: boolean = false) => {
+  const handleAddText = (isTransparent: boolean = false, initialText: string = "텍스트 입력") => {
     if (status !== "done") return;
     const newBox: TextBox = {
-      id: `new-${nextId}`, text: "텍스트 입력",
-      x: 100, y: 100, width: 200, height: 36,
+      id: `new-${nextId}`, text: initialText,
+      x: 100 + (nextId % 5) * 20, y: 100 + (nextId % 5) * 20, 
+      width: Math.min(400, Math.max(200, initialText.length * 14)), 
+      height: 36 + (initialText.split('\n').length - 1) * 20,
       fontSize: 16, isEdited: true, isNew: true, isTransparent, fontFamily: "NotoSansKR",
     };
     setTextBoxes((prev) => [...prev, newBox]);
@@ -387,7 +380,7 @@ export default function PdfEditor({ file }: PdfEditorProps) {
   const hasContent = textBoxes.length > 0 || imageOverlays.length > 0;
 
   return (
-    <div className="flex flex-col items-center w-full max-w-5xl mx-auto py-8">
+    <div className="flex flex-col items-center w-full max-w-7xl mx-auto py-8">
       <style>{`
         @font-face { font-family: "NotoSansKR"; src: url("/NotoSansKR-Regular.otf"); }
         @font-face { font-family: "NanumMyeongjo"; src: url("/NanumMyeongjo.ttf"); }
@@ -409,11 +402,11 @@ export default function PdfEditor({ file }: PdfEditorProps) {
           </button>
           <button onClick={() => handleAddText(false)} disabled={status !== "done"}
             className="flex items-center gap-1 px-3 py-1.5 bg-green-50 text-green-700 text-sm font-medium rounded-lg hover:bg-green-100 disabled:opacity-50">
-            <Plus className="w-4 h-4" /> 텍스트 추가(흰배경)
+            텍스트 추가(흰배경)
           </button>
           <button onClick={() => handleAddText(true)} disabled={status !== "done"}
             className="flex items-center gap-1 px-3 py-1.5 bg-emerald-50 text-emerald-700 text-sm font-medium rounded-lg hover:bg-emerald-100 disabled:opacity-50">
-            <Plus className="w-4 h-4" /> 텍스트 추가(투명)
+            텍스트 추가(투명)
           </button>
           <button onClick={() => imageInputRef.current?.click()} disabled={status !== "done"}
             className="flex items-center gap-1 px-3 py-1.5 bg-purple-50 text-purple-700 text-sm font-medium rounded-lg hover:bg-purple-100 disabled:opacity-50">
@@ -473,115 +466,125 @@ export default function PdfEditor({ file }: PdfEditorProps) {
         </div>
       )}
 
-      {/* PDF 캔버스 + 오버레이 */}
-      <div className="relative border shadow-2xl bg-white overflow-auto rounded-lg mx-auto"
-        ref={containerRef} onDoubleClick={handleCanvasDoubleClick}
-        onClick={() => setSelectedImageId(null)}>
-        <canvas ref={canvasRef} className="block" />
+      <div className={`flex w-full gap-6 items-start ${extractedTexts.length > 0 ? "justify-start" : "justify-center"} overflow-x-auto pb-8`}>
+        {/* PDF 컨테이너 */}
+        <div className="relative border shadow-2xl bg-white overflow-auto rounded-lg shrink-0" ref={containerRef}
+          onDoubleClick={handleCanvasDoubleClick}
+          style={{ minHeight: "600px" }}
+        >
+          <canvas ref={canvasRef} className="block"
+            style={{ width: "100%", height: "100%" }} />
 
-        {isLoading && (
-          <div className="absolute inset-0 bg-white/70 flex flex-col items-center justify-center z-50 backdrop-blur-sm">
-            <Loader2 className="w-12 h-12 text-blue-600 animate-spin mb-4" />
-            <p className="text-lg font-semibold text-gray-700">{statusMsg}</p>
-          </div>
-        )}
+          {isLoading && (
+            <div className="absolute inset-0 bg-white/70 flex flex-col items-center justify-center z-50 backdrop-blur-sm">
+              <Loader2 className="w-12 h-12 text-blue-600 animate-spin mb-4" />
+              <p className="text-lg font-semibold text-gray-700">{statusMsg}</p>
+            </div>
+          )}
 
-        {/* 텍스트 오버레이 */}
-        {status === "done" && textBoxes.map((box) => (
-          <div key={box.id} className="absolute group"
-            onDoubleClick={(e) => e.stopPropagation()}
-            style={{
-              left: `${box.x}px`, top: `${box.y}px`,
-              width: `${box.width}px`, height: `${box.height}px`,
-              zIndex: draggingTextId === box.id || resizingTextId === box.id ? 30 : 10,
-            }}>
+          {/* 텍스트 오버레이 */}
+          {status === "done" && textBoxes.map((box) => (
+            <div key={box.id} className="absolute group"
+              onDoubleClick={(e) => e.stopPropagation()}
+              style={{
+                left: `${box.x * scale}px`, top: `${box.y * scale}px`,
+                width: `${box.width * scale}px`, height: `${box.height * scale}px`,
+                zIndex: draggingTextId === box.id || resizingTextId === box.id ? 30 : 10,
+              }}>
 
-            {/* 상단 컨트롤 바 (hover 시 표시) */}
-            <div className="absolute -top-8 left-0 flex items-center gap-0.5 bg-white rounded-lg shadow-md border px-1 py-0.5 opacity-0 group-hover:opacity-100 transition-opacity z-30">
-              {/* 이동 핸들 */}
-              <div onMouseDown={(e) => handleTextDragStart(e, box.id)}
-                className="p-1 text-gray-500 hover:bg-gray-100 rounded cursor-grab active:cursor-grabbing" title="이동">
-                <Move className="w-3.5 h-3.5" />
+              {/* 상단 컨트롤 바 */}
+              <div className="absolute -top-8 left-0 flex items-center gap-0.5 bg-white rounded-lg shadow-md border px-1 py-0.5 opacity-0 group-hover:opacity-100 transition-opacity z-30">
+                <div onMouseDown={(e) => handleTextDragStart(e, box.id)}
+                  className="p-1 text-gray-500 hover:bg-gray-100 rounded cursor-grab active:cursor-grabbing">
+                  <Move className="w-3.5 h-3.5" />
+                </div>
+                <select 
+                  value={box.fontFamily || "NotoSansKR"}
+                  onChange={(e) => setTextBoxes(prev => prev.map(b => b.id === box.id ? { ...b, fontFamily: e.target.value, isEdited: true } : b))}
+                  className="text-[11px] font-medium border-r bg-transparent outline-none px-1.5 py-0.5 text-gray-600 hover:bg-gray-50 cursor-pointer"
+                >
+                  <option value="NotoSansKR">기본고딕</option>
+                  <option value="NanumMyeongjo">명조체</option>
+                  <option value="Jua">주아체(둥근)</option>
+                </select>
+                <button onClick={() => handleToggleTransparent(box.id)}
+                  className="p-1 text-gray-500 hover:bg-gray-100 rounded text-[10px]">
+                  {box.isTransparent ? "🔳" : "⬜"}
+                </button>
+                <button onClick={() => handleFontSizeChange(box.id, -2)}
+                  className="p-1 text-gray-500 hover:bg-gray-100 rounded">
+                  <Minus className="w-3.5 h-3.5" />
+                </button>
+                <span className="text-[10px] font-mono text-gray-400 min-w-[24px] text-center select-none">{box.fontSize}</span>
+                <button onClick={() => handleFontSizeChange(box.id, 2)}
+                  className="p-1 text-gray-500 hover:bg-gray-100 rounded">
+                  <Plus className="w-3.5 h-3.5" />
+                </button>
+                <button onClick={() => handleDeleteBox(box.id)}
+                  className="p-1 text-red-400 hover:bg-red-50 hover:text-red-600 rounded">
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
               </div>
-              {/* 폰트 변경 */}
-              <select 
-                value={box.fontFamily || "NotoSansKR"}
-                onChange={(e) => setTextBoxes(prev => prev.map(b => b.id === box.id ? { ...b, fontFamily: e.target.value, isEdited: true } : b))}
-                className="text-[11px] font-medium border-r bg-transparent outline-none px-1.5 py-0.5 text-gray-600 hover:bg-gray-50 cursor-pointer"
-                title="폰트 변경"
+
+              <textarea value={box.text}
+                onChange={(e) => handleTextChange(box.id, e.target.value)}
+                className="w-full h-full resize-none overflow-hidden p-1 m-0 leading-snug cursor-pointer focus:cursor-text rounded-sm"
+                style={{
+                  fontSize: `${box.fontSize * scale}px`,
+                  fontFamily: box.fontFamily || "NotoSansKR",
+                  whiteSpace: "pre-wrap",
+                  backgroundColor: box.isTransparent ? "transparent" : "#fff",
+                  color: "#000",
+                  border: box.isNew ? "2px solid rgba(34,197,94,0.6)" : box.isEdited ? "2px solid rgba(245,158,11,0.5)" : "1px solid rgba(59,130,246,0.3)",
+                  outline: "none",
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
+                }}
+              />
+
+              <div onMouseDown={(e) => handleTextResizeStart(e, box.id)}
+                className="absolute -bottom-1.5 -right-1.5 w-4 h-4 bg-blue-500 rounded-full cursor-se-resize border-2 border-white shadow opacity-0 group-hover:opacity-100 transition-opacity z-30" />
+            </div>
+          ))}
+
+          {/* 이미지 오버레이 */}
+          {status === "done" && imageOverlays.map((overlay) => (
+            <ImageOverlayComponent key={overlay.id} overlay={overlay}
+              onUpdate={handleImageUpdate} onDelete={handleImageDelete}
+              isSelected={selectedImageId === overlay.id} onSelect={setSelectedImageId} />
+          ))}
+        </div>
+
+        {/* 텍스트 목록 사이드바 */}
+        {extractedTexts.length > 0 && (
+          <div className="w-80 shrink-0 flex flex-col bg-white border shadow-lg rounded-xl h-[80vh] sticky top-20">
+            <div className="bg-gray-100 px-4 py-3 border-b flex justify-between items-center rounded-t-xl">
+              <span className="text-sm font-bold text-gray-800">📑 추출된 텍스트 ({extractedTexts.length})</span>
+              <button 
+                onClick={() => {
+                  navigator.clipboard.writeText(extractedTexts.join('\n'));
+                  alert('클립보드에 전체 텍스트가 복사되었습니다!');
+                }}
+                className="text-xs px-2.5 py-1.5 bg-white text-blue-600 rounded border border-gray-200 hover:bg-blue-50 font-medium transition-colors shadow-sm"
               >
-                <option value="NotoSansKR">기본고딕</option>
-                <option value="NanumMyeongjo">명조체</option>
-                <option value="Jua">주아체(둥근)</option>
-              </select>
-              {/* 배경 토글 */}
-              <button onClick={() => handleToggleTransparent(box.id)}
-                className="p-1 text-gray-500 hover:bg-gray-100 rounded text-[10px]" title="배경 토글">
-                {box.isTransparent ? "🔳" : "⬜"}
-              </button>
-              {/* 폰트 축소 */}
-              <button onClick={() => handleFontSizeChange(box.id, -2)}
-                className="p-1 text-gray-500 hover:bg-gray-100 rounded" title="폰트 축소">
-                <Minus className="w-3.5 h-3.5" />
-              </button>
-              {/* 폰트 크기 표시 */}
-              <span className="text-[10px] font-mono text-gray-400 min-w-[24px] text-center select-none">{box.fontSize}</span>
-              {/* 폰트 확대 */}
-              <button onClick={() => handleFontSizeChange(box.id, 2)}
-                className="p-1 text-gray-500 hover:bg-gray-100 rounded" title="폰트 확대">
-                <Plus className="w-3.5 h-3.5" />
-              </button>
-              {/* 삭제 */}
-              <button onClick={() => handleDeleteBox(box.id)}
-                className="p-1 text-red-400 hover:bg-red-50 hover:text-red-600 rounded" title="삭제">
-                <Trash2 className="w-3.5 h-3.5" />
+                전체 복사
               </button>
             </div>
-
-            {/* 텍스트 입력 영역 - 흰색 배경 */}
-            <textarea value={box.text}
-              onChange={(e) => handleTextChange(box.id, e.target.value)}
-              className="w-full h-full resize-none overflow-hidden p-1 m-0 leading-snug cursor-pointer focus:cursor-text rounded-sm"
-              style={{
-                fontSize: `${box.fontSize}px`,
-                fontFamily: box.fontFamily || "NotoSansKR",
-                whiteSpace: "pre-wrap",
-                backgroundColor: box.isTransparent ? "transparent" : "#fff",
-                color: "#000",
-                border: box.isNew
-                  ? "2px solid rgba(34,197,94,0.6)"
-                  : box.isEdited
-                  ? "2px solid rgba(245,158,11,0.5)"
-                  : "1px solid rgba(59,130,246,0.3)",
-                outline: "none",
-                boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
-              }}
-              onFocus={(e) => {
-                e.currentTarget.style.border = "2px solid #3b82f6";
-                e.currentTarget.style.boxShadow = "0 0 0 3px rgba(59,130,246,0.2)";
-              }}
-              onBlur={(e) => {
-                e.currentTarget.style.border = box.isNew
-                  ? "2px solid rgba(34,197,94,0.6)"
-                  : box.isEdited
-                  ? "2px solid rgba(245,158,11,0.5)"
-                  : "1px solid rgba(59,130,246,0.3)";
-                e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.08)";
-              }}
-            />
-
-            {/* 리사이즈 핸들 (우하단) */}
-            <div onMouseDown={(e) => handleTextResizeStart(e, box.id)}
-              className="absolute -bottom-1.5 -right-1.5 w-4 h-4 bg-blue-500 rounded-full cursor-se-resize border-2 border-white shadow opacity-0 group-hover:opacity-100 transition-opacity z-30" />
+            <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50/50">
+              {extractedTexts.map((text, idx) => (
+                <div key={idx} 
+                  onDoubleClick={() => handleAddText(true, text)}
+                  title="더블클릭하여 PDF에 텍스트 상자로 추가"
+                  className="p-3 bg-white rounded-lg border border-gray-200 text-sm text-gray-800 whitespace-pre-wrap shadow-sm cursor-pointer hover:bg-blue-50 hover:border-blue-300 transition-colors group relative"
+                >
+                  {text}
+                  <div className="text-[10px] text-blue-500 opacity-0 group-hover:opacity-100 mt-1.5 font-bold transition-opacity">
+                    ✨ 더블클릭하여 PDF에 추가
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
-        ))}
-
-        {/* 이미지 오버레이 */}
-        {status === "done" && imageOverlays.map((overlay) => (
-          <ImageOverlayComponent key={overlay.id} overlay={overlay}
-            onUpdate={handleImageUpdate} onDelete={handleImageDelete}
-            isSelected={selectedImageId === overlay.id} onSelect={setSelectedImageId} />
-        ))}
+        )}
       </div>
     </div>
   );

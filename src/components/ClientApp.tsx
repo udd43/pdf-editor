@@ -32,19 +32,21 @@ export default function ClientApp() {
       <header className="bg-white border-b sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
           {/* 로고 (클릭 시 처음 화면으로 복귀) */}
-          <button 
-            onClick={() => {
-              setFile(null);
-              setReferenceFile(null);
-              setActiveTab("pdf");
-            }}
-            className="shrink-0 outline-none flex items-center"
-          >
-            <span className="text-xl font-black text-blue-700 tracking-tight hover:text-blue-800 transition-colors">PDF Editor</span>
-          </button>
+          <div className="flex-1 flex justify-start">
+            <button 
+              onClick={() => {
+                setFile(null);
+                setReferenceFile(null);
+                setActiveTab("pdf");
+              }}
+              className="shrink-0 outline-none flex items-center"
+            >
+              <span className="text-xl font-black text-blue-700 tracking-tight hover:text-blue-800 transition-colors">PDF Editor</span>
+            </button>
+          </div>
 
           {/* 중앙 탭 */}
-          <nav className="flex items-center bg-gray-100 rounded-full p-1 gap-0.5">
+          <nav className="shrink-0 flex items-center bg-gray-100 rounded-full p-1 gap-0.5">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
@@ -62,7 +64,7 @@ export default function ClientApp() {
           </nav>
 
           {/* 우측 */}
-          <div className="shrink-0 min-w-[100px] flex justify-end gap-2">
+          <div className="flex-1 flex justify-end gap-2">
             {activeTab === "pdf" && file && (
               <>
                 <button onClick={() => document.getElementById("ref-upload")?.click()}
@@ -93,7 +95,7 @@ export default function ClientApp() {
                   <iframe src={URL.createObjectURL(referenceFile)} className="w-full h-full border-0" />
                 </div>
               )}
-              <div className={`${referenceFile ? "w-1/2" : "w-full max-w-5xl"}`}>
+              <div className={`${referenceFile ? "w-1/2" : "w-full max-w-7xl"}`}>
                 <PdfEditor file={file} />
               </div>
             </div>

@@ -1,1 +1,6 @@
 @import "tailwindcss";
+
+/* Next.js 개발 모드 하단 아이콘 및 에러 오버레이 강제 숨김 */
+nextjs-portal {
+  display: none !important;
+}

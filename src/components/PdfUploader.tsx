@@ -2,6 +2,7 @@
 
 import React, { useCallback, useState } from "react";
 import { UploadCloud } from "lucide-react";
+import { PDFDocument } from "pdf-lib";
 
 interface PdfUploaderProps {
   onFileSelect: (file: File) => void;
@@ -20,16 +21,43 @@ export default function PdfUploader({ onFileSelect }: PdfUploaderProps) {
     setIsDragging(false);
   }, []);
 
+  const processFile = async (file: File) => {
+    if (file.type === "application/pdf") {
+      onFileSelect(file);
+    } else if (file.type.startsWith("image/")) {
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        const pdfDoc = await PDFDocument.create();
+        let image;
+        if (file.type === "image/png") {
+          image = await pdfDoc.embedPng(arrayBuffer);
+        } else if (file.type === "image/jpeg" || file.type === "image/jpg") {
+          image = await pdfDoc.embedJpg(arrayBuffer);
+        } else {
+          alert("지원하지 않는 이미지 형식입니다. (JPG, PNG만 가능)");
+          return;
+        }
+        const page = pdfDoc.addPage([image.width, image.height]);
+        page.drawImage(image, { x: 0, y: 0, width: image.width, height: image.height });
+        const pdfBytes = await pdfDoc.save();
+        const blob = new Blob([pdfBytes as any], { type: "application/pdf" });
+        const newFile = new File([blob], `${file.name.split('.')[0]}.pdf`, { type: "application/pdf" });
+        onFileSelect(newFile);
+      } catch (err) {
+        console.error(err);
+        alert("이미지를 PDF로 변환하는 중 오류가 발생했습니다.");
+      }
+    } else {
+      alert("PDF 또는 이미지 파일(JPG, PNG)만 업로드 가능합니다.");
+    }
+  };
+
   const handleDrop = useCallback(
     (e: React.DragEvent<HTMLDivElement>) => {
       e.preventDefault();
       setIsDragging(false);
       const file = e.dataTransfer.files[0];
-      if (file && file.type === "application/pdf") {
-        onFileSelect(file);
-      } else {
-        alert("PDF 파일만 업로드 가능합니다.");
-      }
+      if (file) processFile(file);
     },
     [onFileSelect]
   );
@@ -37,9 +65,7 @@ export default function PdfUploader({ onFileSelect }: PdfUploaderProps) {
   const handleFileChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
-      if (file && file.type === "application/pdf") {
-        onFileSelect(file);
-      }
+      if (file) processFile(file);
     },
     [onFileSelect]
   );
@@ -65,13 +91,13 @@ export default function PdfUploader({ onFileSelect }: PdfUploaderProps) {
         }`}
       />
       <h3 className="text-xl font-semibold text-gray-700 mb-2">
-        PDF 파일을 이곳에 드롭하세요
+        PDF 또는 이미지 파일을 이곳에 드롭하세요
       </h3>
       <p className="text-gray-500 mb-6">또는 클릭하여 파일을 선택하세요</p>
       <input
         id="file-upload"
         type="file"
-        accept="application/pdf"
+        accept="application/pdf, image/jpeg, image/png"
         className="hidden"
         onChange={handleFileChange}
       />
