@@ -44,7 +44,7 @@ export default function PdfEditor({ file }: PdfEditorProps) {
   const [selectedImageId, setSelectedImageId] = useState<string | null>(null);
   const [draggingTextId, setDraggingTextId] = useState<string | null>(null);
   const [resizingTextId, setResizingTextId] = useState<string | null>(null);
-  const [scale, setScale] = useState(1.5);
+  const scale = 1.5;
   const [pdfBuffer, setPdfBuffer] = useState<ArrayBuffer | null>(null);
   const [ocrProgress, setOcrProgress] = useState(0);
   const [nextId, setNextId] = useState(0);
@@ -393,11 +393,6 @@ export default function PdfEditor({ file }: PdfEditorProps) {
       <div className="w-full flex flex-wrap justify-between items-center mb-4 bg-white p-3 rounded-xl shadow-sm border gap-2">
         <h2 className="text-lg font-bold text-gray-800 truncate max-w-xs">{file.name}</h2>
         <div className="flex gap-1.5 flex-wrap">
-          <button onClick={() => setScale((s) => Math.max(0.5, s - 0.2))}
-            className="px-3 py-1.5 bg-gray-100 rounded-lg hover:bg-gray-200 text-sm">축소</button>
-          <button onClick={() => setScale((s) => Math.min(3, s + 0.2))}
-            className="px-3 py-1.5 bg-gray-100 rounded-lg hover:bg-gray-200 text-sm">확대</button>
-          <div className="w-px bg-gray-200 mx-1" />
           <button onClick={handleRunOcr} disabled={status !== "done"}
             className="flex items-center gap-1 px-3 py-1.5 bg-blue-50 text-blue-700 text-sm font-medium rounded-lg hover:bg-blue-100 disabled:opacity-50"
             title="문서 내의 글자를 자동으로 인식하여 편집 가능한 박스로 만듭니다">
