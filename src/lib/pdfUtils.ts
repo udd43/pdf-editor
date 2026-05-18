@@ -113,14 +113,18 @@ export async function exportEditedPdf(
       const selectedFont = fontCache[box.fontFamily || "NotoSansKR"] || fontCache["NotoSansKR"];
       
       try {
-        const padX = 2;
+        // 에디터 내 textarea의 padding(4px) 및 border(2px/1px) 두께를 정확하게 반영하여 좌측 정렬 보정
+        const padX = 5.5;
         
         // 가로 모드일 때 텍스트를 시각적으로 살짝 아래로 내려주는 보정값 추가
         const isLandscape = rotationAngle === 90 || rotationAngle === 270;
         const verticalCorrection = isLandscape ? (fontSize * 0.15) : 0; 
         
-        // Text baseline starts at [realX + padX, realY + fontSize + 2 + verticalCorrection] in visual space.
-        const baselineVp = getPdfCoords(realX + padX, realY + fontSize + 2 + verticalCorrection);
+        // 에디터 내의 세로 중앙 정렬 및 폰트 디센더/어센더 메트릭 비율을 고려한 완벽한 베이스라인 계산
+        const baselineY = realY + (realH / 2) + (fontSize * 0.32) + verticalCorrection;
+        
+        // 계산된 visual point를 PDF 좌표계로 다이렉트 매핑
+        const baselineVp = getPdfCoords(realX + padX, baselineY);
         const textX = baselineVp.px;
         const textY = baselineVp.py;
 

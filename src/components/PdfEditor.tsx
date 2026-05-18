@@ -179,11 +179,11 @@ export default function PdfEditor({ file }: PdfEditorProps) {
   // 더블클릭으로 텍스트 추가
   const handleCanvasDoubleClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (status !== "done") return;
-    const container = containerRef.current;
-    if (!container) return;
-    const rect = container.getBoundingClientRect();
-    const x = (e.clientX - rect.left + container.scrollLeft) / scale;
-    const y = (e.clientY - rect.top + container.scrollTop) / scale;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / scale;
+    const y = (e.clientY - rect.top) / scale;
     const newBox: TextBox = {
       id: `new-${nextId}`, text: "텍스트 입력",
       x: x - 100, y: y - 18, width: 200, height: 36,
@@ -475,8 +475,7 @@ export default function PdfEditor({ file }: PdfEditorProps) {
           onDoubleClick={handleCanvasDoubleClick}
           style={{ minHeight: "600px" }}
         >
-          <canvas ref={canvasRef} className="block"
-            style={{ width: "100%", height: "100%" }} />
+          <canvas ref={canvasRef} className="block" />
 
           {isLoading && (
             <div className="absolute inset-0 bg-white/70 flex flex-col items-center justify-center z-50 backdrop-blur-sm">
