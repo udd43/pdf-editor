@@ -90,13 +90,19 @@ export async function exportEditedPdf(
     }
   };
 
+  // [수정된 부분] UI 스케일과 해상도(DPI) 차이를 결합하여 '최종 고정 배율'을 하나 만듭니다.
+  // 72 / 96 = 0.75 (웹 픽셀을 PDF 포인트로 변환하는 마법의 숫자입니다)
+  const DPI_RATIO = 0.75;
+  const FINAL_SCALE = (1 / (scale || 1)) * DPI_RATIO;
+
   // 1. 텍스트 상자 처리
   for (const box of editedBoxes) {
     if (box.isEdited || box.isNew) {
-      const realX = box.x / scale;
-      const realY = box.y / scale;
-      const realW = box.width / scale;
-      const realH = box.height / scale;
+      // 이제 계속 나누지 않고, 깔끔하게 FINAL_SCALE만 곱해줍니다.
+      const realX = box.x * FINAL_SCALE;
+      const realY = box.y * FINAL_SCALE;
+      const realW = box.width * FINAL_SCALE;
+      const realH = box.height * FINAL_SCALE;
 
       const { rectX, rectY, rectW, rectH, rotate } = getRotatedCoords(realX, realY, realW, realH);
 
@@ -109,7 +115,7 @@ export async function exportEditedPdf(
       }
 
       // 사용자가 설정한 폰트 크기 사용
-      const fontSize = Math.max(8, (box.fontSize || 16) / scale);
+      const fontSize = Math.max(8, (box.fontSize || 16) * FINAL_SCALE);
       const selectedFont = fontCache[box.fontFamily || "NotoSansKR"] || fontCache["NotoSansKR"];
       
       try {
@@ -164,10 +170,11 @@ export async function exportEditedPdf(
         }
       }
 
-      const realX = overlay.x / scale;
-      const realY = overlay.y / scale;
-      const realW = overlay.width / scale;
-      const realH = overlay.height / scale;
+      // 이미지 좌표에도 복잡한 계산 없이 FINAL_SCALE만 곱해줍니다.
+      const realX = overlay.x * FINAL_SCALE;
+      const realY = overlay.y * FINAL_SCALE;
+      const realW = overlay.width * FINAL_SCALE;
+      const realH = overlay.height * FINAL_SCALE;
 
       const { rectX, rectY, rectW, rectH, rotate } = getRotatedCoords(realX, realY, realW, realH);
 
