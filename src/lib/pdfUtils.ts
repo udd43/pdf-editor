@@ -114,9 +114,13 @@ export async function exportEditedPdf(
       
       try {
         const padX = 2;
-        // Text baseline starts at [realX + padX, realY + fontSize + 2] in visual space.
-        // We convert this visual point directly to PDF coordinates.
-        const baselineVp = getPdfCoords(realX + padX, realY + fontSize + 2);
+        
+        // 가로 모드일 때 텍스트를 시각적으로 살짝 아래로 내려주는 보정값 추가
+        const isLandscape = rotationAngle === 90 || rotationAngle === 270;
+        const verticalCorrection = isLandscape ? (fontSize * 0.15) : 0; 
+        
+        // Text baseline starts at [realX + padX, realY + fontSize + 2 + verticalCorrection] in visual space.
+        const baselineVp = getPdfCoords(realX + padX, realY + fontSize + 2 + verticalCorrection);
         const textX = baselineVp.px;
         const textY = baselineVp.py;
 
@@ -126,7 +130,8 @@ export async function exportEditedPdf(
           size: fontSize,
           font: selectedFont,
           color: rgb(0, 0, 0),
-          maxWidth: (rotationAngle === 90 || rotationAngle === 270) ? realH - 4 : realW - 4,
+          // 무조건 UI 상의 너비(realW)를 기준으로 텍스트 최대 너비 제한
+          maxWidth: realW - 4,
           rotate: rotate,
         });
       } catch (drawError) {
