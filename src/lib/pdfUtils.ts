@@ -52,17 +52,18 @@ export async function exportEditedPdf(
    * Canvas 좌표계: 왼쪽 상단 원점, Y축 아래 방향
    *
    * rotation=0   : 그냥 Y 반전 (visualH - uiY - uiH)
-   * rotation=90  : PDF 내부는 세로지만 화면은 가로.
-   *                canvas의 (x, y) → PDF의 (y, pdfWidth - x - w) + rotate(-90)
+   * rotation=90  : pdfjs 변환: canvas_x = pdfHeight - pdf_y, canvas_y = pdf_x
+   *                역변환: pdf_x = canvas_y, pdf_y = pdfHeight - canvas_x
    * rotation=180 : 상하좌우 모두 반전
-   * rotation=270 : canvas의 (x, y) → PDF의 (pdfHeight - y - h, x) + rotate(90)
+   * rotation=270 : pdfjs 변환: canvas_x = pdf_y, canvas_y = pdfWidth - pdf_x
+   *                역변환: pdf_x = pdfWidth - canvas_y, pdf_y = canvas_x
    */
   const getRotatedCoords = (uiX: number, uiY: number, uiW: number, uiH: number) => {
     if (rotationAngle === 90) {
-      // 화면 가로(visualW=pdfHeight), 화면 세로(visualH=pdfWidth)
-      // PDF 내부: x축=pdfWidth방향(아래→위), y축=pdfHeight방향(왼→오)
-      const pdfX = uiY;                        // canvas Y → PDF X
-      const pdfY = pdfWidth - uiX - uiW;       // canvas X → PDF Y (반전)
+      // pdfjs: canvas_x = pdfHeight - pdf_y  →  pdf_y = pdfHeight - canvas_x
+      //        canvas_y = pdf_x             →  pdf_x = canvas_y
+      const pdfX = uiY;                         // canvas Y → PDF X
+      const pdfY = pdfHeight - uiX - uiW;       // canvas X → PDF Y (pdfHeight 기준 반전) ★
       return {
         rectX: pdfX,  rectY: pdfY,  rectW: uiH,  rectH: uiW,
         textX: pdfX,  textY: pdfY + uiW,         // 텍스트 시작점 (rotate 후 왼쪽 상단)
@@ -78,9 +79,10 @@ export async function exportEditedPdf(
         rotate: degrees(180),
       };
     } else if (rotationAngle === 270) {
-      // 화면 가로(visualW=pdfHeight), 화면 세로(visualH=pdfWidth)
-      const pdfX = pdfHeight - uiY - uiH;      // canvas Y → PDF X (반전)
-      const pdfY = uiX;                         // canvas X → PDF Y
+      // pdfjs: canvas_x = pdf_y             →  pdf_y = canvas_x
+      //        canvas_y = pdfWidth - pdf_x  →  pdf_x = pdfWidth - canvas_y
+      const pdfX = pdfWidth - uiY - uiH;        // canvas Y → PDF X (pdfWidth 기준 반전) ★
+      const pdfY = uiX;                          // canvas X → PDF Y
       return {
         rectX: pdfX,  rectY: pdfY,  rectW: uiH,  rectH: uiW,
         textX: pdfX + uiH,  textY: pdfY,          // 텍스트 시작점
