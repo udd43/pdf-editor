@@ -17,6 +17,7 @@ export interface ImageOverlayData {
 
 interface ImageOverlayProps {
   overlay: ImageOverlayData;
+  scale: number;
   onUpdate: (id: string, updates: Partial<ImageOverlayData>) => void;
   onDelete: (id: string) => void;
   isSelected: boolean;
@@ -25,6 +26,7 @@ interface ImageOverlayProps {
 
 export default function ImageOverlay({
   overlay,
+  scale,
   onUpdate,
   onDelete,
   isSelected,
@@ -34,20 +36,21 @@ export default function ImageOverlay({
   const [isResizing, setIsResizing] = useState(false);
   const [isRemovingBg, setIsRemovingBg] = useState(false);
   const [showColorPicker, setShowColorPicker] = useState(false);
-  const dragStart = useRef({ x: 0, y: 0, ox: 0, oy: 0 });
-  const resizeStart = useRef({ x: 0, y: 0, w: 0, h: 0 });
 
   // 드래그 시작
   const handleDragStart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(true);
-    dragStart.current = { x: e.clientX, y: e.clientY, ox: overlay.x, oy: overlay.y };
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const startBoxX = overlay.x;
+    const startBoxY = overlay.y;
 
     const handleMove = (ev: MouseEvent) => {
-      const dx = ev.clientX - dragStart.current.x;
-      const dy = ev.clientY - dragStart.current.y;
-      onUpdate(overlay.id, { x: dragStart.current.ox + dx, y: dragStart.current.oy + dy });
+      const dx = (ev.clientX - startX) / scale;
+      const dy = (ev.clientY - startY) / scale;
+      onUpdate(overlay.id, { x: startBoxX + dx, y: startBoxY + dy });
     };
     const handleUp = () => {
       setIsDragging(false);
@@ -63,13 +66,16 @@ export default function ImageOverlay({
     e.preventDefault();
     e.stopPropagation();
     setIsResizing(true);
-    resizeStart.current = { x: e.clientX, y: e.clientY, w: overlay.width, h: overlay.height };
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const startW = overlay.width;
+    const startH = overlay.height;
 
     const handleMove = (ev: MouseEvent) => {
-      const dx = ev.clientX - resizeStart.current.x;
-      const dy = ev.clientY - resizeStart.current.y;
-      const newW = Math.max(30, resizeStart.current.w + dx);
-      const newH = Math.max(30, resizeStart.current.h + dy);
+      const dx = (ev.clientX - startX) / scale;
+      const dy = (ev.clientY - startY) / scale;
+      const newW = Math.max(30, startW + dx);
+      const newH = Math.max(30, startH + dy);
       onUpdate(overlay.id, { width: newW, height: newH });
     };
     const handleUp = () => {
@@ -145,10 +151,10 @@ export default function ImageOverlay({
     <div
       className={`absolute group ${isDragging ? "cursor-grabbing" : "cursor-grab"}`}
       style={{
-        left: `${overlay.x}px`,
-        top: `${overlay.y}px`,
-        width: `${overlay.width}px`,
-        height: `${overlay.height}px`,
+        left: `${overlay.x * scale}px`,
+        top: `${overlay.y * scale}px`,
+        width: `${overlay.width * scale}px`,
+        height: `${overlay.height * scale}px`,
         zIndex: isSelected ? 25 : 15,
       }}
       onClick={(e) => { e.stopPropagation(); onSelect(overlay.id); }}

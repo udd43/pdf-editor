@@ -182,11 +182,11 @@ export default function PdfEditor({ file }: PdfEditorProps) {
     const container = containerRef.current;
     if (!container) return;
     const rect = container.getBoundingClientRect();
-    const x = e.clientX - rect.left + container.scrollLeft;
-    const y = e.clientY - rect.top + container.scrollTop;
+    const x = (e.clientX - rect.left + container.scrollLeft) / scale;
+    const y = (e.clientY - rect.top + container.scrollTop) / scale;
     const newBox: TextBox = {
       id: `new-${nextId}`, text: "텍스트 입력",
-      x: x - 50, y: y - 12, width: 200, height: 36,
+      x: x - 100, y: y - 18, width: 200, height: 36,
       fontSize: 16, isEdited: true, isNew: true, fontFamily: "NotoSansKR",
     };
     setTextBoxes((prev) => [...prev, newBox]);
@@ -201,18 +201,16 @@ export default function PdfEditor({ file }: PdfEditorProps) {
     const box = textBoxes.find((b) => b.id === boxId);
     if (!box) return;
     setDraggingTextId(boxId);
-    const container = containerRef.current;
-    if (!container) return;
-    const cr = container.getBoundingClientRect();
-    dragOffset.current = {
-      x: e.clientX - cr.left - box.x + container.scrollLeft,
-      y: e.clientY - cr.top - box.y + container.scrollTop,
-    };
+    
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const startBoxX = box.x;
+    const startBoxY = box.y;
+
     const handleMove = (ev: MouseEvent) => {
-      const r = container.getBoundingClientRect();
-      const newX = ev.clientX - r.left - dragOffset.current.x + container.scrollLeft;
-      const newY = ev.clientY - r.top - dragOffset.current.y + container.scrollTop;
-      setTextBoxes((prev) => prev.map((b) => b.id === boxId ? { ...b, x: newX, y: newY } : b));
+      const dx = (ev.clientX - startX) / scale;
+      const dy = (ev.clientY - startY) / scale;
+      setTextBoxes((prev) => prev.map((b) => b.id === boxId ? { ...b, x: startBoxX + dx, y: startBoxY + dy } : b));
     };
     const handleUp = () => {
       setDraggingTextId(null);
@@ -230,12 +228,17 @@ export default function PdfEditor({ file }: PdfEditorProps) {
     const box = textBoxes.find((b) => b.id === boxId);
     if (!box) return;
     setResizingTextId(boxId);
-    resizeStart.current = { x: e.clientX, y: e.clientY, w: box.width, h: box.height };
+    
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const startW = box.width;
+    const startH = box.height;
+
     const handleMove = (ev: MouseEvent) => {
-      const dx = ev.clientX - resizeStart.current.x;
-      const dy = ev.clientY - resizeStart.current.y;
-      const newW = Math.max(60, resizeStart.current.w + dx);
-      const newH = Math.max(20, resizeStart.current.h + dy);
+      const dx = (ev.clientX - startX) / scale;
+      const dy = (ev.clientY - startY) / scale;
+      const newW = Math.max(60, startW + dx);
+      const newH = Math.max(20, startH + dy);
       setTextBoxes((prev) => prev.map((b) => b.id === boxId ? { ...b, width: newW, height: newH } : b));
     };
     const handleUp = () => {
@@ -365,7 +368,7 @@ export default function PdfEditor({ file }: PdfEditorProps) {
     setStatus("rendering");
     setStatusMsg("새 PDF를 생성하는 중...");
     try {
-      await exportEditedPdf(pdfBuffer, textBoxes, imageOverlays, scale);
+      await exportEditedPdf(pdfBuffer, textBoxes, imageOverlays, 1);
       setStatus("done");
       setStatusMsg("PDF가 다운로드되었습니다!");
     } catch (e: any) {
@@ -548,7 +551,7 @@ export default function PdfEditor({ file }: PdfEditorProps) {
 
           {/* 이미지 오버레이 */}
           {status === "done" && imageOverlays.map((overlay) => (
-            <ImageOverlayComponent key={overlay.id} overlay={overlay}
+            <ImageOverlayComponent key={overlay.id} overlay={overlay} scale={scale}
               onUpdate={handleImageUpdate} onDelete={handleImageDelete}
               isSelected={selectedImageId === overlay.id} onSelect={setSelectedImageId} />
           ))}
