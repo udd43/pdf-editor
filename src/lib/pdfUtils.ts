@@ -45,7 +45,8 @@ export async function exportEditedPdf(
     if (rotationAngle === 90) {
       return { px: vy, py: vx };
     } else if (rotationAngle === 180) {
-      return { px: pdfWidth - vx, py: pdfHeight - vy };
+      // 180° 회전: X축 반전 + PDF↔화면 Y 반전이 서로 상쇄되어 py = vy
+      return { px: pdfWidth - vx, py: vy };
     } else if (rotationAngle === 270) {
       return { px: pdfWidth - vy, py: pdfHeight - vx };
     } else {
@@ -65,7 +66,7 @@ export async function exportEditedPdf(
     } else if (rotationAngle === 180) {
       return {
         rectX: pdfWidth - uiX - uiW,
-        rectY: pdfHeight - uiY - uiH,
+        rectY: uiY,
         rectW: uiW,
         rectH: uiH,
         rotate: degrees(180),
