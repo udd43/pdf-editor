@@ -106,8 +106,9 @@ export default function ClientApp() {
       </main>
 
       <footer className="bg-white py-3 mt-auto border-t">
-        <div className="max-w-7xl mx-auto px-4 text-center text-gray-400 text-xs">
-          &copy; 2026 PDF Editor &middot; 모든 처리는 브라우저에서 수행됩니다
+        <div className="max-w-7xl mx-auto px-4 flex items-center justify-between text-gray-400 text-xs">
+          <span className="font-mono text-gray-500">v{process.env.NEXT_PUBLIC_APP_VERSION}</span>
+          <span>&copy; 2026 PDF Editor &middot; 모든 처리는 브라우저에서 수행됩니다</span>
         </div>
       </footer>
     </div>
