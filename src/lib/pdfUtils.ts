@@ -3,11 +3,20 @@ import fontkit from "@pdf-lib/fontkit";
 import { TextBox } from "@/components/PdfEditor";
 import { ImageOverlayData } from "@/components/ImageOverlay";
 
+/**
+ * PDF 내보내기 함수
+ * 
+ * 좌표계 설명:
+ * - PdfEditor에서 텍스트 상자 좌표(box.x, box.y 등)는 "PDF 포인트" 단위로 저장됩니다.
+ *   (생성 시 canvasPixel / renderingScale 로 나눠서 저장하므로)
+ * - 따라서 내보내기 시 추가적인 스케일 변환이 필요하지 않습니다.
+ * - DPI 보정(72/96)도 불필요합니다. PDF.js viewport가 이미 1:1 매핑을 제공합니다.
+ */
 export async function exportEditedPdf(
   originalPdfBuffer: ArrayBuffer,
   editedBoxes: TextBox[],
   imageOverlays: ImageOverlayData[],
-  scale: number
+  _scale: number // 하위 호환성을 위해 남겨둠 (사용하지 않음)
 ) {
   const pdfDoc = await PDFDocument.load(originalPdfBuffer);
   pdfDoc.registerFontkit(fontkit);
@@ -41,11 +50,11 @@ export async function exportEditedPdf(
 
   const { degrees } = await import("pdf-lib");
 
+  // 화면 좌표(좌상단 원점, Y↓) → PDF 좌표(좌하단 원점, Y↑) 변환
   const getPdfCoords = (vx: number, vy: number) => {
     if (rotationAngle === 90) {
       return { px: vy, py: vx };
     } else if (rotationAngle === 180) {
-      // 180° 회전: X축 반전 + PDF↔화면 Y 반전이 서로 상쇄되어 py = vy
       return { px: pdfWidth - vx, py: vy };
     } else if (rotationAngle === 270) {
       return { px: pdfWidth - vy, py: pdfHeight - vx };
@@ -54,6 +63,7 @@ export async function exportEditedPdf(
     }
   };
 
+  // 사각형(배경, 이미지) 좌표 변환 (회전 고려)
   const getRotatedCoords = (uiX: number, uiY: number, uiW: number, uiH: number) => {
     if (rotationAngle === 90) {
       return {
@@ -90,19 +100,17 @@ export async function exportEditedPdf(
     }
   };
 
-  // [수정된 부분] UI 스케일과 해상도(DPI) 차이를 결합하여 '최종 고정 배율'을 하나 만듭니다.
-  // 72 / 96 = 0.75 (웹 픽셀을 PDF 포인트로 변환하는 마법의 숫자입니다)
-  const DPI_RATIO = 0.75;
-  const FINAL_SCALE = (1 / (scale || 1)) * DPI_RATIO;
-
+  // ──────────────────────────────────────────────────────────
   // 1. 텍스트 상자 처리
+  // ──────────────────────────────────────────────────────────
+  // box.x, box.y, box.width, box.height는 이미 PDF 포인트 단위입니다.
+  // 추가적인 스케일/DPI 변환 없이 그대로 사용합니다.
   for (const box of editedBoxes) {
     if (box.isEdited || box.isNew) {
-      // 이제 계속 나누지 않고, 깔끔하게 FINAL_SCALE만 곱해줍니다.
-      const realX = box.x * FINAL_SCALE;
-      const realY = box.y * FINAL_SCALE;
-      const realW = box.width * FINAL_SCALE;
-      const realH = box.height * FINAL_SCALE;
+      const realX = box.x;
+      const realY = box.y;
+      const realW = box.width;
+      const realH = box.height;
 
       const { rectX, rectY, rectW, rectH, rotate } = getRotatedCoords(realX, realY, realW, realH);
 
@@ -114,23 +122,27 @@ export async function exportEditedPdf(
         });
       }
 
-      // 사용자가 설정한 폰트 크기 사용
-      const fontSize = Math.max(8, (box.fontSize || 16) * FINAL_SCALE);
+      // 폰트 크기도 이미 PDF 포인트 단위
+      const fontSize = Math.max(8, box.fontSize || 16);
       const selectedFont = fontCache[box.fontFamily || "NotoSansKR"] || fontCache["NotoSansKR"];
       
       try {
-        // 에디터 내 textarea의 padding(4px) 및 border(2px/1px) 두께를 정확하게 반영하여 좌측 정렬 보정
-        const padX = 5.5;
+        // textarea의 CSS padding(p-1 = 4px) + border(2px) = 6px
+        // PDF 포인트로 변환: 6 / renderingScale(1.5) = 4
+        const padX = 4;
+        const padY = 4;
         
-        // 가로 모드일 때 텍스트를 시각적으로 살짝 아래로 내려주는 보정값 추가
+        // 가로 모드일 때 미세 보정
         const isLandscape = rotationAngle === 90 || rotationAngle === 270;
         const verticalCorrection = isLandscape ? (fontSize * 0.15) : 0; 
         
-        // 에디터 내의 세로 중앙 정렬 및 폰트 디센더/어센더 메트릭 비율을 고려한 완벽한 베이스라인 계산
-        const baselineY = realY + (realH / 2) + (fontSize * 0.32) + verticalCorrection;
+        // 텍스트 베이스라인 위치 계산
+        // PDF drawText의 Y좌표는 베이스라인(글자 밑줄) 위치
+        // 한글 폰트의 어센트(글자 상단~베이스라인) ≈ fontSize * 0.88
+        const baselineVisualY = realY + padY + (fontSize * 0.88) + verticalCorrection;
         
-        // 계산된 visual point를 PDF 좌표계로 다이렉트 매핑
-        const baselineVp = getPdfCoords(realX + padX, baselineY);
+        // 화면 좌표 → PDF 좌표 변환
+        const baselineVp = getPdfCoords(realX + padX, baselineVisualY);
         const textX = baselineVp.px;
         const textY = baselineVp.py;
 
@@ -140,8 +152,7 @@ export async function exportEditedPdf(
           size: fontSize,
           font: selectedFont,
           color: rgb(0, 0, 0),
-          // 무조건 UI 상의 너비(realW)를 기준으로 텍스트 최대 너비 제한
-          maxWidth: realW - 4,
+          maxWidth: realW - (padX * 2),
           rotate: rotate,
         });
       } catch (drawError) {
@@ -150,7 +161,9 @@ export async function exportEditedPdf(
     }
   }
 
+  // ──────────────────────────────────────────────────────────
   // 2. 이미지 오버레이 처리
+  // ──────────────────────────────────────────────────────────
   for (const overlay of imageOverlays) {
     try {
       const imgDataUrl = overlay.displaySrc;
@@ -170,11 +183,11 @@ export async function exportEditedPdf(
         }
       }
 
-      // 이미지 좌표에도 복잡한 계산 없이 FINAL_SCALE만 곱해줍니다.
-      const realX = overlay.x * FINAL_SCALE;
-      const realY = overlay.y * FINAL_SCALE;
-      const realW = overlay.width * FINAL_SCALE;
-      const realH = overlay.height * FINAL_SCALE;
+      // 이미지 좌표도 이미 PDF 포인트 단위
+      const realX = overlay.x;
+      const realY = overlay.y;
+      const realW = overlay.width;
+      const realH = overlay.height;
 
       const { rectX, rectY, rectW, rectH, rotate } = getRotatedCoords(realX, realY, realW, realH);
 
