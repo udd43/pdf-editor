@@ -3,9 +3,10 @@
 import React, { useEffect, useRef, useState } from "react";
 import * as pdfjsLib from "pdfjs-dist";
 import Tesseract from "tesseract.js";
-import { Download, Loader2, Plus, Image as ImageIcon, Scissors, Trash2, Move, Minus, ZoomIn } from "lucide-react";
+import { Download, Loader2, Plus, Image as ImageIcon, Scissors, Trash2, Move, Minus, ZoomIn, Pen } from "lucide-react";
 import { exportEditedPdf } from "@/lib/pdfUtils";
 import ImageOverlayComponent, { ImageOverlayData } from "./ImageOverlay";
+import SignaturePad from "./SignaturePad";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.mjs`;
 
@@ -50,6 +51,7 @@ export default function PdfEditor({ file }: PdfEditorProps) {
   const [nextId, setNextId] = useState(0);
   const [isRemovingBg, setIsRemovingBg] = useState(false);
   const [isUpscaling, setIsUpscaling] = useState(false);
+  const [isSignatureOpen, setIsSignatureOpen] = useState(false);
   const dragOffset = useRef({ x: 0, y: 0 });
   const resizeStart = useRef({ x: 0, y: 0, w: 0, h: 0 });
 
@@ -379,6 +381,27 @@ export default function PdfEditor({ file }: PdfEditorProps) {
     }
   };
 
+  // 서명/그리기 저장 핸들러
+  const handleSignatureSave = (dataUrl: string, width: number, height: number) => {
+    const maxW = 200;
+    const ratio = width / height;
+    const w = Math.min(width, maxW);
+    const h = w / ratio;
+    const newOverlay: ImageOverlayData = {
+      id: `sig-${Date.now()}`,
+      originalSrc: dataUrl,
+      displaySrc: dataUrl,
+      removedBgSrc: null,
+      x: 100,
+      y: 100,
+      width: w,
+      height: h,
+    };
+    setImageOverlays((prev) => [...prev, newOverlay]);
+    setSelectedImageId(newOverlay.id);
+    setStatusMsg("서명이 추가되었습니다! 드래그하여 원하는 위치로 이동하세요.");
+  };
+
   const isLoading = status === "rendering" || status === "ocr";
   const hasContent = textBoxes.length > 0 || imageOverlays.length > 0;
 
@@ -423,6 +446,10 @@ export default function PdfEditor({ file }: PdfEditorProps) {
             업스케일링
           </button>
           <input ref={upscaleInputRef} type="file" accept="image/*" className="hidden" onChange={handleUpscaleUpload} />
+          <button onClick={() => setIsSignatureOpen(true)} disabled={status !== "done"}
+            className="flex items-center gap-1 px-3 py-1.5 bg-pink-50 text-pink-700 text-sm font-medium rounded-lg hover:bg-pink-100 disabled:opacity-50">
+            <Pen className="w-4 h-4" /> 서명/그리기
+          </button>
           <div className="w-px bg-gray-200 mx-1" />
           <button onClick={handleExport} disabled={isLoading || !hasContent}
             className="flex items-center gap-2 px-5 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-lg shadow hover:bg-blue-700 disabled:opacity-50">
@@ -583,6 +610,13 @@ export default function PdfEditor({ file }: PdfEditorProps) {
           </div>
         )}
       </div>
+
+      {/* 서명/그리기 모달 */}
+      <SignaturePad
+        isOpen={isSignatureOpen}
+        onClose={() => setIsSignatureOpen(false)}
+        onSave={handleSignatureSave}
+      />
     </div>
   );
 }
