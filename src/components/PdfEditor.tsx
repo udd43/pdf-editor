@@ -45,7 +45,8 @@ export default function PdfEditor({ file }: PdfEditorProps) {
   const [selectedImageId, setSelectedImageId] = useState<string | null>(null);
   const [draggingTextId, setDraggingTextId] = useState<string | null>(null);
   const [resizingTextId, setResizingTextId] = useState<string | null>(null);
-  const scale = 1.5;
+  const [scale, setScale] = useState(1.5);
+  const [isDragOver, setIsDragOver] = useState(false);
   const [pdfBuffer, setPdfBuffer] = useState<ArrayBuffer | null>(null);
   const [ocrProgress, setOcrProgress] = useState(0);
   const [nextId, setNextId] = useState(0);
@@ -169,7 +170,97 @@ export default function PdfEditor({ file }: PdfEditorProps) {
 
     document.addEventListener("paste", handlePaste);
     return () => document.removeEventListener("paste", handlePaste);
-  }, [status, imageOverlays.length]);
+  }, [status, imageOverlays.length, scale]);
+
+  // 확대 / 축소 핸들러
+  const handleZoom = (type: "in" | "out" | "reset") => {
+    if (type === "in") {
+      setScale((prev) => Math.min(3.0, prev + 0.25));
+    } else if (type === "out") {
+      setScale((prev) => Math.max(0.5, prev - 0.25));
+    } else {
+      setScale(1.5);
+    }
+  };
+
+  // 드래그 앤 드롭 파일 탐색기 연동
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    if (status !== "done") return;
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    if (status !== "done") return;
+
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      const file = files[0];
+      if (file.type.startsWith("image/")) {
+        const container = containerRef.current;
+        if (!container) return;
+
+        // 드롭된 상대 마우스 좌표를 PDF 포인트 단위로 계산
+        const rect = container.getBoundingClientRect();
+        const dropX = (e.clientX - rect.left) / scale;
+        const dropY = (e.clientY - rect.top) / scale;
+
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          const dataUrl = ev.target?.result as string;
+          const img = new Image();
+          img.onload = () => {
+            // 최적 크기 계산
+            const canvas = canvasRef.current;
+            const canvasW = canvas ? canvas.width / scale : 500;
+            const canvasH = canvas ? canvas.height / scale : 700;
+
+            const maxW = Math.min(300, canvasW * 0.4);
+            const maxH = Math.min(300, canvasH * 0.4);
+
+            let w = img.width;
+            let h = img.height;
+            const ratio = img.width / img.height;
+
+            if (w > maxW) {
+              w = maxW;
+              h = w / ratio;
+            }
+            if (h > maxH) {
+              h = maxH;
+              w = h * ratio;
+            }
+
+            // 드롭된 위치의 중심부에 이미지가 놓이도록 위치 설정
+            const x = Math.max(10, Math.min(canvasW - w - 10, dropX - w / 2));
+            const y = Math.max(10, Math.min(canvasH - h - 10, dropY - h / 2));
+
+            const newOverlay: ImageOverlayData = {
+              id: `drop-${Date.now()}`,
+              originalSrc: dataUrl,
+              displaySrc: dataUrl,
+              removedBgSrc: null,
+              x,
+              y,
+              width: w,
+              height: h,
+            };
+            setImageOverlays((prev) => [...prev, newOverlay]);
+            setSelectedImageId(newOverlay.id);
+            setStatusMsg("이미지가 드롭된 위치에 추가되었습니다!");
+          };
+          img.src = dataUrl;
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+  };
 
   const handleTextChange = (id: string, newText: string) => {
     setTextBoxes((prev) => prev.map((b) => b.id === id ? { ...b, text: newText, isEdited: true } : b));
@@ -520,6 +611,23 @@ export default function PdfEditor({ file }: PdfEditorProps) {
             <Pen className="w-4 h-4" /> 서명/그리기
           </button>
           <div className="w-px bg-gray-200 mx-1" />
+          
+          {/* 확대 축소 버튼 추가 */}
+          <div className="flex items-center bg-gray-50 border rounded-lg overflow-hidden mr-1">
+            <button onClick={() => handleZoom("out")} disabled={status !== "done" || scale <= 0.5}
+              className="p-1.5 hover:bg-gray-100 disabled:opacity-40 text-gray-600" title="축소">
+              <Minus className="w-4 h-4" />
+            </button>
+            <span onClick={() => handleZoom("reset")} 
+              className="text-xs font-mono px-2.5 py-1 text-gray-700 bg-white border-x cursor-pointer hover:bg-gray-50 select-none font-bold" title="원래 크기 (1.5x)">
+              {Math.round(scale * 100)}%
+            </span>
+            <button onClick={() => handleZoom("in")} disabled={status !== "done" || scale >= 3.0}
+              className="p-1.5 hover:bg-gray-100 disabled:opacity-40 text-gray-600" title="확대">
+              <Plus className="w-4 h-4" />
+            </button>
+          </div>
+
           <button onClick={handleExport} disabled={isLoading || !hasContent}
             className="flex items-center gap-2 px-5 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-lg shadow hover:bg-blue-700 disabled:opacity-50">
             <Download className="w-4 h-4" /> 내보내기
@@ -562,8 +670,15 @@ export default function PdfEditor({ file }: PdfEditorProps) {
 
       <div className={`flex w-full gap-6 items-start ${extractedTexts.length > 0 ? "justify-start" : "justify-center"} overflow-x-auto pb-8`}>
         {/* PDF 컨테이너 */}
-        <div className="relative border shadow-2xl bg-white overflow-auto rounded-lg shrink-0" ref={containerRef}
+        <div 
+          ref={containerRef}
           onDoubleClick={handleCanvasDoubleClick}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          className={`relative border shadow-2xl bg-white overflow-auto rounded-lg shrink-0 transition-all ${
+            isDragOver ? "ring-4 ring-indigo-500 ring-offset-2 scale-[1.01]" : ""
+          }`}
           style={{ minHeight: "600px" }}
         >
           <canvas ref={canvasRef} className="block" />
@@ -572,6 +687,14 @@ export default function PdfEditor({ file }: PdfEditorProps) {
             <div className="absolute inset-0 bg-white/70 flex flex-col items-center justify-center z-50 backdrop-blur-sm">
               <Loader2 className="w-12 h-12 text-blue-600 animate-spin mb-4" />
               <p className="text-lg font-semibold text-gray-700">{statusMsg}</p>
+            </div>
+          )}
+
+          {/* 드래그 오버 상태의 오버레이 */}
+          {isDragOver && (
+            <div className="absolute inset-0 bg-indigo-500/20 border-4 border-dashed border-indigo-600 flex flex-col items-center justify-center z-40 backdrop-blur-[1px] pointer-events-none animate-pulse">
+              <ImageIcon className="w-16 h-16 text-indigo-700 mb-2" />
+              <p className="text-lg font-bold text-indigo-900">여기에 이미지를 드롭하여 추가</p>
             </div>
           )}
 
