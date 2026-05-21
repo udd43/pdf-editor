@@ -93,6 +93,54 @@ export default function PdfEditor({ file }: PdfEditorProps) {
     return () => { isMounted = false; };
   }, [file, scale]);
 
+  // 클립보드 붙여넣기로 이미지 추가 (Ctrl+V / Cmd+V)
+  useEffect(() => {
+    const handlePaste = (e: ClipboardEvent) => {
+      if (status !== "done") return;
+      const items = e.clipboardData?.items;
+      if (!items) return;
+
+      for (const item of Array.from(items)) {
+        if (item.type.startsWith("image/")) {
+          e.preventDefault();
+          const blob = item.getAsFile();
+          if (!blob) continue;
+
+          const reader = new FileReader();
+          reader.onload = (ev) => {
+            const dataUrl = ev.target?.result as string;
+            const img = new Image();
+            img.onload = () => {
+              const maxW = 300;
+              const ratio = img.width / img.height;
+              const w = Math.min(img.width, maxW);
+              const h = w / ratio;
+              const newOverlay: ImageOverlayData = {
+                id: `paste-${Date.now()}`,
+                originalSrc: dataUrl,
+                displaySrc: dataUrl,
+                removedBgSrc: null,
+                x: 50,
+                y: 50,
+                width: w,
+                height: h,
+              };
+              setImageOverlays((prev) => [...prev, newOverlay]);
+              setSelectedImageId(newOverlay.id);
+              setStatusMsg("클립보드에서 이미지가 붙여넣기되었습니다!");
+            };
+            img.src = dataUrl;
+          };
+          reader.readAsDataURL(blob);
+          break; // 첫 번째 이미지만 처리
+        }
+      }
+    };
+
+    document.addEventListener("paste", handlePaste);
+    return () => document.removeEventListener("paste", handlePaste);
+  }, [status]);
+
   const handleTextChange = (id: string, newText: string) => {
     setTextBoxes((prev) => prev.map((b) => b.id === id ? { ...b, text: newText, isEdited: true } : b));
   };
