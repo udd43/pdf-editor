@@ -98,18 +98,21 @@ export default function BgRemover() {
   };
 
   return (
-    <div className={`flex flex-col items-center w-full max-w-4xl mx-auto px-4 ${!originalSrc ? "flex-1 justify-center" : "py-8"}`}>
+    <div className={`flex flex-col items-center w-full max-w-4xl mx-auto px-4 ${!originalSrc ? "flex-1 justify-center py-12" : "py-8"}`}>
       {/* 업로드 영역 (이미지 없을 때) */}
       {!originalSrc && (
         <div
           onClick={() => fileInputRef.current?.click()}
-          className="w-full max-w-2xl p-16 border-4 border-dashed border-amber-300 rounded-2xl bg-amber-50/50 hover:bg-amber-50 hover:border-amber-400 transition-all cursor-pointer flex flex-col items-center justify-center"
+          className="w-full max-w-xl p-12 border border-white/10 rounded-3xl bg-slate-950/30 hover:border-white/20 hover:bg-slate-950/40 backdrop-blur-xl transition-all cursor-pointer flex flex-col items-center justify-center shadow-2xl relative overflow-hidden group"
         >
-          <Scissors className="w-16 h-16 text-amber-400 mb-4" />
-          <h3 className="text-xl font-semibold text-gray-700 mb-2">이미지를 업로드하세요</h3>
-          <p className="text-gray-500 mb-6">AI가 자동으로 배경을 제거합니다</p>
-          <button className="px-6 py-2.5 bg-amber-500 text-white rounded-lg shadow hover:bg-amber-600 transition-colors font-medium">
-            <Upload className="w-4 h-4 inline mr-2" />
+          <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-pink-500/50 to-transparent opacity-50 group-hover:opacity-100 transition-opacity duration-300" />
+          
+          <div className="w-16 h-16 mb-6 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+            <Scissors className="w-8 h-8 text-pink-400" />
+          </div>
+          <h3 className="text-lg font-semibold text-white mb-2 text-center group-hover:text-pink-200 transition-colors" style={{ fontFamily: "Outfit, sans-serif" }}>이미지를 업로드하세요</h3>
+          <p className="text-slate-400 text-xs sm:text-sm text-center mb-8">AI가 자동으로 배경을 감지하여 제거합니다</p>
+          <button className="px-8 py-3 bg-white text-slate-950 rounded-full font-bold text-sm shadow-[0_4px_20px_rgba(255,255,255,0.1)] hover:bg-slate-100 hover:shadow-[0_4px_25px_rgba(255,255,255,0.25)] transition-all duration-300 hover:scale-105 active:scale-98">
             이미지 선택
           </button>
         </div>
@@ -119,27 +122,29 @@ export default function BgRemover() {
       {/* 결과 영역 */}
       {originalSrc && (
         <>
-          {/* 상단 도구 바 */}
-          <div className="w-full flex flex-wrap justify-between items-center mb-6 bg-white p-4 rounded-xl shadow-sm border gap-3">
-            <h3 className="text-lg font-bold text-gray-800 truncate max-w-xs">{fileName}</h3>
-            <div className="flex gap-2 flex-wrap">
+          {/* 상단 도구 바 (글래스모피즘) */}
+          <div className="w-full flex flex-wrap justify-between items-center mb-6 bg-slate-950/40 backdrop-blur-xl p-4 rounded-2xl border border-white/10 gap-3 shadow-2xl">
+            <h3 className="text-sm font-bold text-slate-200 truncate max-w-xs px-2" style={{ fontFamily: "Outfit, sans-serif" }}>
+              📷 {fileName}
+            </h3>
+            <div className="flex gap-2 flex-wrap items-center">
               <button onClick={handleReset}
-                className="flex items-center gap-1 px-3 py-1.5 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200">
-                <RotateCcw className="w-4 h-4" /> 다시하기
+                className="flex items-center gap-1.5 px-4 py-2 bg-white/5 border border-white/10 text-slate-200 text-xs font-semibold rounded-full hover:bg-white/10 transition-all">
+                <RotateCcw className="w-3.5 h-3.5" /> 다시하기
               </button>
               <button onClick={() => fileInputRef.current?.click()}
-                className="flex items-center gap-1 px-3 py-1.5 bg-amber-50 text-amber-700 text-sm font-medium rounded-lg hover:bg-amber-100">
-                <Upload className="w-4 h-4" /> 다른 이미지
+                className="flex items-center gap-1.5 px-4 py-2 bg-white/5 border border-white/10 text-slate-200 text-xs font-semibold rounded-full hover:bg-white/10 transition-all">
+                <Upload className="w-3.5 h-3.5" /> 다른 이미지
               </button>
               {resultSrc && (
                 <>
                   <button onClick={() => setShowColorPicker(!showColorPicker)}
-                    className="flex items-center gap-1 px-3 py-1.5 bg-purple-50 text-purple-700 text-sm font-medium rounded-lg hover:bg-purple-100">
+                    className="flex items-center gap-1.5 px-4 py-2 bg-white/5 border border-white/10 text-slate-200 text-xs font-semibold rounded-full hover:bg-white/10 transition-all">
                     🎨 색상 변경
                   </button>
                   <button onClick={handleDownload}
-                    className="flex items-center gap-2 px-5 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-lg shadow hover:bg-blue-700">
-                    <Download className="w-4 h-4" /> 다운로드
+                    className="flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 text-white text-xs font-bold rounded-full shadow-[0_4px_15px_rgba(236,72,153,0.25)] hover:shadow-[0_4px_20px_rgba(236,72,153,0.4)] transition-all hover:scale-103 active:scale-97">
+                    <Download className="w-3.5 h-3.5" /> 다운로드
                   </button>
                 </>
               )}
@@ -156,27 +161,31 @@ export default function BgRemover() {
           {/* 비교 뷰 */}
           <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* 원본 */}
-            <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
-              <div className="px-4 py-2 bg-gray-50 border-b text-sm font-medium text-gray-600">📷 원본</div>
-              <div className="p-4 flex items-center justify-center min-h-[300px]">
-                <img src={originalSrc} alt="원본" className="max-w-full max-h-[500px] object-contain rounded" />
+            <div className="bg-slate-950/40 backdrop-blur-xl rounded-2xl border border-white/10 overflow-hidden shadow-xl">
+              <div className="px-4 py-2.5 bg-slate-900/90 border-b border-white/5 text-xs font-bold text-slate-400">📷 원본 이미지</div>
+              <div className="p-4 flex items-center justify-center min-h-[350px]">
+                <img src={originalSrc} alt="원본" className="max-w-full max-h-[450px] object-contain rounded-xl shadow-md" />
               </div>
             </div>
 
             {/* 결과 */}
-            <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
-              <div className="px-4 py-2 bg-gray-50 border-b text-sm font-medium text-gray-600">✂️ 누끼 결과</div>
-              <div className="p-4 flex items-center justify-center min-h-[300px]"
-                style={{ backgroundImage: "linear-gradient(45deg, #e5e7eb 25%, transparent 25%), linear-gradient(-45deg, #e5e7eb 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #e5e7eb 75%), linear-gradient(-45deg, transparent 75%, #e5e7eb 75%)", backgroundSize: "20px 20px", backgroundPosition: "0 0, 0 10px, 10px -10px, -10px 0px" }}>
+            <div className="bg-slate-950/40 backdrop-blur-xl rounded-2xl border border-white/10 overflow-hidden shadow-xl">
+              <div className="px-4 py-2.5 bg-slate-900/90 border-b border-white/5 text-xs font-bold text-slate-400">✂️ 누끼 결과</div>
+              <div className="p-4 flex items-center justify-center min-h-[350px] relative"
+                style={{ 
+                  backgroundImage: "linear-gradient(45deg, rgba(255,255,255,0.03) 25%, transparent 25%), linear-gradient(-45deg, rgba(255,255,255,0.03) 25%, transparent 25%), linear-gradient(45deg, transparent 75%, rgba(255,255,255,0.03) 75%), linear-gradient(-45deg, transparent 75%, rgba(255,255,255,0.03) 75%)", 
+                  backgroundSize: "20px 20px", 
+                  backgroundPosition: "0 0, 0 10px, 10px -10px, -10px 0px" 
+                }}>
                 {isProcessing ? (
                   <div className="flex flex-col items-center">
-                    <Loader2 className="w-12 h-12 text-amber-500 animate-spin mb-4" />
-                    <p className="text-sm font-medium text-gray-600">{progress}</p>
+                    <Loader2 className="w-10 h-10 text-pink-500 animate-spin mb-4" />
+                    <p className="text-xs font-semibold text-slate-400">{progress}</p>
                   </div>
                 ) : resultSrc ? (
-                  <img src={resultSrc} alt="결과" className="max-w-full max-h-[500px] object-contain" />
+                  <img src={resultSrc} alt="결과" className="max-w-full max-h-[450px] object-contain" />
                 ) : (
-                  <p className="text-gray-400 text-sm">{progress || "처리 대기 중..."}</p>
+                  <p className="text-slate-500 text-xs">{progress || "처리 대기 중..."}</p>
                 )}
               </div>
             </div>
@@ -184,8 +193,8 @@ export default function BgRemover() {
 
           {/* 다운로드 안내 */}
           {resultSrc && !isProcessing && (
-            <div className="w-full mt-6 bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg text-sm font-medium text-center">
-              ✅ 배경 제거 완료! <strong>다운로드</strong> 버튼으로 PNG 파일을 저장하세요. 🎨 색상 변경도 가능합니다.
+            <div className="w-full mt-6 bg-pink-950/20 border border-pink-500/30 text-pink-200 px-4 py-3.5 rounded-xl text-xs font-semibold text-center">
+              ✨ 배경 제거 완료! <strong>다운로드</strong> 버튼으로 PNG 파일을 저장하세요. 🎨 배경 색상 변경도 가능합니다.
             </div>
           )}
         </>
