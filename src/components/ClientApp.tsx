@@ -44,7 +44,7 @@ export default function ClientApp() {
               className="shrink-0 outline-none flex items-center gap-2"
             >
               <span className="text-xl font-bold tracking-tight text-gray-900" style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
-                pdf<span className="font-normal text-gray-500">aqryl</span>
+                pdf<span className="font-normal text-gray-500">itor</span>
               </span>
             </button>
           </div>
@@ -117,7 +117,7 @@ export default function ClientApp() {
       <footer className="bg-gray-50 py-8 border-t border-gray-200 z-10 mt-12">
         <div className="max-w-6xl mx-auto px-6 flex items-center justify-between text-gray-400 text-xs">
           <span className="font-mono bg-gray-100 border border-gray-200 px-2 py-0.5 rounded-md text-gray-500">v{process.env.NEXT_PUBLIC_APP_VERSION}</span>
-          <span className="font-medium">&copy; 2026 pdfaqryl &middot; Private by default.</span>
+          <span className="font-medium">&copy; 2026 pdfitor &middot; Private by default.</span>
         </div>
       </footer>
     </div>
