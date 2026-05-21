@@ -93,6 +93,37 @@ export default function PdfEditor({ file }: PdfEditorProps) {
     return () => { isMounted = false; };
   }, [file, scale]);
 
+  // 이미지 추가 시 적절한 크기와 겹치지 않는 위치를 계산하는 헬퍼 함수
+  const getOptimizedImageCoords = (imgW: number, imgH: number, currentImagesCount: number) => {
+    const canvas = canvasRef.current;
+    const canvasW = canvas ? canvas.width / scale : 500;
+    const canvasH = canvas ? canvas.height / scale : 700;
+
+    // 캔버스 가로/세로의 최대 40% 크기로 제한
+    const maxW = Math.min(300, canvasW * 0.4);
+    const maxH = Math.min(300, canvasH * 0.4);
+
+    let w = imgW;
+    let h = imgH;
+    const ratio = imgW / imgH;
+
+    if (w > maxW) {
+      w = maxW;
+      h = w / ratio;
+    }
+    if (h > maxH) {
+      h = maxH;
+      w = h * ratio;
+    }
+
+    // 겹치지 않게 계단식 오프셋 추가
+    const offset = (currentImagesCount % 5) * 25;
+    const x = Math.max(10, Math.min(canvasW - w - 10, (canvasW - w) / 2 + offset));
+    const y = Math.max(10, Math.min(canvasH - h - 10, (canvasH - h) / 2 + offset));
+
+    return { w, h, x, y };
+  };
+
   // 클립보드 붙여넣기로 이미지 추가 (Ctrl+V / Cmd+V)
   useEffect(() => {
     const handlePaste = (e: ClipboardEvent) => {
@@ -111,17 +142,16 @@ export default function PdfEditor({ file }: PdfEditorProps) {
             const dataUrl = ev.target?.result as string;
             const img = new Image();
             img.onload = () => {
-              const maxW = 300;
-              const ratio = img.width / img.height;
-              const w = Math.min(img.width, maxW);
-              const h = w / ratio;
+              // 최적화된 위치와 크기 계산
+              const { w, h, x, y } = getOptimizedImageCoords(img.width, img.height, imageOverlays.length);
+
               const newOverlay: ImageOverlayData = {
                 id: `paste-${Date.now()}`,
                 originalSrc: dataUrl,
                 displaySrc: dataUrl,
                 removedBgSrc: null,
-                x: 50,
-                y: 50,
+                x,
+                y,
                 width: w,
                 height: h,
               };
@@ -139,7 +169,7 @@ export default function PdfEditor({ file }: PdfEditorProps) {
 
     document.addEventListener("paste", handlePaste);
     return () => document.removeEventListener("paste", handlePaste);
-  }, [status]);
+  }, [status, imageOverlays.length]);
 
   const handleTextChange = (id: string, newText: string) => {
     setTextBoxes((prev) => prev.map((b) => b.id === id ? { ...b, text: newText, isEdited: true } : b));
@@ -309,13 +339,10 @@ export default function PdfEditor({ file }: PdfEditorProps) {
       const dataUrl = ev.target?.result as string;
       const img = new Image();
       img.onload = () => {
-        const maxW = 300;
-        const ratio = img.width / img.height;
-        const w = Math.min(img.width, maxW);
-        const h = w / ratio;
+        const { w, h, x, y } = getOptimizedImageCoords(img.width, img.height, imageOverlays.length);
         const newOverlay: ImageOverlayData = {
           id: `img-${Date.now()}`, originalSrc: dataUrl, displaySrc: dataUrl,
-          removedBgSrc: null, x: 50, y: 50, width: w, height: h,
+          removedBgSrc: null, x, y, width: w, height: h,
         };
         setImageOverlays((prev) => [...prev, newOverlay]);
         setSelectedImageId(newOverlay.id);
@@ -342,13 +369,10 @@ export default function PdfEditor({ file }: PdfEditorProps) {
       const originalUrl = URL.createObjectURL(imgFile);
       const img = new Image();
       img.onload = () => {
-        const maxW = 300;
-        const ratio = img.width / img.height;
-        const w = Math.min(img.width, maxW);
-        const h = w / ratio;
+        const { w, h, x, y } = getOptimizedImageCoords(img.width, img.height, imageOverlays.length);
         const newOverlay: ImageOverlayData = {
           id: `img-${Date.now()}`, originalSrc: originalUrl, displaySrc: resultUrl,
-          removedBgSrc: resultUrl, x: 50, y: 50, width: w, height: h,
+          removedBgSrc: resultUrl, x, y, width: w, height: h,
         };
         setImageOverlays((prev) => [...prev, newOverlay]);
         setSelectedImageId(newOverlay.id);
@@ -384,13 +408,10 @@ export default function PdfEditor({ file }: PdfEditorProps) {
       const resultUrl = URL.createObjectURL(blob);
       const img = new Image();
       img.onload = () => {
-        const maxW = 400;
-        const ratio = img.width / img.height;
-        const w = Math.min(img.width, maxW);
-        const h = w / ratio;
+        const { w, h, x, y } = getOptimizedImageCoords(img.width, img.height, imageOverlays.length);
         const newOverlay: ImageOverlayData = {
           id: `img-${Date.now()}`, originalSrc: resultUrl, displaySrc: resultUrl,
-          removedBgSrc: null, x: 50, y: 50, width: w, height: h,
+          removedBgSrc: null, x, y, width: w, height: h,
         };
         setImageOverlays((prev) => [...prev, newOverlay]);
         setSelectedImageId(newOverlay.id);
