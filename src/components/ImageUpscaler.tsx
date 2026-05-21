@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useRef, useState } from "react";
-import { ZoomIn, Download, Loader2, Upload, RotateCcw, Settings } from "lucide-react";
+import { ZoomIn, Download, Loader2, Upload, RotateCcw } from "lucide-react";
 
 export default function ImageUpscaler() {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -10,8 +10,6 @@ export default function ImageUpscaler() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState("");
   const [fileName, setFileName] = useState("");
-  const [scale, setScale] = useState(2);
-  const [noise, setNoise] = useState(1);
   const [originalFile, setOriginalFile] = useState<File | null>(null);
   const [originalSize, setOriginalSize] = useState({ w: 0, h: 0 });
   const [resultSize, setResultSize] = useState({ w: 0, h: 0 });
@@ -44,8 +42,8 @@ export default function ImageUpscaler() {
     try {
       const formData = new FormData();
       formData.append("image", originalFile);
-      formData.append("scale", String(scale));
-      formData.append("noise", String(noise));
+      formData.append("scale", "2");
+      formData.append("noise", "-1");
 
       setProgress("Real-ESRGAN 초고속 모델 불러오는 중... (최대 10~30초 소요)");
 
@@ -81,7 +79,7 @@ export default function ImageUpscaler() {
     if (!resultSrc) return;
     const link = document.createElement("a");
     link.href = resultSrc;
-    link.download = `${fileName || "image"}_${scale}x.png`;
+    link.download = `${fileName || "image"}_2x.png`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -140,48 +138,12 @@ export default function ImageUpscaler() {
           </div>
 
           {/* 설정 패널 */}
-          <div className="w-full mb-6 bg-white p-4 rounded-xl shadow-sm border">
-            <div className="flex items-center gap-2 mb-3 text-sm font-medium text-gray-700">
-              <Settings className="w-4 h-4" /> 업스케일링 설정
-            </div>
-            <div className="flex flex-wrap gap-6">
-              {/* 배율 */}
-              <div>
-                <label className="text-xs text-gray-500 mb-1 block">배율</label>
-                <div className="flex gap-1">
-                  {[2, 4].map((s) => (
-                    <button key={s} onClick={() => setScale(s)}
-                      className={`px-4 py-1.5 text-sm rounded-lg font-medium transition-colors ${
-                        scale === s ? "bg-indigo-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                      }`}>
-                      {s}x
-                    </button>
-                  ))}
-                </div>
-              </div>
-              {/* 노이즈 제거 */}
-              <div>
-                <label className="text-xs text-gray-500 mb-1 block">노이즈 제거</label>
-                <div className="flex gap-1">
-                  {[-1, 0, 1, 2, 3].map((n) => (
-                    <button key={n} onClick={() => setNoise(n)}
-                      className={`px-3 py-1.5 text-sm rounded-lg font-medium transition-colors ${
-                        noise === n ? "bg-indigo-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                      }`}>
-                      {n === -1 ? "없음" : n}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              {/* 실행 버튼 */}
-              <div className="flex items-end">
-                <button onClick={handleUpscale} disabled={isProcessing}
-                  className="flex items-center gap-2 px-6 py-1.5 bg-indigo-600 text-white text-sm font-medium rounded-lg shadow hover:bg-indigo-700 disabled:opacity-50">
-                  {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <ZoomIn className="w-4 h-4" />}
-                  {isProcessing ? "처리 중..." : "업스케일링 시작"}
-                </button>
-              </div>
-            </div>
+          <div className="w-full mb-6 flex justify-center">
+            <button onClick={handleUpscale} disabled={isProcessing}
+              className="flex items-center gap-2 px-8 py-2.5 bg-indigo-600 text-white text-sm font-semibold rounded-xl shadow-lg hover:bg-indigo-700 disabled:opacity-50 transition-all">
+              {isProcessing ? <Loader2 className="w-5 h-5 animate-spin" /> : <ZoomIn className="w-5 h-5" />}
+              {isProcessing ? "처리 중..." : "2배 업스케일링 시작"}
+            </button>
           </div>
 
           {/* 비교 뷰 */}
