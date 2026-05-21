@@ -72,17 +72,6 @@ export default function PdfUploader({ onFileSelect }: PdfUploaderProps) {
 
   return (
     <div className="flex-1 flex flex-col items-center justify-center w-full max-w-4xl mx-auto px-4 py-16 relative z-10">
-      {/* 헤드라인 메시지 (SaaS 스타일) */}
-      <div className="text-center mb-16 max-w-2xl animate-in fade-in slide-in-from-bottom-8 duration-700">
-        <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-gray-900 mb-4 leading-tight" style={{ fontFamily: "Inter, sans-serif" }}>
-          Your PDFs<br />
-          deserve more than <span className="underline decoration-blue-500 decoration-4 underline-offset-4">guessing.</span>
-        </h1>
-        <p className="text-gray-500 text-sm sm:text-base font-medium max-w-lg mx-auto leading-relaxed">
-          Start editing like a professional.
-        </p>
-      </div>
-
       {/* 모던 클린 드롭존 카드 */}
       <div
         className={`w-full max-w-xl p-10 sm:p-12 rounded-3xl transition-all duration-300 flex flex-col items-center justify-center cursor-pointer border relative overflow-hidden group bg-white shadow-sm
