@@ -38,17 +38,17 @@ export async function POST(request: NextRequest) {
     // -n realesrgan-x4plus (기본 고품질 모델)
     const { execFile } = require('child_process');
     
-    // RTX 4060 최적화: 고품질/고정확도 범용 모델 (realesrgan-x4plus) + 명시적 GPU 할당 및 멀티스레딩
+    // RTX 3070 최적화: 동시 접속 20명 & 리소스 50% 제한을 위한 경량 모델 및 스레드 제한
     await new Promise<void>((resolve, reject) => {
       execFile(
         '/opt/realesrgan/realesrgan-ncnn-vulkan',
         [
           '-i', inputPath,
           '-o', outputPath,
-          '-n', 'realesrgan-x4plus', // 빠르고 가장 정확한 고품질 범용 모델
+          '-n', 'realesr-animevideov3', // VRAM 소모가 가장 적고 빠른 초경량 모델
           '-s', String(scale),
-          '-g', '0',                 // 0번 GPU(RTX 4060) 강제 할당
-          '-j', '4:4:4',             // 로드/프로세스/저장 스레드 최대치 (I/O 병목 해소)
+          '-g', '0',                 // 0번 GPU(RTX 3070) 사용
+          '-j', '1:1:1',             // 동시 접속 20명의 병목을 막기 위해 1개 프로세스당 스레드 1개로 제한
           '-m', '/opt/realesrgan/models'
         ],
         { timeout: 120000 },
