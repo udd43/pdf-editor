@@ -101,14 +101,14 @@ export default function ImageUpscaler() {
       {!originalSrc && (
         <div
           onClick={() => fileInputRef.current?.click()}
-          className="w-full max-w-xl p-12 border border-gray-200 rounded-3xl bg-white hover:border-gray-300 hover:shadow-md transition-all cursor-pointer flex flex-col items-center justify-center shadow-sm relative overflow-hidden group"
+          className="w-full max-w-4xl min-h-[400px] sm:min-h-[500px] p-12 sm:p-20 border border-gray-200 rounded-3xl bg-white hover:border-gray-300 hover:shadow-md transition-all cursor-pointer flex flex-col items-center justify-center shadow-sm relative overflow-hidden group"
         >
-          <div className="w-16 h-16 mb-6 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-            <ZoomIn className="w-8 h-8 text-blue-500" />
+          <div className="w-24 h-24 mb-8 rounded-3xl bg-gray-50 border border-gray-100 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+            <ZoomIn className="w-12 h-12 text-blue-500" />
           </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2 text-center transition-colors" style={{ fontFamily: "Inter, sans-serif" }}>이미지를 업로드하세요</h3>
-          <p className="text-gray-500 text-xs sm:text-sm text-center mb-8">Real-ESRGAN AI로 빠른 고품질 2배 해상도 업스케일링</p>
-          <button className="px-6 py-2.5 bg-blue-600 text-white rounded-full font-semibold text-sm shadow-sm hover:bg-blue-700 transition-all duration-300 hover:scale-[1.02] active:scale-95">
+          <h3 className="text-2xl font-bold text-gray-900 mb-3 text-center transition-colors" style={{ fontFamily: "Inter, sans-serif" }}>이미지를 업로드하세요</h3>
+          <p className="text-gray-500 text-sm sm:text-base text-center mb-10">Real-ESRGAN AI로 빠른 고품질 2배 해상도 업스케일링</p>
+          <button className="px-8 py-3.5 bg-blue-600 text-white rounded-full font-semibold text-base shadow-sm hover:bg-blue-700 transition-all duration-300 hover:scale-[1.02] active:scale-95">
             이미지 선택
           </button>
         </div>

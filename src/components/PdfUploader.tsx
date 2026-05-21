@@ -74,7 +74,7 @@ export default function PdfUploader({ onFileSelect }: PdfUploaderProps) {
     <div className="flex-1 flex flex-col items-center justify-center w-full max-w-4xl mx-auto px-4 py-16 relative z-10">
       {/* 모던 클린 드롭존 카드 */}
       <div
-        className={`w-full max-w-xl p-10 sm:p-12 rounded-3xl transition-all duration-300 flex flex-col items-center justify-center cursor-pointer border relative overflow-hidden group bg-white shadow-sm
+        className={`w-full max-w-4xl min-h-[400px] sm:min-h-[500px] p-12 sm:p-20 rounded-3xl transition-all duration-300 flex flex-col items-center justify-center cursor-pointer border relative overflow-hidden group bg-white shadow-sm
           ${
             isDragging
               ? "border-blue-500 bg-blue-50/50 scale-[1.02] shadow-md"
@@ -86,18 +86,18 @@ export default function PdfUploader({ onFileSelect }: PdfUploaderProps) {
         onDrop={handleDrop}
         onClick={() => document.getElementById("file-upload")?.click()}
       >
-        <div className="w-16 h-16 mb-6 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+        <div className="w-24 h-24 mb-8 rounded-3xl bg-gray-50 border border-gray-100 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
           <UploadCloud
-            className={`w-8 h-8 transition-colors duration-300 ${
+            className={`w-12 h-12 transition-colors duration-300 ${
               isDragging ? "text-blue-500" : "text-gray-400 group-hover:text-gray-600"
             }`}
           />
         </div>
 
-        <h3 className="text-lg font-semibold text-gray-900 mb-2 text-center transition-colors">
+        <h3 className="text-2xl font-bold text-gray-900 mb-3 text-center transition-colors">
           PDF 또는 이미지 드래그 앤 드롭
         </h3>
-        <p className="text-gray-500 text-xs sm:text-sm text-center mb-8">
+        <p className="text-gray-500 text-sm sm:text-base text-center mb-10">
           Private by default. 편집 및 저장은 브라우저 내에서 안전하게 처리됩니다.
         </p>
 
@@ -110,8 +110,8 @@ export default function PdfUploader({ onFileSelect }: PdfUploaderProps) {
         />
         
         {/* 모던 SaaS 버튼 스타일 */}
-        <button className="px-6 py-2.5 bg-blue-600 text-white rounded-full font-semibold text-sm shadow-sm hover:bg-blue-700 transition-all duration-300 hover:scale-105 active:scale-95">
-          Start for free
+        <button className="px-8 py-3.5 bg-blue-600 text-white rounded-full font-semibold text-base shadow-sm hover:bg-blue-700 transition-all duration-300 hover:scale-[1.02] active:scale-95">
+          파일 불러오기
         </button>
       </div>
     </div>
