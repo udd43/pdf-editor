@@ -38,17 +38,17 @@ export async function POST(request: NextRequest) {
     // -n realesrgan-x4plus (기본 고품질 모델)
     const { execFile } = require('child_process');
     
-    // RTX 3070 최적화: 동시 접속 20명 & 리소스 50% 제한을 위한 경량 모델 및 스레드 제한
+    // VRAM 12GB (50% 제한) & 동시접속 5명 최적화: 1인당 1.2GB 여유로 고품질 범용 모델 적용 가능
     await new Promise<void>((resolve, reject) => {
       execFile(
         '/opt/realesrgan/realesrgan-ncnn-vulkan',
         [
           '-i', inputPath,
           '-o', outputPath,
-          '-n', 'realesr-animevideov3', // VRAM 소모가 가장 적고 빠른 초경량 모델
+          '-n', 'realesrgan-x4plus', // 1인당 1.2GB 할당 가능하므로 빠르고 고품질인 범용 모델 사용
           '-s', String(scale),
-          '-g', '0',                 // 0번 GPU(RTX 3070) 사용
-          '-j', '1:1:1',             // 동시 접속 20명의 병목을 막기 위해 1개 프로세스당 스레드 1개로 제한
+          '-g', '0',                 // 0번 GPU 사용
+          '-j', '2:2:2',             // 동시접속 5명에 맞춰 각 프로세스가 적당한 스레드를 점유하도록 세팅
           '-m', '/opt/realesrgan/models'
         ],
         { timeout: 120000 },
