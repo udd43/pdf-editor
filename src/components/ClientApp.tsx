@@ -22,23 +22,18 @@ export default function ClientApp() {
   };
 
   const tabs: { id: Tab; label: string; icon: React.ReactNode; color: string; activeBg: string }[] = [
-    { id: "pdf", label: "PDF 편집", icon: <FileText className="w-3.5 h-3.5" />, color: "text-indigo-600", activeBg: "bg-indigo-50/70 text-indigo-700 border border-indigo-100/50" },
-    { id: "bgremove", label: "누끼따기", icon: <Scissors className="w-3.5 h-3.5" />, color: "text-pink-600", activeBg: "bg-pink-50/70 text-pink-700 border border-pink-100/50" },
-    { id: "upscale", label: "업스케일링", icon: <ZoomIn className="w-3.5 h-3.5" />, color: "text-purple-600", activeBg: "bg-purple-50/70 text-purple-700 border border-purple-100/50" },
+    { id: "pdf", label: "PDF 편집", icon: <FileText className="w-3.5 h-3.5" />, color: "text-gray-600", activeBg: "bg-white text-gray-900 shadow-sm" },
+    { id: "bgremove", label: "누끼따기", icon: <Scissors className="w-3.5 h-3.5" />, color: "text-gray-600", activeBg: "bg-white text-gray-900 shadow-sm" },
+    { id: "upscale", label: "업스케일링", icon: <ZoomIn className="w-3.5 h-3.5" />, color: "text-gray-600", activeBg: "bg-white text-gray-900 shadow-sm" },
   ];
 
   return (
-    <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col relative overflow-hidden font-sans antialiased">
-      {/* 백그라운드 디자인 그라데이션 구체들 */}
-      <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] rounded-full bg-gradient-to-tr from-purple-600/30 to-indigo-500/20 blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] rounded-full bg-gradient-to-tr from-pink-500/20 to-purple-600/20 blur-[130px] pointer-events-none" />
-      <div className="absolute top-[20%] right-[10%] w-[400px] h-[400px] rounded-full bg-gradient-to-tr from-sky-500/10 to-indigo-600/10 blur-[100px] pointer-events-none" />
-
-      {/* 헤더 (글래스모피즘) */}
-      <header className="backdrop-blur-xl bg-slate-950/40 border-b border-white/5 sticky top-0 z-40 transition-all duration-300">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+    <div className="min-h-screen bg-gray-50 text-gray-900 flex flex-col relative font-sans antialiased">
+      {/* 헤더 */}
+      <header className="bg-gray-50 border-b border-gray-200 sticky top-0 z-40 transition-all duration-300">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           
-          {/* 로고 (Serif 풍의 우아한 로고) */}
+          {/* 로고 (깔끔한 Sans-serif) */}
           <div className="flex-1 flex justify-start">
             <button 
               onClick={() => {
@@ -46,27 +41,24 @@ export default function ClientApp() {
                 setReferenceFile(null);
                 setActiveTab("pdf");
               }}
-              className="shrink-0 outline-none flex items-center gap-2 group"
+              className="shrink-0 outline-none flex items-center gap-2"
             >
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-indigo-500/20 group-hover:scale-105 transition-transform duration-300">
-                <span className="text-white text-base font-black">P</span>
-              </div>
-              <span className="text-xl font-bold tracking-tight text-white group-hover:text-indigo-200 transition-colors" style={{ fontFamily: "Outfit, system-ui, sans-serif" }}>
-                pdf<span className="font-light text-slate-400">novu</span>
+              <span className="text-xl font-bold tracking-tight text-gray-900" style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
+                pdf<span className="font-normal text-gray-500">aqryl</span>
               </span>
             </button>
           </div>
 
-          {/* 중앙 네비게이션 탭 (Novu의 헤더 스타일 참조) */}
-          <nav className="shrink-0 flex items-center bg-white/5 backdrop-blur-md rounded-full p-1 border border-white/10 shadow-[0_4px_30px_rgba(0,0,0,0.1)] gap-1">
+          {/* 중앙 네비게이션 탭 */}
+          <nav className="shrink-0 flex items-center bg-gray-200/50 rounded-full p-1 border border-gray-200 gap-1">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-5 py-2 text-xs font-semibold rounded-full transition-all duration-300 ${
+                className={`flex items-center gap-2 px-4 py-1.5 text-xs font-semibold rounded-full transition-all duration-200 ${
                   activeTab === tab.id
-                    ? `${tab.activeBg} shadow-md scale-105`
-                    : "text-slate-400 hover:text-white hover:bg-white/5"
+                    ? `${tab.activeBg}`
+                    : "text-gray-500 hover:text-gray-900 hover:bg-gray-200/50"
                 }`}
               >
                 {tab.icon}
@@ -80,12 +72,12 @@ export default function ClientApp() {
             {activeTab === "pdf" && file && (
               <>
                 <button onClick={() => document.getElementById("ref-upload")?.click()}
-                  className="text-xs text-indigo-300 bg-white/5 px-4 py-2 rounded-full border border-white/10 hover:bg-white/10 transition-all font-semibold shadow-sm hover:scale-102">
-                  + 대조 원본 추가
+                  className="text-xs text-blue-600 bg-blue-50 px-4 py-1.5 rounded-full border border-blue-100 hover:bg-blue-100 transition-all font-semibold">
+                  대조 원본 추가
                 </button>
                 <input id="ref-upload" type="file" accept="application/pdf" className="hidden" onChange={handleReferenceSelect} />
                 <button onClick={() => { setFile(null); setReferenceFile(null); }}
-                  className="text-xs text-slate-400 hover:text-slate-200 px-3 py-2 rounded-full hover:bg-white/5 transition-all">
+                  className="text-xs text-gray-500 hover:text-gray-900 px-3 py-1.5 rounded-full hover:bg-gray-100 transition-all font-medium">
                   처음으로
                 </button>
               </>
@@ -95,23 +87,23 @@ export default function ClientApp() {
       </header>
 
       {/* 메인 내용 */}
-      <main className="flex-1 flex flex-col items-center justify-center p-4 sm:p-8 z-10">
+      <main className="flex-1 flex flex-col items-center justify-start p-4 sm:p-8 z-10 w-full max-w-6xl mx-auto">
         {activeTab === "pdf" && (
           !file ? <PdfUploader onFileSelect={setFile} /> : (
             <div className={`w-full flex gap-6 ${referenceFile ? "flex-row" : "justify-center"}`}>
               {referenceFile && (
-                <div className="w-1/2 flex flex-col border border-white/10 shadow-2xl rounded-2xl overflow-hidden bg-slate-950/80 backdrop-blur-lg h-[80vh] sticky top-24">
-                  <div className="bg-slate-900/90 px-4 py-3 border-b border-white/5 flex justify-between items-center shrink-0">
-                    <span className="text-sm font-semibold text-slate-300 flex items-center gap-1.5">
-                      <span className="inline-block w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
-                      👀 대조 원본 PDF
+                <div className="w-1/2 flex flex-col border border-gray-200 shadow-sm rounded-2xl overflow-hidden bg-white h-[80vh] sticky top-24">
+                  <div className="bg-gray-50 px-4 py-3 border-b border-gray-200 flex justify-between items-center shrink-0">
+                    <span className="text-sm font-semibold text-gray-700 flex items-center gap-1.5">
+                      <span className="inline-block w-2 h-2 rounded-full bg-blue-500" />
+                      대조 원본 PDF
                     </span>
-                    <button onClick={() => setReferenceFile(null)} className="text-xs px-3 py-1 bg-white/5 hover:bg-red-500/10 rounded-lg text-red-400 border border-red-500/20 transition-all">닫기</button>
+                    <button onClick={() => setReferenceFile(null)} className="text-xs px-3 py-1 bg-white hover:bg-red-50 rounded-lg text-red-500 border border-red-100 transition-all">닫기</button>
                   </div>
-                  <iframe src={URL.createObjectURL(referenceFile)} className="w-full h-full border-0 invert opacity-90 filter hue-rotate-180" />
+                  <iframe src={URL.createObjectURL(referenceFile)} className="w-full h-full border-0" />
                 </div>
               )}
-              <div className={`${referenceFile ? "w-1/2" : "w-full max-w-7xl"}`}>
+              <div className={`${referenceFile ? "w-1/2" : "w-full"}`}>
                 <PdfEditor file={file} />
               </div>
             </div>
@@ -122,10 +114,10 @@ export default function ClientApp() {
       </main>
 
       {/* 푸터 */}
-      <footer className="bg-slate-950/50 backdrop-blur-md py-4 mt-auto border-t border-white/5 z-10">
-        <div className="max-w-7xl mx-auto px-6 flex items-center justify-between text-slate-500 text-xs">
-          <span className="font-mono text-indigo-400 bg-indigo-950/30 border border-indigo-900/30 px-2 py-0.5 rounded-full">v{process.env.NEXT_PUBLIC_APP_VERSION}</span>
-          <span className="font-medium">&copy; 2026 pdfnovu &middot; 모든 연산은 웹에서 안전하게 처리됩니다</span>
+      <footer className="bg-gray-50 py-8 border-t border-gray-200 z-10 mt-12">
+        <div className="max-w-6xl mx-auto px-6 flex items-center justify-between text-gray-400 text-xs">
+          <span className="font-mono bg-gray-100 border border-gray-200 px-2 py-0.5 rounded-md text-gray-500">v{process.env.NEXT_PUBLIC_APP_VERSION}</span>
+          <span className="font-medium">&copy; 2026 pdfaqryl &middot; Private by default.</span>
         </div>
       </footer>
     </div>

@@ -71,30 +71,25 @@ export default function PdfUploader({ onFileSelect }: PdfUploaderProps) {
   );
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center w-full max-w-4xl mx-auto px-4 py-12 relative z-10">
-      {/* 구글 폰트 로드 */}
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Playfair+Display:ital,wght@0,700;1,400&display=swap');
-      `}</style>
-
-      {/* 헤드라인 메시지 (Novu 스타일) */}
-      <div className="text-center mb-12 max-w-2xl animate-in fade-in slide-in-from-bottom-8 duration-700">
-        <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-white mb-6 leading-tight" style={{ fontFamily: "Outfit, sans-serif" }}>
-          Edit your <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400">PDF.</span><br />
-          Own your <span className="italic font-serif font-normal text-indigo-200">document.</span>
+    <div className="flex-1 flex flex-col items-center justify-center w-full max-w-4xl mx-auto px-4 py-16 relative z-10">
+      {/* 헤드라인 메시지 (SaaS 스타일) */}
+      <div className="text-center mb-16 max-w-2xl animate-in fade-in slide-in-from-bottom-8 duration-700">
+        <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-gray-900 mb-4 leading-tight" style={{ fontFamily: "Inter, sans-serif" }}>
+          Your PDFs<br />
+          deserve more than <span className="underline decoration-blue-500 decoration-4 underline-offset-4">guessing.</span>
         </h1>
-        <p className="text-slate-400 text-sm sm:text-base font-normal max-w-lg mx-auto leading-relaxed">
-          클라이언트 사이드에서 완전하게 개인 정보가 보호되는 직관적인 스마트 PDF/OCR 편집기. 파일을 업로드하고 즉시 텍스트와 서명을 편집하세요.
+        <p className="text-gray-500 text-sm sm:text-base font-medium max-w-lg mx-auto leading-relaxed">
+          Start editing like a professional.
         </p>
       </div>
 
-      {/* 글래스모피즘 드롭존 카드 */}
+      {/* 모던 클린 드롭존 카드 */}
       <div
-        className={`w-full max-w-xl p-10 sm:p-12 rounded-3xl transition-all duration-300 flex flex-col items-center justify-center cursor-pointer border backdrop-blur-xl relative overflow-hidden group shadow-[0_20px_50px_rgba(0,0,0,0.3)]
+        className={`w-full max-w-xl p-10 sm:p-12 rounded-3xl transition-all duration-300 flex flex-col items-center justify-center cursor-pointer border relative overflow-hidden group bg-white shadow-sm
           ${
             isDragging
-              ? "border-indigo-400 bg-indigo-950/20 scale-[1.02] shadow-[0_20px_50px_rgba(99,102,241,0.15)]"
-              : "border-white/10 bg-slate-950/30 hover:border-white/20 hover:bg-slate-950/40"
+              ? "border-blue-500 bg-blue-50/50 scale-[1.02] shadow-md"
+              : "border-gray-200 hover:border-gray-300 hover:shadow-md"
           }
         `}
         onDragOver={handleDragOver}
@@ -102,22 +97,19 @@ export default function PdfUploader({ onFileSelect }: PdfUploaderProps) {
         onDrop={handleDrop}
         onClick={() => document.getElementById("file-upload")?.click()}
       >
-        {/* 드롭 영역 내부 데코 배너 */}
-        <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-indigo-500/50 to-transparent opacity-50 group-hover:opacity-100 transition-opacity duration-300" />
-        
-        <div className="w-16 h-16 mb-6 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-inner">
+        <div className="w-16 h-16 mb-6 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
           <UploadCloud
             className={`w-8 h-8 transition-colors duration-300 ${
-              isDragging ? "text-indigo-400" : "text-slate-400 group-hover:text-slate-300"
+              isDragging ? "text-blue-500" : "text-gray-400 group-hover:text-gray-600"
             }`}
           />
         </div>
 
-        <h3 className="text-lg font-semibold text-white mb-2 text-center group-hover:text-indigo-200 transition-colors" style={{ fontFamily: "Outfit, sans-serif" }}>
+        <h3 className="text-lg font-semibold text-gray-900 mb-2 text-center transition-colors">
           PDF 또는 이미지 드래그 앤 드롭
         </h3>
-        <p className="text-slate-400 text-xs sm:text-sm text-center mb-8">
-          또는 클립보드 붙여넣기 및 클릭으로 파일 탐색
+        <p className="text-gray-500 text-xs sm:text-sm text-center mb-8">
+          Private by default. 편집 및 저장은 브라우저 내에서 안전하게 처리됩니다.
         </p>
 
         <input
@@ -128,9 +120,9 @@ export default function PdfUploader({ onFileSelect }: PdfUploaderProps) {
           onChange={handleFileChange}
         />
         
-        {/* Novu의 Download App 버튼 스타일 */}
-        <button className="px-8 py-3 bg-white text-slate-950 rounded-full font-bold text-sm shadow-[0_4px_20px_rgba(255,255,255,0.1)] hover:bg-slate-100 hover:shadow-[0_4px_25px_rgba(255,255,255,0.25)] transition-all duration-300 hover:scale-105 active:scale-98">
-          파일 불러오기
+        {/* 모던 SaaS 버튼 스타일 */}
+        <button className="px-6 py-2.5 bg-blue-600 text-white rounded-full font-semibold text-sm shadow-sm hover:bg-blue-700 transition-all duration-300 hover:scale-105 active:scale-95">
+          Start for free
         </button>
       </div>
     </div>

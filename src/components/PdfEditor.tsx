@@ -572,70 +572,70 @@ export default function PdfEditor({ file }: PdfEditorProps) {
         @font-face { font-family: "NanumMyeongjo"; src: url("/NanumMyeongjo.ttf"); }
         @font-face { font-family: "Jua"; src: url("/Jua.ttf"); }
       `}</style>
-      {/* 툴바 (글래스모피즘) */}
-      <div className="w-full flex flex-wrap justify-between items-center mb-6 bg-slate-950/40 backdrop-blur-xl p-4 rounded-2xl border border-white/10 gap-3 shadow-2xl">
-        <h2 className="text-sm font-bold text-slate-200 truncate max-w-xs px-2" style={{ fontFamily: "Outfit, sans-serif" }}>
+      {/* 툴바 */}
+      <div className="w-full flex flex-wrap justify-between items-center mb-6 bg-white p-4 rounded-2xl border border-gray-200 gap-3 shadow-sm">
+        <h2 className="text-sm font-bold text-gray-900 truncate max-w-xs px-2" style={{ fontFamily: "Inter, sans-serif" }}>
           📄 {file.name}
         </h2>
         <div className="flex gap-2 flex-wrap items-center">
           <button onClick={handleRunOcr} disabled={status !== "done"}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-white/5 border border-white/10 text-slate-200 text-xs font-semibold rounded-full hover:bg-white/10 disabled:opacity-30 transition-all"
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-white border border-gray-200 text-gray-700 text-xs font-semibold rounded-full hover:bg-gray-50 disabled:opacity-30 transition-all shadow-sm"
             title="문서 내의 글자를 자동으로 인식하여 편집 가능한 박스로 만듭니다">
             📝 텍스트 자동 추출
           </button>
           <button onClick={() => handleAddText(false)} disabled={status !== "done"}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-white/5 border border-white/10 text-slate-200 text-xs font-semibold rounded-full hover:bg-white/10 disabled:opacity-30 transition-all">
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-white border border-gray-200 text-gray-700 text-xs font-semibold rounded-full hover:bg-gray-50 disabled:opacity-30 transition-all shadow-sm">
             텍스트 추가(흰배경)
           </button>
           <button onClick={() => handleAddText(true)} disabled={status !== "done"}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-white/5 border border-white/10 text-slate-200 text-xs font-semibold rounded-full hover:bg-white/10 disabled:opacity-30 transition-all">
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-white border border-gray-200 text-gray-700 text-xs font-semibold rounded-full hover:bg-gray-50 disabled:opacity-30 transition-all shadow-sm">
             텍스트 추가(투명)
           </button>
           <button onClick={() => imageInputRef.current?.click()} disabled={status !== "done"}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-white/5 border border-white/10 text-slate-200 text-xs font-semibold rounded-full hover:bg-white/10 disabled:opacity-30 transition-all">
-            <ImageIcon className="w-3.5 h-3.5 text-indigo-400" /> 이미지 추가
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-white border border-gray-200 text-gray-700 text-xs font-semibold rounded-full hover:bg-gray-50 disabled:opacity-30 transition-all shadow-sm">
+            <ImageIcon className="w-3.5 h-3.5 text-blue-500" /> 이미지 추가
           </button>
           <input ref={imageInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
           
           <button onClick={() => bgRemoveInputRef.current?.click()} disabled={status !== "done" || isRemovingBg}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-white/5 border border-white/10 text-slate-200 text-xs font-semibold rounded-full hover:bg-white/10 disabled:opacity-30 transition-all">
-            {isRemovingBg ? <Loader2 className="w-3.5 h-3.5 animate-spin text-pink-400" /> : <Scissors className="w-3.5 h-3.5 text-pink-400" />}
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-white border border-gray-200 text-gray-700 text-xs font-semibold rounded-full hover:bg-gray-50 disabled:opacity-30 transition-all shadow-sm">
+            {isRemovingBg ? <Loader2 className="w-3.5 h-3.5 animate-spin text-pink-500" /> : <Scissors className="w-3.5 h-3.5 text-pink-500" />}
             누끼따기
           </button>
           <input ref={bgRemoveInputRef} type="file" accept="image/*" className="hidden" onChange={handleBgRemoveUpload} />
           
           <button onClick={() => upscaleInputRef.current?.click()} disabled={status !== "done" || isUpscaling}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-white/5 border border-white/10 text-slate-200 text-xs font-semibold rounded-full hover:bg-white/10 disabled:opacity-30 transition-all">
-            {isUpscaling ? <Loader2 className="w-3.5 h-3.5 animate-spin text-purple-400" /> : <ZoomIn className="w-3.5 h-3.5 text-purple-400" />}
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-white border border-gray-200 text-gray-700 text-xs font-semibold rounded-full hover:bg-gray-50 disabled:opacity-30 transition-all shadow-sm">
+            {isUpscaling ? <Loader2 className="w-3.5 h-3.5 animate-spin text-purple-500" /> : <ZoomIn className="w-3.5 h-3.5 text-purple-500" />}
             업스케일링
           </button>
           <input ref={upscaleInputRef} type="file" accept="image/*" className="hidden" onChange={handleUpscaleUpload} />
           
           <button onClick={() => setIsSignatureOpen(true)} disabled={status !== "done"}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-white/5 border border-white/10 text-slate-200 text-xs font-semibold rounded-full hover:bg-white/10 disabled:opacity-30 transition-all">
-            <Pen className="w-3.5 h-3.5 text-pink-400" /> 서명/그리기
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-white border border-gray-200 text-gray-700 text-xs font-semibold rounded-full hover:bg-gray-50 disabled:opacity-30 transition-all shadow-sm">
+            <Pen className="w-3.5 h-3.5 text-emerald-500" /> 서명/그리기
           </button>
           
-          <div className="w-[1px] h-6 bg-white/10 mx-1" />
+          <div className="w-[1px] h-6 bg-gray-200 mx-1" />
           
           {/* 확대 축소 버튼 */}
-          <div className="flex items-center bg-white/5 border border-white/10 rounded-full overflow-hidden mr-1">
+          <div className="flex items-center bg-white border border-gray-200 rounded-full overflow-hidden mr-1 shadow-sm">
             <button onClick={() => handleZoom("out")} disabled={status !== "done" || scale <= 0.5}
-              className="p-2 hover:bg-white/5 disabled:opacity-30 text-slate-300" title="축소">
+              className="p-2 hover:bg-gray-50 disabled:opacity-30 text-gray-600" title="축소">
               <Minus className="w-3.5 h-3.5" />
             </button>
             <span onClick={() => handleZoom("reset")} 
-              className="text-[10px] font-mono px-3 py-1.5 text-slate-200 bg-white/5 border-x border-white/10 cursor-pointer hover:bg-white/10 select-none font-bold" title="원래 크기 (1.5x)">
+              className="text-[10px] font-mono px-3 py-1.5 text-gray-800 bg-white border-x border-gray-200 cursor-pointer hover:bg-gray-50 select-none font-bold" title="원래 크기 (1.5x)">
               {Math.round(scale * 100)}%
             </span>
             <button onClick={() => handleZoom("in")} disabled={status !== "done" || scale >= 3.0}
-              className="p-2 hover:bg-white/5 disabled:opacity-30 text-slate-300" title="확대">
+              className="p-2 hover:bg-gray-50 disabled:opacity-30 text-gray-600" title="확대">
               <Plus className="w-3.5 h-3.5" />
             </button>
           </div>
 
           <button onClick={handleExport} disabled={isLoading || !hasContent}
-            className="flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white text-xs font-bold rounded-full shadow-[0_4px_15px_rgba(99,102,241,0.25)] hover:shadow-[0_4px_20px_rgba(99,102,241,0.4)] transition-all hover:scale-103 active:scale-97 disabled:opacity-40 disabled:pointer-events-none">
+            className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white text-xs font-semibold rounded-full shadow-sm hover:bg-blue-700 transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-40 disabled:pointer-events-none">
             <Download className="w-3.5 h-3.5" /> 내보내기
           </button>
         </div>
@@ -643,28 +643,28 @@ export default function PdfEditor({ file }: PdfEditorProps) {
 
       {/* 상태 메시지 */}
       <div className={`w-full mb-4 px-4 py-3 rounded-xl text-xs font-semibold border ${
-        status === "error" ? "bg-red-950/20 border-red-500/30 text-red-300"
-        : status === "done" && hasContent ? "bg-indigo-950/20 border-indigo-500/30 text-indigo-200"
-        : status === "done" ? "bg-slate-950/20 border-white/10 text-slate-300"
-        : "bg-purple-950/20 border-purple-500/30 text-purple-200"
+        status === "error" ? "bg-red-50 border-red-200 text-red-700"
+        : status === "done" && hasContent ? "bg-blue-50 border-blue-200 text-blue-700"
+        : status === "done" ? "bg-gray-50 border-gray-200 text-gray-700"
+        : "bg-indigo-50 border-indigo-200 text-indigo-700"
       }`}>
         {isLoading && <span className="inline-block mr-2 animate-spin">⏳</span>}
         {status === "done" && hasContent && "✏️ "}
         {status === "error" && "❌ "}
         {statusMsg}
         {status === "done" && (
-          <span className="ml-2 text-slate-400 text-[10px] font-normal">
+          <span className="ml-2 text-gray-500 text-[10px] font-normal">
             드래그: 이동 | 우하단: 크기 조절 | A+/A-: 폰트 크기 | 더블클릭: 추가
           </span>
         )}
         {status === "error" && errorDetail && (
-          <span className="block mt-1 text-[10px] text-red-400 font-mono">{errorDetail}</span>
+          <span className="block mt-1 text-[10px] text-red-500 font-mono">{errorDetail}</span>
         )}
       </div>
 
       {status === "ocr" && (
-        <div className="w-full mb-4 bg-slate-950/40 border border-white/5 rounded-full h-3.5 p-[2px] overflow-hidden">
-          <div className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 h-full rounded-full transition-all duration-300" style={{ width: `${ocrProgress}%` }} />
+        <div className="w-full mb-4 bg-gray-100 border border-gray-200 rounded-full h-3.5 p-[2px] overflow-hidden">
+          <div className="bg-blue-600 h-full rounded-full transition-all duration-300" style={{ width: `${ocrProgress}%` }} />
         </div>
       )}
 
@@ -776,30 +776,30 @@ export default function PdfEditor({ file }: PdfEditorProps) {
           ))}
         </div>
 
-        {/* 텍스트 목록 사이드바 (글래스모피즘) */}
+        {/* 텍스트 목록 사이드바 */}
         {extractedTexts.length > 0 && (
-          <div className="w-80 shrink-0 flex flex-col bg-slate-950/40 backdrop-blur-xl border border-white/10 shadow-2xl rounded-2xl h-[80vh] sticky top-24 overflow-hidden">
-            <div className="bg-slate-900/90 px-4 py-3.5 border-b border-white/5 flex justify-between items-center">
-              <span className="text-xs font-bold text-slate-300">📑 추출된 텍스트 ({extractedTexts.length})</span>
+          <div className="w-80 shrink-0 flex flex-col bg-white border border-gray-200 shadow-sm rounded-2xl h-[80vh] sticky top-24 overflow-hidden">
+            <div className="bg-gray-50 px-4 py-3 border-b border-gray-200 flex justify-between items-center">
+              <span className="text-xs font-bold text-gray-700">📑 추출된 텍스트 ({extractedTexts.length})</span>
               <button 
                 onClick={() => {
                   navigator.clipboard.writeText(extractedTexts.join('\n'));
                   alert('클립보드에 전체 텍스트가 복사되었습니다!');
                 }}
-                className="text-[10px] px-2.5 py-1 bg-white/5 text-slate-200 rounded-full border border-white/10 hover:bg-white/10 font-bold transition-all"
+                className="text-[10px] px-2.5 py-1 bg-white text-gray-700 rounded-full border border-gray-200 hover:bg-gray-50 font-semibold transition-all shadow-sm"
               >
                 전체 복사
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-950/20">
+            <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-white">
               {extractedTexts.map((text, idx) => (
                 <div key={idx} 
                   onDoubleClick={() => handleAddText(true, text)}
                   title="더블클릭하여 PDF에 텍스트 상자로 추가"
-                  className="p-3 bg-slate-900/40 rounded-xl border border-white/5 text-xs text-slate-300 whitespace-pre-wrap shadow-sm cursor-pointer hover:bg-indigo-500/10 hover:border-indigo-500/30 transition-all group relative"
+                  className="p-3 bg-gray-50 rounded-xl border border-gray-100 text-xs text-gray-700 whitespace-pre-wrap shadow-sm cursor-pointer hover:bg-blue-50 hover:border-blue-200 transition-all group relative"
                 >
                   {text}
-                  <div className="text-[9px] text-indigo-400 opacity-0 group-hover:opacity-100 mt-1.5 font-bold transition-opacity">
+                  <div className="text-[9px] text-blue-600 opacity-0 group-hover:opacity-100 mt-1.5 font-bold transition-opacity">
                     ✨ 더블클릭하여 PDF에 추가
                   </div>
                 </div>

@@ -217,12 +217,12 @@ export default function SignaturePad({ isOpen, onClose, onSave }: SignaturePadPr
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-[640px] mx-4 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         {/* 헤더 */}
-        <div className="flex items-center justify-between px-5 py-3.5 border-b bg-gradient-to-r from-indigo-50 to-purple-50">
+        <div className="flex items-center justify-between px-5 py-3.5 border-b bg-gray-50/80">
           <div className="flex items-center gap-2">
             <span className="text-lg">✍️</span>
             <h3 className="text-base font-bold text-gray-800">서명 / 그리기</h3>
           </div>
-          <button onClick={onClose} className="p-1.5 hover:bg-white/80 rounded-lg transition-colors">
+          <button onClick={onClose} className="p-1.5 hover:bg-gray-200 rounded-lg transition-colors">
             <X className="w-5 h-5 text-gray-500" />
           </button>
         </div>
@@ -238,7 +238,7 @@ export default function SignaturePad({ isOpen, onClose, onSave }: SignaturePadPr
                 onClick={() => setPenWidth(w.value)}
                 className={`px-2.5 py-1 text-xs rounded-md transition-all duration-150 ${
                   penWidth === w.value
-                    ? "bg-indigo-600 text-white font-semibold shadow-sm"
+                    ? "bg-blue-600 text-white font-semibold shadow-sm"
                     : "bg-white border text-gray-600 hover:bg-gray-100"
                 }`}
               >
@@ -302,7 +302,7 @@ export default function SignaturePad({ isOpen, onClose, onSave }: SignaturePadPr
           <button
             onClick={handleSave}
             disabled={strokes.length === 0}
-            className="flex items-center gap-1.5 px-5 py-2 text-sm text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-40 transition-colors font-semibold shadow-sm"
+            className="flex items-center gap-1.5 px-5 py-2 text-sm text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-40 transition-colors font-semibold shadow-sm"
           >
             <Check className="w-4 h-4" /> PDF에 삽입
           </button>
