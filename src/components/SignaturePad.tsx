@@ -23,20 +23,12 @@ interface Stroke {
 export default function SignaturePad({ isOpen, onClose, onSave }: SignaturePadProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
-  const [penColor, setPenColor] = useState("#000000");
   const [penWidth, setPenWidth] = useState(3);
   const [strokes, setStrokes] = useState<Stroke[]>([]);
   const [currentStroke, setCurrentStroke] = useState<Point[]>([]);
 
   const CANVAS_WIDTH = 560;
   const CANVAS_HEIGHT = 280;
-
-  const colors = [
-    { value: "#000000", label: "검정", bg: "bg-gray-900" },
-    { value: "#1e40af", label: "파랑", bg: "bg-blue-700" },
-    { value: "#dc2626", label: "빨강", bg: "bg-red-600" },
-    { value: "#047857", label: "초록", bg: "bg-emerald-700" },
-  ];
 
   const widths = [
     { value: 1, label: "가늘게" },
@@ -57,7 +49,7 @@ export default function SignaturePad({ isOpen, onClose, onSave }: SignaturePadPr
     for (const stroke of strokes) {
       if (stroke.points.length < 2) continue;
       ctx.beginPath();
-      ctx.strokeStyle = stroke.color;
+      ctx.strokeStyle = "#000000";
       ctx.lineWidth = stroke.width;
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
@@ -114,7 +106,7 @@ export default function SignaturePad({ isOpen, onClose, onSave }: SignaturePadPr
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     ctx.beginPath();
-    ctx.fillStyle = penColor;
+    ctx.fillStyle = "#000000";
     ctx.arc(point.x, point.y, penWidth / 2, 0, Math.PI * 2);
     ctx.fill();
   };
@@ -133,7 +125,7 @@ export default function SignaturePad({ isOpen, onClose, onSave }: SignaturePadPr
     const pts = [...currentStroke, point];
     if (pts.length >= 2) {
       ctx.beginPath();
-      ctx.strokeStyle = penColor;
+      ctx.strokeStyle = "#000000";
       ctx.lineWidth = penWidth;
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
@@ -147,7 +139,7 @@ export default function SignaturePad({ isOpen, onClose, onSave }: SignaturePadPr
     if (!isDrawing) return;
     setIsDrawing(false);
     if (currentStroke.length > 0) {
-      setStrokes(prev => [...prev, { points: currentStroke, color: penColor, width: penWidth }]);
+      setStrokes(prev => [...prev, { points: currentStroke, color: "#000000", width: penWidth }]);
       setCurrentStroke([]);
     }
   };
@@ -203,7 +195,7 @@ export default function SignaturePad({ isOpen, onClose, onSave }: SignaturePadPr
     for (const stroke of strokes) {
       if (stroke.points.length < 2) continue;
       cropCtx.beginPath();
-      cropCtx.strokeStyle = stroke.color;
+      cropCtx.strokeStyle = "#000000";
       cropCtx.lineWidth = stroke.width;
       cropCtx.lineCap = "round";
       cropCtx.lineJoin = "round";
@@ -237,25 +229,6 @@ export default function SignaturePad({ isOpen, onClose, onSave }: SignaturePadPr
 
         {/* 도구 모음 */}
         <div className="flex items-center gap-4 px-5 py-3 border-b bg-gray-50/80">
-          {/* 색상 선택 */}
-          <div className="flex items-center gap-1.5">
-            <span className="text-xs text-gray-500 font-medium mr-1">색상</span>
-            {colors.map((c) => (
-              <button
-                key={c.value}
-                onClick={() => setPenColor(c.value)}
-                className={`w-7 h-7 rounded-full border-2 transition-all duration-150 ${c.bg} ${
-                  penColor === c.value
-                    ? "border-indigo-400 ring-2 ring-indigo-200 scale-110"
-                    : "border-gray-300 hover:scale-105"
-                }`}
-                title={c.label}
-              />
-            ))}
-          </div>
-
-          <div className="w-px h-6 bg-gray-300" />
-
           {/* 굵기 선택 */}
           <div className="flex items-center gap-1">
             <span className="text-xs text-gray-500 font-medium mr-1">굵기</span>
