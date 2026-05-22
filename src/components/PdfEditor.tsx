@@ -573,13 +573,14 @@ export default function PdfEditor({ file }: PdfEditorProps) {
       defaultName = defaultName.slice(0, -4);
     }
     
-    // 한글 이름을 소리나는 대로 영문으로 자동 변환
-    const romanizedDefault = koreanToRoman(defaultName);
-
-    const exportName = window.prompt("저장할 파일 이름을 입력하세요 (영문 변환됨, 확장자 제외):", romanizedDefault);
+    const exportName = window.prompt("저장할 파일 이름을 입력하세요 (한글로 입력해도 자동으로 영문 변환됩니다):", defaultName);
     if (exportName === null) return; 
     
-    const finalFileName = exportName.trim() === "" ? `${romanizedDefault}.pdf` : `${exportName.trim()}.pdf`;
+    const baseName = exportName.trim() === "" ? defaultName : exportName.trim();
+    
+    // 사용자가 입력한 이름을 소리나는 대로 영문 변환
+    const romanizedFileName = koreanToRoman(baseName);
+    const finalFileName = `${romanizedFileName}.pdf`;
 
     setStatus("rendering");
     setStatusMsg("새 PDF를 생성하는 중...");
