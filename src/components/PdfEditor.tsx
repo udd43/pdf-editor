@@ -25,6 +25,7 @@ export interface TextBox {
   isNew?: boolean;
   isTransparent?: boolean;
   fontFamily?: string;
+  pageIndex: number;
 }
 
 type Status = "idle" | "rendering" | "ocr" | "done" | "error";
@@ -66,6 +67,10 @@ export default function PdfEditor({ file }: PdfEditorProps) {
   const [isSignatureOpen, setIsSignatureOpen] = useState(false);
   const dragOffset = useRef({ x: 0, y: 0 });
   const resizeStart = useRef({ x: 0, y: 0, w: 0, h: 0 });
+  
+  const pdfDocRef = useRef<pdfjsLib.PDFDocumentProxy | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [numPages, setNumPages] = useState(1);
 
   useEffect(() => {
     let isMounted = true;
@@ -81,7 +86,29 @@ export default function PdfEditor({ file }: PdfEditorProps) {
         setStatusMsg("PDF 문서를 파싱하는 중...");
         const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
         const pdf = await loadingTask.promise;
-        const page = await pdf.getPage(1);
+        if (!isMounted) return;
+        
+        pdfDocRef.current = pdf;
+        setNumPages(pdf.numPages);
+        setCurrentPage(1);
+      } catch (error: any) {
+        console.error("PDF 파싱 오류:", error);
+        if (isMounted) { setStatus("error"); setStatusMsg("오류 발생"); setErrorDetail(error?.message || String(error)); }
+      }
+    };
+    loadPdf();
+    return () => { isMounted = false; };
+  }, [file]);
+
+  useEffect(() => {
+    let isMounted = true;
+    const renderPage = async () => {
+      const pdf = pdfDocRef.current;
+      if (!pdf) return;
+      try {
+        setStatus("rendering");
+        setStatusMsg(`PDF 페이지 ${currentPage}/${numPages} 렌더링 중...`);
+        const page = await pdf.getPage(currentPage);
         const viewport = page.getViewport({ scale });
         const canvas = canvasRef.current;
         if (!canvas) throw new Error("Canvas를 찾을 수 없습니다.");
@@ -90,20 +117,19 @@ export default function PdfEditor({ file }: PdfEditorProps) {
         canvas.height = viewport.height;
         canvas.width = viewport.width;
 
-        setStatusMsg("PDF 페이지를 렌더링하는 중...");
         await page.render({ canvasContext: context, viewport } as any).promise;
         if (!isMounted) return;
 
         setStatus("done");
-        setStatusMsg("PDF 로딩 완료! 필요한 곳을 더블클릭하거나 상단의 '텍스트 추가' 버튼을 누르세요.");
+        setStatusMsg("PDF 로딩 완료! 필요한 곳을 더블클릭하거나 텍스트를 추가하세요.");
       } catch (error: any) {
-        console.error("PDF/OCR 오류:", error);
-        if (isMounted) { setStatus("error"); setStatusMsg("오류 발생"); setErrorDetail(error?.message || String(error)); }
+        console.error("PDF 렌더링 오류:", error);
+        if (isMounted) { setStatus("error"); setStatusMsg("렌더링 오류 발생"); setErrorDetail(error?.message || String(error)); }
       }
     };
-    loadPdf();
+    renderPage();
     return () => { isMounted = false; };
-  }, [file, scale]);
+  }, [currentPage, scale, numPages]);
 
   // 이미지 추가 시 적절한 크기와 겹치지 않는 위치를 계산하는 헬퍼 함수
   const getOptimizedImageCoords = (imgW: number, imgH: number, currentImagesCount: number) => {
@@ -166,6 +192,7 @@ export default function PdfEditor({ file }: PdfEditorProps) {
                 y,
                 width: w,
                 height: h,
+                pageIndex: currentPage,
               };
               setImageOverlays((prev) => [...prev, newOverlay]);
               setSelectedImageId(newOverlay.id);
@@ -261,6 +288,7 @@ export default function PdfEditor({ file }: PdfEditorProps) {
               y,
               width: w,
               height: h,
+              pageIndex: currentPage,
             };
             setImageOverlays((prev) => [...prev, newOverlay]);
             setSelectedImageId(newOverlay.id);
@@ -354,6 +382,7 @@ export default function PdfEditor({ file }: PdfEditorProps) {
       width: Math.min(400, Math.max(200, initialText.length * 14)), 
       height: 36 + (initialText.split('\n').length - 1) * 20,
       fontSize: 16, isEdited: true, isNew: true, isTransparent, fontFamily: "NotoSansKR",
+      pageIndex: currentPage,
     };
     setTextBoxes((prev) => [...prev, newBox]);
     setNextId((prev) => prev + 1);
@@ -390,6 +419,7 @@ export default function PdfEditor({ file }: PdfEditorProps) {
       id: `new-${nextId}`, text: "텍스트 입력",
       x: x - 100, y: y - 18, width: 200, height: 36,
       fontSize: 16, isEdited: true, isNew: true, fontFamily: "NotoSansKR",
+      pageIndex: currentPage,
     };
     setTextBoxes((prev) => [...prev, newBox]);
     setNextId((prev) => prev + 1);
@@ -456,7 +486,7 @@ export default function PdfEditor({ file }: PdfEditorProps) {
         const { w, h, x, y } = getOptimizedImageCoords(img.width, img.height, imageOverlays.length);
         const newOverlay: ImageOverlayData = {
           id: `img-${Date.now()}`, originalSrc: dataUrl, displaySrc: dataUrl,
-          removedBgSrc: null, x, y, width: w, height: h,
+          removedBgSrc: null, x, y, width: w, height: h, pageIndex: currentPage,
         };
         setImageOverlays((prev) => [...prev, newOverlay]);
         setSelectedImageId(newOverlay.id);
@@ -486,7 +516,7 @@ export default function PdfEditor({ file }: PdfEditorProps) {
         const { w, h, x, y } = getOptimizedImageCoords(img.width, img.height, imageOverlays.length);
         const newOverlay: ImageOverlayData = {
           id: `img-${Date.now()}`, originalSrc: originalUrl, displaySrc: resultUrl,
-          removedBgSrc: resultUrl, x, y, width: w, height: h,
+          removedBgSrc: resultUrl, x, y, width: w, height: h, pageIndex: currentPage,
         };
         setImageOverlays((prev) => [...prev, newOverlay]);
         setSelectedImageId(newOverlay.id);
@@ -525,7 +555,7 @@ export default function PdfEditor({ file }: PdfEditorProps) {
         const { w, h, x, y } = getOptimizedImageCoords(img.width, img.height, imageOverlays.length);
         const newOverlay: ImageOverlayData = {
           id: `img-${Date.now()}`, originalSrc: resultUrl, displaySrc: resultUrl,
-          removedBgSrc: null, x, y, width: w, height: h,
+          removedBgSrc: null, x, y, width: w, height: h, pageIndex: currentPage,
         };
         setImageOverlays((prev) => [...prev, newOverlay]);
         setSelectedImageId(newOverlay.id);
@@ -576,7 +606,8 @@ export default function PdfEditor({ file }: PdfEditorProps) {
             ...target,
             id: `copy-${Date.now()}`,
             x: target.x + 20,
-            y: target.y + 20
+            y: target.y + 20,
+            pageIndex: currentPage,
           };
           setImageOverlays(prev => [...prev, newOverlay]);
           setSelectedImageId(newOverlay.id);
@@ -629,6 +660,7 @@ export default function PdfEditor({ file }: PdfEditorProps) {
       y: 100,
       width: w,
       height: h,
+      pageIndex: currentPage,
     };
     setImageOverlays((prev) => [...prev, newOverlay]);
     setSelectedImageId(newOverlay.id);
@@ -695,6 +727,23 @@ export default function PdfEditor({ file }: PdfEditorProps) {
           </button>
           
           <div className="w-[1px] h-6 bg-gray-200 mx-1" />
+          
+          {/* 페이지 이동 (여러 장일 경우) */}
+          {numPages > 1 && (
+            <div className="flex items-center bg-white border border-gray-200 rounded-full overflow-hidden mr-1 shadow-sm">
+              <button onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))} disabled={currentPage <= 1 || status !== "done"}
+                className="px-3 py-1.5 hover:bg-gray-50 disabled:opacity-30 text-xs font-bold text-gray-600 border-r border-gray-200">
+                이전
+              </button>
+              <span className="text-[11px] font-mono px-3 py-1.5 text-gray-800 bg-gray-50 select-none">
+                {currentPage} / {numPages}
+              </span>
+              <button onClick={() => setCurrentPage(prev => Math.min(numPages, prev + 1))} disabled={currentPage >= numPages || status !== "done"}
+                className="px-3 py-1.5 hover:bg-gray-50 disabled:opacity-30 text-xs font-bold text-gray-600 border-l border-gray-200">
+                다음
+              </button>
+            </div>
+          )}
           
           {/* 확대 축소 버튼 */}
           <div className="flex items-center bg-white border border-gray-200 rounded-full overflow-hidden mr-1 shadow-sm">
@@ -783,7 +832,7 @@ export default function PdfEditor({ file }: PdfEditorProps) {
           )}
 
           {/* 텍스트 오버레이 */}
-          {status === "done" && textBoxes.map((box) => (
+          {status === "done" && textBoxes.filter(box => box.pageIndex === currentPage).map((box) => (
             <TextBoxOverlay
               key={box.id}
               box={box}
@@ -801,7 +850,7 @@ export default function PdfEditor({ file }: PdfEditorProps) {
           ))}
 
           {/* 이미지 오버레이 */}
-          {status === "done" && imageOverlays.map((overlay) => (
+          {status === "done" && imageOverlays.filter(overlay => overlay.pageIndex === currentPage).map((overlay) => (
             <ImageOverlayComponent key={overlay.id} overlay={overlay} scale={scale}
               onUpdate={handleImageUpdate} onDelete={handleImageDelete}
               isSelected={selectedImageId === overlay.id} onSelect={setSelectedImageId} />

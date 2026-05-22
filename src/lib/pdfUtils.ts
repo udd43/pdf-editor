@@ -45,178 +45,166 @@ export async function exportEditedPdf(
   }
 
   const pages = pdfDoc.getPages();
-  const firstPage = pages[0];
-  const { width: pdfWidth, height: pdfHeight } = firstPage.getSize();
-  const rotationAngle = firstPage.getRotation().angle;
-
   const { degrees } = await import("pdf-lib");
 
-  // 화면 좌표(좌상단 원점, Y↓) → PDF 좌표(좌하단 원점, Y↑) 변환
-  const getPdfCoords = (vx: number, vy: number) => {
-    if (rotationAngle === 90) {
-      return { px: vy, py: vx };
-    } else if (rotationAngle === 180) {
-      return { px: pdfWidth - vx, py: vy };
-    } else if (rotationAngle === 270) {
-      return { px: pdfWidth - vy, py: pdfHeight - vx };
-    } else {
-      return { px: vx, py: pdfHeight - vy };
-    }
-  };
+  for (let pageIdx = 0; pageIdx < pages.length; pageIdx++) {
+    const page = pages[pageIdx];
+    const { width: pdfWidth, height: pdfHeight } = page.getSize();
+    const rotationAngle = page.getRotation().angle;
+    const currentUiPageNumber = pageIdx + 1;
 
-  // 사각형(배경, 이미지) 좌표 변환 (회전 고려)
-  const getRotatedCoords = (uiX: number, uiY: number, uiW: number, uiH: number) => {
-    if (rotationAngle === 90) {
-      return {
-        rectX: uiY,
-        rectY: uiX,
-        rectW: uiH,
-        rectH: uiW,
-        rotate: degrees(90),
-      };
-    } else if (rotationAngle === 180) {
-      return {
-        rectX: pdfWidth - uiX - uiW,
-        rectY: uiY,
-        rectW: uiW,
-        rectH: uiH,
-        rotate: degrees(180),
-      };
-    } else if (rotationAngle === 270) {
-      return {
-        rectX: pdfWidth - uiY - uiH,
-        rectY: pdfHeight - uiX - uiW,
-        rectW: uiH,
-        rectH: uiW,
-        rotate: degrees(270),
-      };
-    } else {
-      return {
-        rectX: uiX,
-        rectY: pdfHeight - uiY - uiH,
-        rectW: uiW,
-        rectH: uiH,
-        rotate: degrees(0),
-      };
-    }
-  };
-
-  // ──────────────────────────────────────────────────────────
-  // 1. 텍스트 상자 처리
-  // ──────────────────────────────────────────────────────────
-  // box.x, box.y, box.width, box.height는 이미 PDF 포인트 단위입니다.
-  // 추가적인 스케일/DPI 변환 없이 그대로 사용합니다.
-  for (const box of editedBoxes) {
-    if (box.isEdited || box.isNew) {
-      const realX = box.x;
-      const realY = box.y;
-      const realW = box.width;
-      const realH = box.height;
-
-      const { rectX, rectY, rectW, rectH, rotate } = getRotatedCoords(realX, realY, realW, realH);
-
-      // 흰색 배경 사각형
-      if (!box.isTransparent) {
-        firstPage.drawRectangle({
-          x: rectX, y: rectY, width: rectW, height: rectH,
-          color: rgb(1, 1, 1),
-        });
-      }
-
-      // 폰트 크기도 이미 PDF 포인트 단위
-      const fontSize = Math.max(8, box.fontSize || 16);
-      const selectedFont = fontCache[box.fontFamily || "NotoSansKR"] || fontCache["NotoSansKR"];
-      
-      try {
-        // textarea의 CSS padding(p-1 = 4px) + border(2px) = 6px
-        // PDF 포인트로 변환: 6 / renderingScale(1.5) = 4
-        const padX = 4;
-        const padY = 4;
-        
-        // 가로 모드일 때 미세 보정
-        const isLandscape = rotationAngle === 90 || rotationAngle === 270;
-        const verticalCorrection = isLandscape ? (fontSize * 0.15) : 0; 
-        
-        // 텍스트 베이스라인 위치 계산
-        // PDF drawText의 Y좌표는 베이스라인(글자 밑줄) 위치
-        // 한글 폰트의 어센트(글자 상단~베이스라인) ≈ fontSize * 0.88
-        const baselineVisualY = realY + padY + (fontSize * 0.88) + verticalCorrection;
-        
-        // 화면 좌표 → PDF 좌표 변환
-        const baselineVp = getPdfCoords(realX + padX, baselineVisualY);
-        const textX = baselineVp.px;
-        const textY = baselineVp.py;
-
-        firstPage.drawText(box.text, {
-          x: textX,
-          y: textY,
-          size: fontSize,
-          font: selectedFont,
-          color: rgb(0, 0, 0),
-          maxWidth: realW - (padX * 2),
-          rotate: rotate,
-        });
-      } catch (drawError) {
-        console.warn(`텍스트 그리기 실패 (${box.id}):`, drawError);
-      }
-    }
-  }
-
-  // ──────────────────────────────────────────────────────────
-  // 2. 이미지 오버레이 처리
-  // ──────────────────────────────────────────────────────────
-  for (const overlay of imageOverlays) {
-    try {
-      const imgDataUrl = overlay.displaySrc;
-      const response = await fetch(imgDataUrl);
-      const imgBlob = await response.blob();
-      const imgArrayBuffer = await imgBlob.arrayBuffer();
-      const imgBytes = new Uint8Array(imgArrayBuffer);
-
-      let embeddedImage;
-      if (imgDataUrl.includes("image/png") || imgDataUrl.startsWith("blob:")) {
-        embeddedImage = await pdfDoc.embedPng(imgBytes);
+    // 화면 좌표(좌상단 원점, Y↓) → PDF 좌표(좌하단 원점, Y↑) 변환
+    const getPdfCoords = (vx: number, vy: number) => {
+      if (rotationAngle === 90) {
+        return { px: vy, py: vx };
+      } else if (rotationAngle === 180) {
+        return { px: pdfWidth - vx, py: vy };
+      } else if (rotationAngle === 270) {
+        return { px: pdfWidth - vy, py: pdfHeight - vx };
       } else {
+        return { px: vx, py: pdfHeight - vy };
+      }
+    };
+
+    // 사각형(배경, 이미지) 좌표 변환 (회전 고려)
+    const getRotatedCoords = (uiX: number, uiY: number, uiW: number, uiH: number) => {
+      if (rotationAngle === 90) {
+        return {
+          rectX: uiY,
+          rectY: uiX,
+          rectW: uiH,
+          rectH: uiW,
+          rotate: degrees(90),
+        };
+      } else if (rotationAngle === 180) {
+        return {
+          rectX: pdfWidth - uiX - uiW,
+          rectY: uiY,
+          rectW: uiW,
+          rectH: uiH,
+          rotate: degrees(180),
+        };
+      } else if (rotationAngle === 270) {
+        return {
+          rectX: pdfWidth - uiY - uiH,
+          rectY: pdfHeight - uiX - uiW,
+          rectW: uiH,
+          rectH: uiW,
+          rotate: degrees(270),
+        };
+      } else {
+        return {
+          rectX: uiX,
+          rectY: pdfHeight - uiY - uiH,
+          rectW: uiW,
+          rectH: uiH,
+          rotate: degrees(0),
+        };
+      }
+    };
+
+    // ──────────────────────────────────────────────────────────
+    // 1. 텍스트 상자 처리
+    // ──────────────────────────────────────────────────────────
+    const pageBoxes = editedBoxes.filter(b => b.pageIndex === currentUiPageNumber);
+    for (const box of pageBoxes) {
+      if (box.isEdited || box.isNew) {
+        const realX = box.x;
+        const realY = box.y;
+        const realW = box.width;
+        const realH = box.height;
+
+        const { rectX, rectY, rectW, rectH, rotate } = getRotatedCoords(realX, realY, realW, realH);
+
+        if (!box.isTransparent) {
+          page.drawRectangle({
+            x: rectX, y: rectY, width: rectW, height: rectH,
+            color: rgb(1, 1, 1),
+          });
+        }
+
+        const fontSize = Math.max(8, box.fontSize || 16);
+        const selectedFont = fontCache[box.fontFamily || "NotoSansKR"] || fontCache["NotoSansKR"];
+        
         try {
-          embeddedImage = await pdfDoc.embedJpg(imgBytes);
-        } catch {
-          embeddedImage = await pdfDoc.embedPng(imgBytes);
+          const padX = 4;
+          const padY = 4;
+          const isLandscape = rotationAngle === 90 || rotationAngle === 270;
+          const verticalCorrection = isLandscape ? (fontSize * 0.15) : 0; 
+          const baselineVisualY = realY + padY + (fontSize * 0.88) + verticalCorrection;
+          const baselineVp = getPdfCoords(realX + padX, baselineVisualY);
+          const textX = baselineVp.px;
+          const textY = baselineVp.py;
+
+          page.drawText(box.text, {
+            x: textX,
+            y: textY,
+            size: fontSize,
+            font: selectedFont,
+            color: rgb(0, 0, 0),
+            maxWidth: realW - (padX * 2),
+            rotate: rotate,
+          });
+        } catch (drawError) {
+          console.warn(`텍스트 그리기 실패 (${box.id}):`, drawError);
         }
       }
+    }
 
-      // 이미지 좌표도 이미 PDF 포인트 단위
-      const realX = overlay.x;
-      const realY = overlay.y;
-      const realW = overlay.width;
-      const realH = overlay.height;
+    // ──────────────────────────────────────────────────────────
+    // 2. 이미지 오버레이 처리
+    // ──────────────────────────────────────────────────────────
+    const pageOverlays = imageOverlays.filter(o => o.pageIndex === currentUiPageNumber);
+    for (const overlay of pageOverlays) {
+      try {
+        const imgDataUrl = overlay.displaySrc;
+        const response = await fetch(imgDataUrl);
+        const imgBlob = await response.blob();
+        const imgArrayBuffer = await imgBlob.arrayBuffer();
+        const imgBytes = new Uint8Array(imgArrayBuffer);
 
-      const { rectX, rectY, rectW, rectH, rotate } = getRotatedCoords(realX, realY, realW, realH);
+        let embeddedImage;
+        if (imgDataUrl.includes("image/png") || imgDataUrl.startsWith("blob:")) {
+          embeddedImage = await pdfDoc.embedPng(imgBytes);
+        } else {
+          try {
+            embeddedImage = await pdfDoc.embedJpg(imgBytes);
+          } catch {
+            embeddedImage = await pdfDoc.embedPng(imgBytes);
+          }
+        }
 
-      // 이미지는 bottom-left 기준으로 그려지고 회전하므로,
-      // 회전 각도에 맞춰 그리기 기준점을 조정해 줍니다.
-      let imgDrawX = rectX;
-      let imgDrawY = rectY;
-      
-      if (rotationAngle === 90) {
-        imgDrawX = rectX + rectW;
-        imgDrawY = rectY;
-      } else if (rotationAngle === 180) {
-        imgDrawX = rectX + rectW;
-        imgDrawY = rectY + rectH;
-      } else if (rotationAngle === 270) {
-        imgDrawX = rectX;
-        imgDrawY = rectY + rectH;
+        const realX = overlay.x;
+        const realY = overlay.y;
+        const realW = overlay.width;
+        const realH = overlay.height;
+
+        const { rectX, rectY, rectW, rectH, rotate } = getRotatedCoords(realX, realY, realW, realH);
+
+        let imgDrawX = rectX;
+        let imgDrawY = rectY;
+        
+        if (rotationAngle === 90) {
+          imgDrawX = rectX + rectW;
+          imgDrawY = rectY;
+        } else if (rotationAngle === 180) {
+          imgDrawX = rectX + rectW;
+          imgDrawY = rectY + rectH;
+        } else if (rotationAngle === 270) {
+          imgDrawX = rectX;
+          imgDrawY = rectY + rectH;
+        }
+
+        page.drawImage(embeddedImage, {
+          x: imgDrawX,
+          y: imgDrawY,
+          width: realW,
+          height: realH,
+          rotate: rotate,
+        });
+      } catch (imgError) {
+        console.warn(`이미지 삽입 실패 (${overlay.id}):`, imgError);
       }
-
-      firstPage.drawImage(embeddedImage, {
-        x: imgDrawX,
-        y: imgDrawY,
-        width: realW,
-        height: realH,
-        rotate: rotate,
-      });
-    } catch (imgError) {
-      console.warn(`이미지 삽입 실패 (${overlay.id}):`, imgError);
     }
   }
 

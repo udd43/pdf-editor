@@ -13,6 +13,7 @@ export interface ImageOverlayData {
   y: number;
   width: number;
   height: number;
+  pageIndex: number;
 }
 
 interface ImageOverlayProps {
