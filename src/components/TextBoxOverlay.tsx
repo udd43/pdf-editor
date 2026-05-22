@@ -34,10 +34,10 @@ const TextBoxOverlay: React.FC<TextBoxOverlayProps> = ({
       className="absolute group"
       onDoubleClick={(e) => e.stopPropagation()}
       style={{
-        left: \`\${box.x * scale}px\`,
-        top: \`\${box.y * scale}px\`,
-        width: \`\${box.width * scale}px\`,
-        height: \`\${box.height * scale}px\`,
+        left: `${box.x * scale}px`,
+        top: `${box.y * scale}px`,
+        width: `${box.width * scale}px`,
+        height: `${box.height * scale}px`,
         zIndex: isDragging || isResizing ? 30 : 10,
       }}
     >
@@ -92,7 +92,7 @@ const TextBoxOverlay: React.FC<TextBoxOverlayProps> = ({
         onChange={(e) => onChange(box.id, e.target.value)}
         className="w-full h-full resize-none overflow-hidden p-1 m-0 leading-snug cursor-pointer focus:cursor-text rounded-sm"
         style={{
-          fontSize: \`\${box.fontSize * scale}px\`,
+          fontSize: `${box.fontSize * scale}px`,
           fontFamily: box.fontFamily || "NotoSansKR",
           whiteSpace: "pre-wrap",
           backgroundColor: box.isTransparent ? "transparent" : "#fff",

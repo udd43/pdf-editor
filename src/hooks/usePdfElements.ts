@@ -9,7 +9,7 @@ export function usePdfElements() {
   const [nextId, setNextId] = useState(0);
 
   const addTextBox = useCallback((newBox: Omit<TextBox, 'id'>) => {
-    const id = \`new-\${nextId}\`;
+    const id = `new-${nextId}`;
     setTextBoxes((prev) => [...prev, { ...newBox, id }]);
     setNextId((prev) => prev + 1);
     return id;
@@ -24,7 +24,7 @@ export function usePdfElements() {
   }, []);
 
   const addImageOverlay = useCallback((newOverlay: Omit<ImageOverlayData, 'id'>) => {
-    const id = \`img-\${Date.now()}\`;
+    const id = `img-${Date.now()}`;
     setImageOverlays((prev) => [...prev, { ...newOverlay, id }]);
     setSelectedImageId(id);
     return id;
