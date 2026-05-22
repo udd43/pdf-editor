@@ -8,6 +8,8 @@ import { exportEditedPdf } from "@/lib/pdfUtils";
 import { koreanToRoman } from "@/lib/romanize";
 import ImageOverlayComponent, { ImageOverlayData } from "./ImageOverlay";
 import SignaturePad from "./SignaturePad";
+import TextBoxOverlay from "./TextBoxOverlay";
+import { usePdfElements } from "@/hooks/usePdfElements";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.mjs`;
 
@@ -40,18 +42,26 @@ export default function PdfEditor({ file }: PdfEditorProps) {
   const [status, setStatus] = useState<Status>("rendering");
   const [statusMsg, setStatusMsg] = useState("PDF를 렌더링하는 중...");
   const [errorDetail, setErrorDetail] = useState("");
-  const [textBoxes, setTextBoxes] = useState<TextBox[]>([]);
   const [extractedTexts, setExtractedTexts] = useState<string[]>([]);
-  const [imageOverlays, setImageOverlays] = useState<ImageOverlayData[]>([]);
-  const [selectedImageId, setSelectedImageId] = useState<string | null>(null);
   const [draggingTextId, setDraggingTextId] = useState<string | null>(null);
   const [resizingTextId, setResizingTextId] = useState<string | null>(null);
   const [scale, setScale] = useState(1.5);
   const [isDragOver, setIsDragOver] = useState(false);
   const [pdfBuffer, setPdfBuffer] = useState<ArrayBuffer | null>(null);
   const [ocrProgress, setOcrProgress] = useState(0);
-  const [nextId, setNextId] = useState(0);
   const [isRemovingBg, setIsRemovingBg] = useState(false);
+  
+  // Custom hook for element state management
+  const {
+    textBoxes,
+    setTextBoxes,
+    imageOverlays,
+    setImageOverlays,
+    selectedImageId,
+    setSelectedImageId,
+    nextId,
+    setNextId,
+  } = usePdfElements();
   const [isUpscaling, setIsUpscaling] = useState(false);
   const [isSignatureOpen, setIsSignatureOpen] = useState(false);
   const dragOffset = useRef({ x: 0, y: 0 });
@@ -263,19 +273,24 @@ export default function PdfEditor({ file }: PdfEditorProps) {
     }
   };
 
-  const handleTextChange = (id: string, newText: string) => {
+  const handleTextChange = useCallback((id: string, newText: string) => {
     setTextBoxes((prev) => prev.map((b) => b.id === id ? { ...b, text: newText, isEdited: true } : b));
-  };
-  const handleDeleteBox = (id: string) => {
+  }, [setTextBoxes]);
+
+  const handleDeleteBox = useCallback((id: string) => {
     setTextBoxes((prev) => prev.filter((b) => b.id !== id));
-  };
+  }, [setTextBoxes]);
 
   // 폰트 크기 변경
-  const handleFontSizeChange = (id: string, delta: number) => {
+  const handleFontSizeChange = useCallback((id: string, delta: number) => {
     setTextBoxes((prev) => prev.map((b) =>
       b.id === id ? { ...b, fontSize: Math.max(8, Math.min(72, b.fontSize + delta)), isEdited: true } : b
     ));
-  };
+  }, [setTextBoxes]);
+
+  const handleFontFamilyChange = useCallback((id: string, fontFamily: string) => {
+    setTextBoxes((prev) => prev.map((b) => b.id === id ? { ...b, fontFamily, isEdited: true } : b));
+  }, [setTextBoxes]);
 
   // 수동 OCR 실행 (표 내부 텍스트 인식률 향상을 위해 PSM 11 사용)
   const handleRunOcr = async () => {
@@ -359,9 +374,9 @@ export default function PdfEditor({ file }: PdfEditorProps) {
     handleAddText(true, romanized);
   };
 
-  const handleToggleTransparent = (id: string) => {
+  const handleToggleTransparent = useCallback((id: string) => {
     setTextBoxes((prev) => prev.map((b) => b.id === id ? { ...b, isTransparent: !b.isTransparent, isEdited: true } : b));
-  };
+  }, [setTextBoxes]);
 
   // 더블클릭으로 텍스트 추가
   const handleCanvasDoubleClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -382,17 +397,13 @@ export default function PdfEditor({ file }: PdfEditorProps) {
   };
 
   // 텍스트 박스 드래그 이동
-  const handleTextDragStart = (e: React.MouseEvent, boxId: string) => {
+  const handleTextDragStart = useCallback((e: React.MouseEvent, boxId: string, startBoxX: number, startBoxY: number) => {
     e.preventDefault();
     e.stopPropagation();
-    const box = textBoxes.find((b) => b.id === boxId);
-    if (!box) return;
     setDraggingTextId(boxId);
     
     const startX = e.clientX;
     const startY = e.clientY;
-    const startBoxX = box.x;
-    const startBoxY = box.y;
 
     const handleMove = (ev: MouseEvent) => {
       const dx = (ev.clientX - startX) / scale;
@@ -406,20 +417,16 @@ export default function PdfEditor({ file }: PdfEditorProps) {
     };
     window.addEventListener("mousemove", handleMove);
     window.addEventListener("mouseup", handleUp);
-  };
+  }, [scale, setTextBoxes]);
 
   // 텍스트 박스 리사이즈
-  const handleTextResizeStart = (e: React.MouseEvent, boxId: string) => {
+  const handleTextResizeStart = useCallback((e: React.MouseEvent, boxId: string, startW: number, startH: number) => {
     e.preventDefault();
     e.stopPropagation();
-    const box = textBoxes.find((b) => b.id === boxId);
-    if (!box) return;
     setResizingTextId(boxId);
     
     const startX = e.clientX;
     const startY = e.clientY;
-    const startW = box.width;
-    const startH = box.height;
 
     const handleMove = (ev: MouseEvent) => {
       const dx = (ev.clientX - startX) / scale;
@@ -435,7 +442,7 @@ export default function PdfEditor({ file }: PdfEditorProps) {
     };
     window.addEventListener("mousemove", handleMove);
     window.addEventListener("mouseup", handleUp);
-  };
+  }, [scale, setTextBoxes]);
 
   // 이미지 추가
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -777,66 +784,20 @@ export default function PdfEditor({ file }: PdfEditorProps) {
 
           {/* 텍스트 오버레이 */}
           {status === "done" && textBoxes.map((box) => (
-            <div key={box.id} className="absolute group"
-              onDoubleClick={(e) => e.stopPropagation()}
-              style={{
-                left: `${box.x * scale}px`, top: `${box.y * scale}px`,
-                width: `${box.width * scale}px`, height: `${box.height * scale}px`,
-                zIndex: draggingTextId === box.id || resizingTextId === box.id ? 30 : 10,
-              }}>
-
-              {/* 상단 컨트롤 바 */}
-              <div className="absolute -top-8 left-0 flex items-center gap-0.5 bg-white rounded-lg shadow-md border px-1 py-0.5 opacity-0 group-hover:opacity-100 transition-opacity z-30">
-                <div onMouseDown={(e) => handleTextDragStart(e, box.id)}
-                  className="p-1 text-gray-500 hover:bg-gray-100 rounded cursor-grab active:cursor-grabbing">
-                  <Move className="w-3.5 h-3.5" />
-                </div>
-                <select 
-                  value={box.fontFamily || "NotoSansKR"}
-                  onChange={(e) => setTextBoxes(prev => prev.map(b => b.id === box.id ? { ...b, fontFamily: e.target.value, isEdited: true } : b))}
-                  className="text-[11px] font-medium border-r bg-transparent outline-none px-1.5 py-0.5 text-gray-600 hover:bg-gray-50 cursor-pointer"
-                >
-                  <option value="NotoSansKR">기본고딕</option>
-                  <option value="NanumMyeongjo">명조체</option>
-                  <option value="Jua">주아체(둥근)</option>
-                </select>
-                <button onClick={() => handleToggleTransparent(box.id)}
-                  className="p-1 text-gray-500 hover:bg-gray-100 rounded text-[10px]">
-                  {box.isTransparent ? "🔳" : "⬜"}
-                </button>
-                <button onClick={() => handleFontSizeChange(box.id, -2)}
-                  className="p-1 text-gray-500 hover:bg-gray-100 rounded">
-                  <Minus className="w-3.5 h-3.5" />
-                </button>
-                <span className="text-[10px] font-mono text-gray-400 min-w-[24px] text-center select-none">{box.fontSize}</span>
-                <button onClick={() => handleFontSizeChange(box.id, 2)}
-                  className="p-1 text-gray-500 hover:bg-gray-100 rounded">
-                  <Plus className="w-3.5 h-3.5" />
-                </button>
-                <button onClick={() => handleDeleteBox(box.id)}
-                  className="p-1 text-red-400 hover:bg-red-50 hover:text-red-600 rounded">
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              </div>
-
-              <textarea value={box.text}
-                onChange={(e) => handleTextChange(box.id, e.target.value)}
-                className="w-full h-full resize-none overflow-hidden p-1 m-0 leading-snug cursor-pointer focus:cursor-text rounded-sm"
-                style={{
-                  fontSize: `${box.fontSize * scale}px`,
-                  fontFamily: box.fontFamily || "NotoSansKR",
-                  whiteSpace: "pre-wrap",
-                  backgroundColor: box.isTransparent ? "transparent" : "#fff",
-                  color: "#000",
-                  border: box.isNew ? "2px solid rgba(34,197,94,0.6)" : box.isEdited ? "2px solid rgba(245,158,11,0.5)" : "1px solid rgba(59,130,246,0.3)",
-                  outline: "none",
-                  boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
-                }}
-              />
-
-              <div onMouseDown={(e) => handleTextResizeStart(e, box.id)}
-                className="absolute -bottom-1.5 -right-1.5 w-4 h-4 bg-blue-500 rounded-full cursor-se-resize border-2 border-white shadow opacity-0 group-hover:opacity-100 transition-opacity z-30" />
-            </div>
+            <TextBoxOverlay
+              key={box.id}
+              box={box}
+              scale={scale}
+              isDragging={draggingTextId === box.id}
+              isResizing={resizingTextId === box.id}
+              onDragStart={handleTextDragStart}
+              onResizeStart={handleTextResizeStart}
+              onChange={handleTextChange}
+              onDelete={handleDeleteBox}
+              onFontSizeChange={handleFontSizeChange}
+              onToggleTransparent={handleToggleTransparent}
+              onFontFamilyChange={handleFontFamilyChange}
+            />
           ))}
 
           {/* 이미지 오버레이 */}
