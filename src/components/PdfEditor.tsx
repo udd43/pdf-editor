@@ -5,6 +5,7 @@ import * as pdfjsLib from "pdfjs-dist";
 import Tesseract from "tesseract.js";
 import { Download, Loader2, Plus, Image as ImageIcon, Scissors, Trash2, Move, Minus, ZoomIn, Pen } from "lucide-react";
 import { exportEditedPdf } from "@/lib/pdfUtils";
+import { koreanToRoman } from "@/lib/romanize";
 import ImageOverlayComponent, { ImageOverlayData } from "./ImageOverlay";
 import SignaturePad from "./SignaturePad";
 
@@ -571,10 +572,14 @@ export default function PdfEditor({ file }: PdfEditorProps) {
     if (defaultName.toLowerCase().endsWith(".pdf")) {
       defaultName = defaultName.slice(0, -4);
     }
-    const exportName = window.prompt("저장할 파일 이름을 입력하세요 (확장자 제외):", defaultName);
+    
+    // 한글 이름을 소리나는 대로 영문으로 자동 변환
+    const romanizedDefault = koreanToRoman(defaultName);
+
+    const exportName = window.prompt("저장할 파일 이름을 입력하세요 (영문 변환됨, 확장자 제외):", romanizedDefault);
     if (exportName === null) return; 
     
-    const finalFileName = exportName.trim() === "" ? file.name : `${exportName.trim()}.pdf`;
+    const finalFileName = exportName.trim() === "" ? `${romanizedDefault}.pdf` : `${exportName.trim()}.pdf`;
 
     setStatus("rendering");
     setStatusMsg("새 PDF를 생성하는 중...");
