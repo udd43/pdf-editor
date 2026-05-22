@@ -13,6 +13,24 @@ export default function ClientApp() {
   const [file, setFile] = useState<File | null>(null);
   const [referenceFile, setReferenceFile] = useState<File | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>("pdf");
+  
+  const [secretClickCount, setSecretClickCount] = useState(0);
+  const [showEasterEgg, setShowEasterEgg] = useState(false);
+
+  const handleSecretClick = () => {
+    if (showEasterEgg) return;
+    setSecretClickCount(prev => {
+      const next = prev + 1;
+      if (next >= 5) {
+        setShowEasterEgg(true);
+        setTimeout(() => {
+          setShowEasterEgg(false);
+          setSecretClickCount(0);
+        }, 5000);
+      }
+      return next;
+    });
+  };
 
   const handleReferenceSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -120,6 +138,34 @@ export default function ClientApp() {
           <span className="font-medium">&copy; 2026 PDF Editor &middot; Private by default.</span>
         </div>
       </footer>
+
+      {/* 이스터에그 클릭 영역 (오른쪽 구석) */}
+      <div 
+        onClick={handleSecretClick}
+        className="fixed bottom-0 right-0 w-24 h-24 z-50 cursor-default"
+      />
+
+      {/* 이스터에그 메시지 */}
+      {showEasterEgg && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-none" style={{ animation: "fadeInOut 5s ease-in-out forwards" }}>
+          <style>{`
+            @keyframes fadeInOut {
+              0% { opacity: 0; transform: scale(0.9) translateY(20px); filter: blur(10px); }
+              15% { opacity: 1; transform: scale(1) translateY(0); filter: blur(0px); }
+              85% { opacity: 1; transform: scale(1) translateY(0); filter: blur(0px); }
+              100% { opacity: 0; transform: scale(1.1) translateY(-20px); filter: blur(10px); }
+            }
+          `}</style>
+          <div className="bg-white/90 backdrop-blur-md px-10 py-8 rounded-3xl shadow-[0_0_50px_rgba(79,70,229,0.2)] border border-indigo-100 text-center">
+            <h2 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 mb-4 tracking-tight">
+              Thanks to
+            </h2>
+            <p className="text-xl font-bold text-gray-700 leading-relaxed max-w-2xl break-keep">
+              현지, 요한, 지연, 시우, 비헌, 상아, 강희, 정민, 백천, 보원, 경주, 나경, 희진, 준수, 성범
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
