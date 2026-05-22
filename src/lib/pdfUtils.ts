@@ -16,7 +16,8 @@ export async function exportEditedPdf(
   originalPdfBuffer: ArrayBuffer,
   editedBoxes: TextBox[],
   imageOverlays: ImageOverlayData[],
-  _scale: number // 하위 호환성을 위해 남겨둠 (사용하지 않음)
+  _scale: number, // 하위 호환성을 위해 남겨둠 (사용하지 않음)
+  filename: string = "edited_document.pdf"
 ) {
   const pdfDoc = await PDFDocument.load(originalPdfBuffer);
   pdfDoc.registerFontkit(fontkit);
@@ -225,7 +226,7 @@ export async function exportEditedPdf(
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = "edited_document.pdf";
+  link.download = filename;
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);

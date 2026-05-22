@@ -525,12 +525,61 @@ export default function PdfEditor({ file }: PdfEditorProps) {
     if (selectedImageId === id) setSelectedImageId(null);
   };
 
+  // 단축키 지원 (삭제, 복사, 붙여넣기)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (status !== "done") return;
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+
+      if (e.key === "Delete" || e.key === "Backspace") {
+        if (selectedImageId) {
+          setImageOverlays((prev) => prev.filter((o) => o.id !== selectedImageId));
+          setSelectedImageId(null);
+        }
+      }
+
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "c") {
+        if (selectedImageId) {
+          const target = imageOverlays.find(o => o.id === selectedImageId);
+          if (target) sessionStorage.setItem("pdfitor_clipboard_overlay", JSON.stringify(target));
+        }
+      }
+
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "v") {
+        const copied = sessionStorage.getItem("pdfitor_clipboard_overlay");
+        if (copied) {
+          const target = JSON.parse(copied) as ImageOverlayData;
+          const newOverlay: ImageOverlayData = {
+            ...target,
+            id: `copy-${Date.now()}`,
+            x: target.x + 20,
+            y: target.y + 20
+          };
+          setImageOverlays(prev => [...prev, newOverlay]);
+          setSelectedImageId(newOverlay.id);
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [status, selectedImageId, imageOverlays]);
+
   const handleExport = async () => {
     if (!pdfBuffer) return;
+    
+    let defaultName = file.name;
+    if (defaultName.toLowerCase().endsWith(".pdf")) {
+      defaultName = defaultName.slice(0, -4);
+    }
+    const exportName = window.prompt("저장할 파일 이름을 입력하세요 (확장자 제외):", defaultName);
+    if (exportName === null) return; 
+    
+    const finalFileName = exportName.trim() === "" ? file.name : `${exportName.trim()}.pdf`;
+
     setStatus("rendering");
     setStatusMsg("새 PDF를 생성하는 중...");
     try {
-      await exportEditedPdf(pdfBuffer, textBoxes, imageOverlays, 1);
+      await exportEditedPdf(pdfBuffer, textBoxes, imageOverlays, 1, finalFileName);
       setStatus("done");
       setStatusMsg("PDF가 다운로드되었습니다!");
     } catch (e: any) {
