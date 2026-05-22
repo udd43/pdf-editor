@@ -344,6 +344,21 @@ export default function PdfEditor({ file }: PdfEditorProps) {
     setNextId((prev) => prev + 1);
   };
 
+  // 영문명 변환 추가 버튼
+  const handleAddRomanizedName = () => {
+    if (status !== "done") return;
+    const koreanName = window.prompt("영문으로 변환할 한글 이름을 입력하세요 (예: 홍길동):", "");
+    if (!koreanName || koreanName.trim() === "") return;
+    
+    // 로마자 변환 후 단어 첫 글자를 대문자로
+    const romanized = koreanToRoman(koreanName.trim())
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+
+    handleAddText(true, romanized);
+  };
+
   const handleToggleTransparent = (id: string) => {
     setTextBoxes((prev) => prev.map((b) => b.id === id ? { ...b, isTransparent: !b.isTransparent, isEdited: true } : b));
   };
@@ -573,14 +588,10 @@ export default function PdfEditor({ file }: PdfEditorProps) {
       defaultName = defaultName.slice(0, -4);
     }
     
-    const exportName = window.prompt("저장할 파일 이름을 입력하세요 (한글로 입력해도 자동으로 영문 변환됩니다):", defaultName);
+    const exportName = window.prompt("저장할 파일 이름을 입력하세요 (확장자 제외):", defaultName);
     if (exportName === null) return; 
     
-    const baseName = exportName.trim() === "" ? defaultName : exportName.trim();
-    
-    // 사용자가 입력한 이름을 소리나는 대로 영문 변환
-    const romanizedFileName = koreanToRoman(baseName);
-    const finalFileName = `${romanizedFileName}.pdf`;
+    const finalFileName = exportName.trim() === "" ? file.name : `${exportName.trim()}.pdf`;
 
     setStatus("rendering");
     setStatusMsg("새 PDF를 생성하는 중...");
@@ -645,6 +656,11 @@ export default function PdfEditor({ file }: PdfEditorProps) {
           <button onClick={() => handleAddText(true)} disabled={status !== "done"}
             className="flex items-center gap-1.5 px-3.5 py-2 bg-white border border-gray-200 text-gray-700 text-xs font-semibold rounded-full hover:bg-gray-50 disabled:opacity-30 transition-all shadow-sm">
             텍스트 추가(투명)
+          </button>
+          <button onClick={handleAddRomanizedName} disabled={status !== "done"}
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-blue-50 border border-blue-200 text-blue-700 text-xs font-bold rounded-full hover:bg-blue-100 disabled:opacity-30 transition-all shadow-sm"
+            title="한글 이름을 입력하면 소리나는 대로 영문으로 변환하여 추가합니다">
+            영문명 변환
           </button>
           <button onClick={() => imageInputRef.current?.click()} disabled={status !== "done"}
             className="flex items-center gap-1.5 px-3.5 py-2 bg-white border border-gray-200 text-gray-700 text-xs font-semibold rounded-full hover:bg-gray-50 disabled:opacity-30 transition-all shadow-sm">
