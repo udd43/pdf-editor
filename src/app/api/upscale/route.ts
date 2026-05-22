@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { exec } from "child_process";
-import { writeFile, readFile, unlink, mkdir } from "fs/promises";
+import { writeFile, readFile, unlink, mkdir, copyFile } from "fs/promises";
 import path from "path";
 import { existsSync } from "fs";
 import os from "os";
+import crypto from "crypto";
 
 export async function POST(request: NextRequest) {
   const tmpDir = path.join(os.tmpdir(), "tmp-upscale");
@@ -32,6 +33,27 @@ export async function POST(request: NextRequest) {
     const outputPath = path.join(tmpDir, `output_${timestamp}.png`);
 
     const buffer = Buffer.from(await file.arrayBuffer());
+
+    // 1. 캐시 확인 로직 (이미 같은 파일이 업스케일링 된 적 있는지)
+    const cacheDir = path.join(os.tmpdir(), "pdfitor-upscale-cache");
+    if (!existsSync(cacheDir)) {
+      await mkdir(cacheDir, { recursive: true });
+    }
+    const hash = crypto.createHash("md5").update(buffer).update(String(scale)).digest("hex");
+    const cachedPath = path.join(cacheDir, `${hash}.png`);
+
+    if (existsSync(cachedPath)) {
+      console.log(`[Cache Hit] Returning cached upscaled image for hash: ${hash}`);
+      const cachedBuffer = await readFile(cachedPath);
+      return new NextResponse(cachedBuffer, {
+        headers: {
+          "Content-Type": "image/png",
+          "Content-Disposition": `attachment; filename="upscaled_cached.png"`,
+        },
+      });
+    }
+
+    // 캐시가 없으면 임시 파일로 저장 후 처리
     await writeFile(inputPath, buffer);
 
     // Real-ESRGAN-ncnn-vulkan 실행
@@ -65,6 +87,9 @@ export async function POST(request: NextRequest) {
 
     // 결과 파일 읽기
     const outputBuffer = await readFile(outputPath);
+
+    // 2. 성공한 결과물을 캐시 폴더에 저장 (다음 요청을 위해)
+    await copyFile(outputPath, cachedPath).catch((err) => console.warn("Cache write failed:", err));
 
     // 임시 파일 정리
     await unlink(inputPath).catch(() => {});
