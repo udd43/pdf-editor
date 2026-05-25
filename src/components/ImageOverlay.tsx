@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useRef, useState } from "react";
-import { Loader2, Scissors, Palette, Trash2, Move } from "lucide-react";
+import { Loader2, Scissors, Palette, Trash2, Move, Download } from "lucide-react";
 import ColorPicker from "./ColorPicker";
 
 export interface ImageOverlayData {
@@ -110,7 +110,7 @@ export default function ImageOverlay({
 
   // 색상 변경 (전경 픽셀에만 적용)
   const handleColorChange = (color: string, opacity: number) => {
-    const srcImage = overlay.removedBgSrc || overlay.displaySrc;
+    const srcImage = overlay.removedBgSrc || overlay.originalSrc;
 
     const img = new Image();
     img.crossOrigin = "anonymous";
@@ -146,6 +146,16 @@ export default function ImageOverlay({
     };
     img.src = srcImage;
     setShowColorPicker(false);
+  };
+
+  const handleDownload = () => {
+    const link = document.createElement("a");
+    link.href = overlay.displaySrc;
+    // Extract base name for custom files
+    link.download = `overlay-${overlay.id}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (
@@ -201,6 +211,15 @@ export default function ImageOverlay({
               title="색상 변경"
             >
               <Palette className="w-4 h-4" />
+            </button>
+
+            {/* 다운로드 */}
+            <button
+              onClick={handleDownload}
+              className="p-1.5 text-gray-600 hover:bg-blue-50 hover:text-blue-600 rounded"
+              title="다운로드"
+            >
+              <Download className="w-4 h-4" />
             </button>
 
             {/* 삭제 */}

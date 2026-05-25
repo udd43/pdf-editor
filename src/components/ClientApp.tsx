@@ -1,13 +1,14 @@
 "use client";
 
 import React, { useState } from "react";
-import { FileText, Scissors, ZoomIn } from "lucide-react";
+import { FileText, Scissors, ZoomIn, Palette } from "lucide-react";
 import PdfUploader from "@/components/PdfUploader";
 import PdfEditor from "@/components/PdfEditor";
 import BgRemover from "@/components/BgRemover";
 import ImageUpscaler from "@/components/ImageUpscaler";
+import ImageColorizer from "@/components/ImageColorizer";
 
-type Tab = "pdf" | "bgremove" | "upscale";
+type Tab = "pdf" | "bgremove" | "upscale" | "colorize";
 
 export default function ClientApp() {
   const [file, setFile] = useState<File | null>(null);
@@ -43,6 +44,7 @@ export default function ClientApp() {
     { id: "pdf", label: "PDF 편집", icon: <FileText className="w-3.5 h-3.5" />, color: "text-gray-600", activeBg: "bg-white text-gray-900 shadow-sm" },
     { id: "bgremove", label: "누끼따기", icon: <Scissors className="w-3.5 h-3.5" />, color: "text-gray-600", activeBg: "bg-white text-gray-900 shadow-sm" },
     { id: "upscale", label: "업스케일링", icon: <ZoomIn className="w-3.5 h-3.5" />, color: "text-gray-600", activeBg: "bg-white text-gray-900 shadow-sm" },
+    { id: "colorize", label: "색상 변경", icon: <Palette className="w-3.5 h-3.5" />, color: "text-gray-600", activeBg: "bg-white text-gray-900 shadow-sm" },
   ];
 
   return (
@@ -129,6 +131,7 @@ export default function ClientApp() {
         )}
         {activeTab === "bgremove" && <BgRemover />}
         {activeTab === "upscale" && <ImageUpscaler />}
+        {activeTab === "colorize" && <ImageColorizer />}
       </main>
 
       {/* 푸터 */}

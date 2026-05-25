@@ -68,7 +68,7 @@ export default function PdfEditor({ file }: PdfEditorProps) {
   const dragOffset = useRef({ x: 0, y: 0 });
   const resizeStart = useRef({ x: 0, y: 0, w: 0, h: 0 });
   
-  const pdfDocRef = useRef<pdfjsLib.PDFDocumentProxy | null>(null);
+  const [pdfDoc, setPdfDoc] = useState<pdfjsLib.PDFDocumentProxy | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [numPages, setNumPages] = useState(1);
 
@@ -78,6 +78,14 @@ export default function PdfEditor({ file }: PdfEditorProps) {
       try {
         setStatus("rendering");
         setStatusMsg("PDF 파일을 읽는 중...");
+        
+        // Reset states to prevent state leakage from previous PDF
+        setTextBoxes([]);
+        setImageOverlays([]);
+        setSelectedImageId(null);
+        setNextId(0);
+        setExtractedTexts([]);
+
         const arrayBuffer = await file.arrayBuffer();
         if (!isMounted) return;
         const bufferCopy = arrayBuffer.slice(0);
@@ -88,7 +96,7 @@ export default function PdfEditor({ file }: PdfEditorProps) {
         const pdf = await loadingTask.promise;
         if (!isMounted) return;
         
-        pdfDocRef.current = pdf;
+        setPdfDoc(pdf);
         setNumPages(pdf.numPages);
         setCurrentPage(1);
       } catch (error: any) {
@@ -103,7 +111,7 @@ export default function PdfEditor({ file }: PdfEditorProps) {
   useEffect(() => {
     let isMounted = true;
     const renderPage = async () => {
-      const pdf = pdfDocRef.current;
+      const pdf = pdfDoc;
       if (!pdf) return;
       try {
         setStatus("rendering");
@@ -129,7 +137,7 @@ export default function PdfEditor({ file }: PdfEditorProps) {
     };
     renderPage();
     return () => { isMounted = false; };
-  }, [currentPage, scale, numPages]);
+  }, [currentPage, scale, pdfDoc]);
 
   // 이미지 추가 시 적절한 크기와 겹치지 않는 위치를 계산하는 헬퍼 함수
   const getOptimizedImageCoords = (imgW: number, imgH: number, currentImagesCount: number) => {

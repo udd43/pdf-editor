@@ -22,7 +22,8 @@ export default function PdfUploader({ onFileSelect }: PdfUploaderProps) {
   }, []);
 
   const processFile = async (file: File) => {
-    if (file.type === "application/pdf") {
+    const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+    if (isPdf) {
       onFileSelect(file);
     } else if (file.type.startsWith("image/")) {
       try {

@@ -1,34 +1,42 @@
 "use client";
-
+ 
 import React, { useRef, useState, useEffect, useCallback } from "react";
-import { X, Trash2, Check, Undo2 } from "lucide-react";
-
+import { X, Trash2, Check, Undo2, Download } from "lucide-react";
+ 
 interface SignaturePadProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (dataUrl: string, width: number, height: number) => void;
 }
-
+ 
 interface Point {
   x: number;
   y: number;
 }
-
+ 
 interface Stroke {
   points: Point[];
   color: string;
   width: number;
 }
-
+ 
 export default function SignaturePad({ isOpen, onClose, onSave }: SignaturePadProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [penWidth, setPenWidth] = useState(3);
+  const [penColor, setPenColor] = useState("#000000");
   const [strokes, setStrokes] = useState<Stroke[]>([]);
   const [currentStroke, setCurrentStroke] = useState<Point[]>([]);
-
+ 
   const CANVAS_WIDTH = 560;
   const CANVAS_HEIGHT = 280;
+ 
+  const presetColors = [
+    { value: "#000000", label: "검정" },
+    { value: "#EF4444", label: "빨강" },
+    { value: "#3B82F6", label: "파랑" },
+    { value: "#22C55E", label: "초록" },
+  ];
 
   const widths = [
     { value: 1, label: "가늘게" },
@@ -49,7 +57,7 @@ export default function SignaturePad({ isOpen, onClose, onSave }: SignaturePadPr
     for (const stroke of strokes) {
       if (stroke.points.length < 2) continue;
       ctx.beginPath();
-      ctx.strokeStyle = "#000000";
+      ctx.strokeStyle = stroke.color;
       ctx.lineWidth = stroke.width;
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
@@ -106,7 +114,7 @@ export default function SignaturePad({ isOpen, onClose, onSave }: SignaturePadPr
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     ctx.beginPath();
-    ctx.fillStyle = "#000000";
+    ctx.fillStyle = penColor;
     ctx.arc(point.x, point.y, penWidth / 2, 0, Math.PI * 2);
     ctx.fill();
   };
@@ -125,7 +133,7 @@ export default function SignaturePad({ isOpen, onClose, onSave }: SignaturePadPr
     const pts = [...currentStroke, point];
     if (pts.length >= 2) {
       ctx.beginPath();
-      ctx.strokeStyle = "#000000";
+      ctx.strokeStyle = penColor;
       ctx.lineWidth = penWidth;
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
@@ -139,7 +147,7 @@ export default function SignaturePad({ isOpen, onClose, onSave }: SignaturePadPr
     if (!isDrawing) return;
     setIsDrawing(false);
     if (currentStroke.length > 0) {
-      setStrokes(prev => [...prev, { points: currentStroke, color: "#000000", width: penWidth }]);
+      setStrokes(prev => [...prev, { points: currentStroke, color: penColor, width: penWidth }]);
       setCurrentStroke([]);
     }
   };
@@ -195,7 +203,7 @@ export default function SignaturePad({ isOpen, onClose, onSave }: SignaturePadPr
     for (const stroke of strokes) {
       if (stroke.points.length < 2) continue;
       cropCtx.beginPath();
-      cropCtx.strokeStyle = "#000000";
+      cropCtx.strokeStyle = stroke.color;
       cropCtx.lineWidth = stroke.width;
       cropCtx.lineCap = "round";
       cropCtx.lineJoin = "round";
@@ -209,6 +217,63 @@ export default function SignaturePad({ isOpen, onClose, onSave }: SignaturePadPr
     const dataUrl = cropCanvas.toDataURL("image/png");
     onSave(dataUrl, cropW, cropH);
     onClose();
+  };
+
+  const handleDownload = () => {
+    const canvas = canvasRef.current;
+    if (!canvas || strokes.length === 0) return;
+
+    // 그려진 영역의 바운딩 박스 계산
+    let minX = CANVAS_WIDTH, minY = CANVAS_HEIGHT, maxX = 0, maxY = 0;
+    for (const stroke of strokes) {
+      for (const point of stroke.points) {
+        minX = Math.min(minX, point.x - stroke.width);
+        minY = Math.min(minY, point.y - stroke.width);
+        maxX = Math.max(maxX, point.x + stroke.width);
+        maxY = Math.max(maxY, point.y + stroke.width);
+      }
+    }
+
+    // 여백 추가
+    const padding = 8;
+    minX = Math.max(0, minX - padding);
+    minY = Math.max(0, minY - padding);
+    maxX = Math.min(CANVAS_WIDTH, maxX + padding);
+    maxY = Math.min(CANVAS_HEIGHT, maxY + padding);
+
+    const cropW = maxX - minX;
+    const cropH = maxY - minY;
+
+    if (cropW <= 0 || cropH <= 0) return;
+
+    const cropCanvas = document.createElement("canvas");
+    cropCanvas.width = cropW;
+    cropCanvas.height = cropH;
+    const cropCtx = cropCanvas.getContext("2d");
+    if (!cropCtx) return;
+
+    // 투명 배경으로 스트로크 그리기
+    for (const stroke of strokes) {
+      if (stroke.points.length < 2) continue;
+      cropCtx.beginPath();
+      cropCtx.strokeStyle = stroke.color;
+      cropCtx.lineWidth = stroke.width;
+      cropCtx.lineCap = "round";
+      cropCtx.lineJoin = "round";
+      cropCtx.moveTo(stroke.points[0].x - minX, stroke.points[0].y - minY);
+      for (let i = 1; i < stroke.points.length; i++) {
+        cropCtx.lineTo(stroke.points[i].x - minX, stroke.points[i].y - minY);
+      }
+      cropCtx.stroke();
+    }
+
+    const dataUrl = cropCanvas.toDataURL("image/png");
+    const link = document.createElement("a");
+    link.href = dataUrl;
+    link.download = `signature-${Date.now()}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   if (!isOpen) return null;
@@ -245,6 +310,31 @@ export default function SignaturePad({ isOpen, onClose, onSave }: SignaturePadPr
                 {w.label}
               </button>
             ))}
+          </div>
+
+          {/* 색상 선택 */}
+          <div className="flex items-center gap-1.5 ml-2 border-l pl-4 border-gray-200">
+            <span className="text-xs text-gray-500 font-medium mr-1">색상</span>
+            {presetColors.map((c) => (
+              <button
+                key={c.value}
+                onClick={() => setPenColor(c.value)}
+                className={`w-5 h-5 rounded-full border transition-all ${
+                  penColor === c.value
+                    ? "ring-2 ring-blue-500 ring-offset-1 scale-110"
+                    : "border-gray-300 hover:scale-105"
+                }`}
+                style={{ backgroundColor: c.value }}
+                title={c.label}
+              />
+            ))}
+            <input
+              type="color"
+              value={penColor}
+              onChange={(e) => setPenColor(e.target.value)}
+              className="w-5 h-5 rounded-full border border-gray-300 cursor-pointer overflow-hidden p-0 bg-transparent outline-none"
+              title="사용자 지정 색상"
+            />
           </div>
 
           <div className="flex-1" />
@@ -293,6 +383,13 @@ export default function SignaturePad({ isOpen, onClose, onSave }: SignaturePadPr
 
         {/* 하단 버튼 */}
         <div className="flex items-center justify-end gap-2 px-5 py-3.5 border-t bg-gray-50/80">
+          <button
+            onClick={handleDownload}
+            disabled={strokes.length === 0}
+            className="flex items-center gap-1.5 px-4 py-2 text-sm text-gray-700 bg-white border rounded-lg hover:bg-gray-100 disabled:opacity-40 transition-colors font-medium mr-auto"
+          >
+            <Download className="w-4 h-4 text-gray-600" /> 그림 다운로드
+          </button>
           <button
             onClick={onClose}
             className="px-5 py-2 text-sm text-gray-600 bg-white border rounded-lg hover:bg-gray-100 transition-colors font-medium"
