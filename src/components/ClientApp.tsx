@@ -9,9 +9,10 @@ import ImageUpscaler from "@/components/ImageUpscaler";
 import ImageColorizer from "@/components/ImageColorizer";
 import RomanizerTab from "@/components/RomanizerTab";
 import SignatureTab from "@/components/SignatureTab";
-import { Languages, PenTool } from "lucide-react";
+import CalculatorTab from "@/components/CalculatorTab";
+import { Languages, PenTool, Calculator } from "lucide-react";
 
-type Tab = "pdf" | "bgremove" | "upscale" | "colorize" | "romanize" | "signature";
+type Tab = "pdf" | "bgremove" | "upscale" | "colorize" | "romanize" | "signature" | "calculator";
 
 export default function ClientApp() {
   const [file, setFile] = useState<File | null>(null);
@@ -50,6 +51,7 @@ export default function ClientApp() {
     { id: "colorize", label: "색상 변경", icon: <Palette className="w-3.5 h-3.5" />, color: "text-gray-600", activeBg: "bg-white text-gray-900 shadow-sm" },
     { id: "romanize", label: "영문명 변환", icon: <Languages className="w-3.5 h-3.5" />, color: "text-gray-600", activeBg: "bg-white text-gray-900 shadow-sm" },
     { id: "signature", label: "서명 그리기", icon: <PenTool className="w-3.5 h-3.5" />, color: "text-gray-600", activeBg: "bg-white text-gray-900 shadow-sm" },
+    { id: "calculator", label: "계산기", icon: <Calculator className="w-3.5 h-3.5" />, color: "text-gray-600", activeBg: "bg-white text-gray-900 shadow-sm" },
   ];
 
   return (
@@ -139,6 +141,7 @@ export default function ClientApp() {
         {activeTab === "colorize" && <ImageColorizer />}
         {activeTab === "romanize" && <RomanizerTab />}
         {activeTab === "signature" && <SignatureTab />}
+        {activeTab === "calculator" && <CalculatorTab />}
       </main>
 
       {/* 푸터 */}
