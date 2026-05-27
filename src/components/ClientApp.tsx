@@ -10,6 +10,7 @@ import ImageColorizer from "@/components/ImageColorizer";
 import RomanizerTab from "@/components/RomanizerTab";
 import SignatureTab from "@/components/SignatureTab";
 import CalculatorTab from "@/components/CalculatorTab";
+import ChangelogModal from "@/components/ChangelogModal";
 import { Languages, PenTool, Calculator } from "lucide-react";
 
 type Tab = "pdf" | "bgremove" | "upscale" | "colorize" | "romanize" | "signature" | "calculator";
@@ -21,6 +22,7 @@ export default function ClientApp() {
   
   const [secretClickCount, setSecretClickCount] = useState(0);
   const [showEasterEgg, setShowEasterEgg] = useState(false);
+  const [showChangelog, setShowChangelog] = useState(false);
 
   const handleSecretClick = () => {
     if (showEasterEgg) return;
@@ -147,7 +149,12 @@ export default function ClientApp() {
       {/* 푸터 */}
       <footer className="bg-gray-50 py-8 border-t border-gray-200 z-10 mt-12">
         <div className="max-w-6xl mx-auto px-6 flex items-center justify-between text-gray-400 text-xs">
-          <span className="font-mono bg-gray-100 border border-gray-200 px-2 py-0.5 rounded-md text-gray-500">v{process.env.NEXT_PUBLIC_APP_VERSION}</span>
+          <button 
+            onClick={() => setShowChangelog(true)}
+            className="font-mono bg-gray-100 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 border border-gray-200 px-2 py-0.5 rounded-md text-gray-500 transition-colors cursor-pointer"
+          >
+            v{process.env.NEXT_PUBLIC_APP_VERSION}
+          </button>
           <span className="font-medium">&copy; 2026 PDF Editor &middot; Private by default.</span>
         </div>
       </footer>
@@ -179,6 +186,9 @@ export default function ClientApp() {
           </div>
         </div>
       )}
+
+      {/* 업데이트 내역 모달 */}
+      <ChangelogModal isOpen={showChangelog} onClose={() => setShowChangelog(false)} />
     </div>
   );
 }
