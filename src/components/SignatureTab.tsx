@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useRef, useState, useEffect, useCallback } from "react";
-import { Trash2, Undo2, Download, PenTool } from "lucide-react";
+import { Trash2, Undo2, Download, PenTool, Type, Edit3 } from "lucide-react";
 
 interface Point {
   x: number;
@@ -14,17 +14,27 @@ interface Stroke {
   width: number;
 }
 
+const FONTS = [
+  { name: "Nanum Pen Script", label: "나눔 펜" },
+  { name: "Nanum Brush Script", label: "나눔 브러쉬" },
+  { name: "Hi Melody", label: "하이 멜로디" },
+  { name: "Caveat", label: "영문 필기체" } // 영문 전용이지만 추가
+];
+
 export default function SignatureTab() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   
+  const [mode, setMode] = useState<"draw" | "type">("draw");
+  const [typedText, setTypedText] = useState("");
+  const [selectedFont, setSelectedFont] = useState(FONTS[0].name);
+
   const [isDrawing, setIsDrawing] = useState(false);
   const [penWidth, setPenWidth] = useState(3);
   const [penColor, setPenColor] = useState("#000000");
   const [strokes, setStrokes] = useState<Stroke[]>([]);
   const [currentStroke, setCurrentStroke] = useState<Point[]>([]);
   
-  // Use state for dimensions so canvas can resize based on container
   const [dimensions, setDimensions] = useState({ width: 800, height: 400 });
 
   const presetColors = [
@@ -55,6 +65,35 @@ export default function SignatureTab() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  const drawTextOnCanvas = useCallback(async () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    ctx.clearRect(0, 0, dimensions.width, dimensions.height);
+
+    if (mode === "type" && typedText) {
+      const fontSize = 80;
+      const fontString = `${fontSize}px "${selectedFont}"`;
+      
+      try {
+        // 폰트가 로드될 때까지 기다림
+        await document.fonts.load(fontString);
+      } catch (e) {
+        console.error("Font load error", e);
+      }
+
+      ctx.font = fontString;
+      ctx.fillStyle = penColor;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      
+      // 텍스트를 캔버스 중앙에 배치
+      ctx.fillText(typedText, dimensions.width / 2, dimensions.height / 2);
+    }
+  }, [typedText, selectedFont, penColor, dimensions, mode]);
+
   const redrawCanvas = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -63,20 +102,24 @@ export default function SignatureTab() {
 
     ctx.clearRect(0, 0, dimensions.width, dimensions.height);
 
-    for (const stroke of strokes) {
-      if (stroke.points.length < 2) continue;
-      ctx.beginPath();
-      ctx.strokeStyle = stroke.color;
-      ctx.lineWidth = stroke.width;
-      ctx.lineCap = "round";
-      ctx.lineJoin = "round";
-      ctx.moveTo(stroke.points[0].x, stroke.points[0].y);
-      for (let i = 1; i < stroke.points.length; i++) {
-        ctx.lineTo(stroke.points[i].x, stroke.points[i].y);
+    if (mode === "draw") {
+      for (const stroke of strokes) {
+        if (stroke.points.length < 2) continue;
+        ctx.beginPath();
+        ctx.strokeStyle = stroke.color;
+        ctx.lineWidth = stroke.width;
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+        ctx.moveTo(stroke.points[0].x, stroke.points[0].y);
+        for (let i = 1; i < stroke.points.length; i++) {
+          ctx.lineTo(stroke.points[i].x, stroke.points[i].y);
+        }
+        ctx.stroke();
       }
-      ctx.stroke();
+    } else {
+      drawTextOnCanvas();
     }
-  }, [strokes, dimensions]);
+  }, [strokes, dimensions, mode, drawTextOnCanvas]);
 
   useEffect(() => {
     redrawCanvas();
@@ -104,6 +147,7 @@ export default function SignatureTab() {
   };
 
   const handlePointerDown = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    if (mode !== "draw") return;
     e.preventDefault();
     setIsDrawing(true);
     const point = getCanvasPoint(e);
@@ -120,7 +164,7 @@ export default function SignatureTab() {
   };
 
   const handlePointerMove = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
-    if (!isDrawing) return;
+    if (mode !== "draw" || !isDrawing) return;
     e.preventDefault();
     const point = getCanvasPoint(e);
     setCurrentStroke(prev => [...prev, point]);
@@ -143,7 +187,7 @@ export default function SignatureTab() {
   };
 
   const handlePointerUp = () => {
-    if (!isDrawing) return;
+    if (mode !== "draw" || !isDrawing) return;
     setIsDrawing(false);
     if (currentStroke.length > 0) {
       setStrokes(prev => [...prev, { points: currentStroke, color: penColor, width: penWidth }]);
@@ -152,28 +196,48 @@ export default function SignatureTab() {
   };
 
   const handleUndo = () => {
-    setStrokes(prev => prev.slice(0, -1));
+    if (mode === "draw") {
+      setStrokes(prev => prev.slice(0, -1));
+    }
   };
 
   const handleClear = () => {
-    if (confirm("모든 서명을 지우시겠습니까?")) {
-      setStrokes([]);
-      setCurrentStroke([]);
+    if (mode === "draw") {
+      if (strokes.length > 0 && confirm("모든 서명을 지우시겠습니까?")) {
+        setStrokes([]);
+        setCurrentStroke([]);
+      }
+    } else {
+      setTypedText("");
     }
   };
 
   const handleDownload = () => {
     const canvas = canvasRef.current;
-    if (!canvas || strokes.length === 0) return;
+    if (!canvas) return;
+    
+    // 그리기 모드일 때 스트로크가 없으면 불가, 텍스트 모드일 때 텍스트가 없으면 불가
+    if (mode === "draw" && strokes.length === 0) return;
+    if (mode === "type" && !typedText) return;
 
-    // 바운딩 박스 계산 (그려진 영역만)
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    // 이미지 데이터에서 실제 픽셀이 있는 영역 찾기
+    const imgData = ctx.getImageData(0, 0, dimensions.width, dimensions.height);
+    const data = imgData.data;
+
     let minX = dimensions.width, minY = dimensions.height, maxX = 0, maxY = 0;
-    for (const stroke of strokes) {
-      for (const point of stroke.points) {
-        minX = Math.min(minX, point.x - stroke.width);
-        minY = Math.min(minY, point.y - stroke.width);
-        maxX = Math.max(maxX, point.x + stroke.width);
-        maxY = Math.max(maxY, point.y + stroke.width);
+    
+    for (let y = 0; y < dimensions.height; y++) {
+      for (let x = 0; x < dimensions.width; x++) {
+        const alpha = data[(y * dimensions.width + x) * 4 + 3];
+        if (alpha > 10) {
+          minX = Math.min(minX, x);
+          minY = Math.min(minY, y);
+          maxX = Math.max(maxX, x);
+          maxY = Math.max(maxY, y);
+        }
       }
     }
 
@@ -194,19 +258,8 @@ export default function SignatureTab() {
     const cropCtx = cropCanvas.getContext("2d");
     if (!cropCtx) return;
 
-    for (const stroke of strokes) {
-      if (stroke.points.length < 2) continue;
-      cropCtx.beginPath();
-      cropCtx.strokeStyle = stroke.color;
-      cropCtx.lineWidth = stroke.width;
-      cropCtx.lineCap = "round";
-      cropCtx.lineJoin = "round";
-      cropCtx.moveTo(stroke.points[0].x - minX, stroke.points[0].y - minY);
-      for (let i = 1; i < stroke.points.length; i++) {
-        cropCtx.lineTo(stroke.points[i].x - minX, stroke.points[i].y - minY);
-      }
-      cropCtx.stroke();
-    }
+    // 원본 캔버스에서 잘라낼 영역을 새 캔버스에 그리기
+    cropCtx.putImageData(ctx.getImageData(minX, minY, cropW, cropH), 0, 0);
 
     const dataUrl = cropCanvas.toDataURL("image/png");
     const link = document.createElement("a");
@@ -219,38 +272,96 @@ export default function SignatureTab() {
 
   return (
     <div className="w-full max-w-4xl mx-auto py-8 px-4" ref={containerRef}>
+      <style dangerouslySetInnerHTML={{ __html: `
+        @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Nanum+Brush+Script&family=Nanum+Pen+Script&family=Hi+Melody&display=swap');
+      `}} />
       <div className="bg-white rounded-3xl shadow-sm border border-gray-200 overflow-hidden">
         {/* 헤더 */}
-        <div className="flex items-center gap-3 px-8 py-6 border-b border-gray-100">
-          <div className="w-12 h-12 bg-blue-50 text-blue-500 rounded-2xl flex items-center justify-center border border-blue-100">
-            <PenTool className="w-6 h-6" />
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-8 py-6 border-b border-gray-100">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-blue-50 text-blue-500 rounded-2xl flex items-center justify-center border border-blue-100 shrink-0">
+              <PenTool className="w-6 h-6" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-gray-900" style={{ fontFamily: "Inter, sans-serif" }}>서명 만들기</h2>
+              <p className="text-sm text-gray-500">투명 배경의 서명 이미지를 만들어 저장하세요</p>
+            </div>
           </div>
-          <div>
-            <h2 className="text-xl font-bold text-gray-900" style={{ fontFamily: "Inter, sans-serif" }}>서명 그리기</h2>
-            <p className="text-sm text-gray-500">투명 배경의 서명 이미지를 만들어 저장하세요</p>
+          
+          {/* 모드 전환 토글 */}
+          <div className="flex bg-gray-100 p-1 rounded-xl shrink-0">
+            <button
+              onClick={() => setMode("draw")}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                mode === "draw" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              <Edit3 className="w-4 h-4" />
+              직접 그리기
+            </button>
+            <button
+              onClick={() => setMode("type")}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                mode === "type" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              <Type className="w-4 h-4" />
+              텍스트로 만들기
+            </button>
           </div>
         </div>
 
         {/* 툴바 */}
         <div className="flex flex-wrap items-center gap-6 px-8 py-4 bg-gray-50/50 border-b border-gray-100">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-gray-600 w-8">굵기</span>
-            <div className="flex gap-1.5">
-              {widths.map((w) => (
-                <button
-                  key={w.value}
-                  onClick={() => setPenWidth(w.value)}
-                  className={`px-3 py-1.5 text-xs rounded-lg transition-all font-medium ${
-                    penWidth === w.value
-                      ? "bg-blue-600 text-white shadow-sm"
-                      : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
-                  }`}
-                >
-                  {w.label}
-                </button>
-              ))}
+          {mode === "draw" && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-gray-600 w-8">굵기</span>
+              <div className="flex gap-1.5">
+                {widths.map((w) => (
+                  <button
+                    key={w.value}
+                    onClick={() => setPenWidth(w.value)}
+                    className={`px-3 py-1.5 text-xs rounded-lg transition-all font-medium ${
+                      penWidth === w.value
+                        ? "bg-blue-600 text-white shadow-sm"
+                        : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
+                    }`}
+                  >
+                    {w.label}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
+
+          {mode === "type" && (
+            <div className="flex items-center gap-4 flex-1">
+              <div className="flex-1 max-w-xs">
+                <input
+                  type="text"
+                  value={typedText}
+                  onChange={(e) => setTypedText(e.target.value)}
+                  placeholder="서명할 이름을 입력하세요 (예: 김길동)"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-sm"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-gray-600">폰트</span>
+                <select
+                  value={selectedFont}
+                  onChange={(e) => setSelectedFont(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-lg outline-none focus:border-blue-500 text-sm"
+                  style={{ fontFamily: selectedFont }}
+                >
+                  {FONTS.map(f => (
+                    <option key={f.name} value={f.name} style={{ fontFamily: f.name, fontSize: '16px' }}>
+                      {f.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          )}
 
           <div className="flex items-center gap-2">
             <span className="text-xs font-semibold text-gray-600 w-8">색상</span>
@@ -281,16 +392,18 @@ export default function SignatureTab() {
           <div className="flex-1" />
 
           <div className="flex gap-2">
-            <button
-              onClick={handleUndo}
-              disabled={strokes.length === 0}
-              className="flex items-center gap-1.5 px-3 py-2 text-sm text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 disabled:opacity-40 transition-colors shadow-sm"
-            >
-              <Undo2 className="w-4 h-4" /> 되돌리기
-            </button>
+            {mode === "draw" && (
+              <button
+                onClick={handleUndo}
+                disabled={strokes.length === 0}
+                className="flex items-center gap-1.5 px-3 py-2 text-sm text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 disabled:opacity-40 transition-colors shadow-sm"
+              >
+                <Undo2 className="w-4 h-4" /> 되돌리기
+              </button>
+            )}
             <button
               onClick={handleClear}
-              disabled={strokes.length === 0}
+              disabled={mode === "draw" ? strokes.length === 0 : typedText.length === 0}
               className="flex items-center gap-1.5 px-3 py-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl hover:bg-red-100 disabled:opacity-40 transition-colors shadow-sm font-medium"
             >
               <Trash2 className="w-4 h-4" /> 지우기
@@ -305,7 +418,7 @@ export default function SignatureTab() {
               ref={canvasRef}
               width={dimensions.width}
               height={dimensions.height}
-              className="block w-full h-full cursor-crosshair touch-none"
+              className={`block w-full h-full touch-none ${mode === "draw" ? "cursor-crosshair" : "cursor-default"}`}
               onMouseDown={handlePointerDown}
               onMouseMove={handlePointerMove}
               onMouseUp={handlePointerUp}
@@ -314,10 +427,10 @@ export default function SignatureTab() {
               onTouchMove={handlePointerMove}
               onTouchEnd={handlePointerUp}
             />
-            {strokes.length === 0 && !isDrawing && (
+            {((mode === "draw" && strokes.length === 0 && !isDrawing) || (mode === "type" && !typedText)) && (
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                 <p className="text-gray-400 font-medium select-none bg-white/80 px-4 py-2 rounded-full backdrop-blur-sm">
-                  이 영역에 서명이나 그림을 그려보세요
+                  {mode === "draw" ? "이 영역에 서명을 그려보세요" : "위 입력칸에 이름을 입력하면 서명이 생성됩니다"}
                 </p>
               </div>
             )}
@@ -329,7 +442,7 @@ export default function SignatureTab() {
           <p className="text-xs text-gray-500">다운로드 시 빈 여백은 자동으로 잘라내어 투명 배경으로 저장됩니다.</p>
           <button
             onClick={handleDownload}
-            disabled={strokes.length === 0}
+            disabled={mode === "draw" ? strokes.length === 0 : typedText.length === 0}
             className="flex items-center gap-2 px-6 py-2.5 text-sm text-white bg-blue-600 rounded-xl hover:bg-blue-700 disabled:opacity-40 transition-all font-semibold shadow-sm hover:shadow active:scale-95"
           >
             <Download className="w-4 h-4" /> 투명 PNG 다운로드
