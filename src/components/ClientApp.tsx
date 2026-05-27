@@ -7,8 +7,11 @@ import PdfEditor from "@/components/PdfEditor";
 import BgRemover from "@/components/BgRemover";
 import ImageUpscaler from "@/components/ImageUpscaler";
 import ImageColorizer from "@/components/ImageColorizer";
+import RomanizerTab from "@/components/RomanizerTab";
+import SignatureTab from "@/components/SignatureTab";
+import { Languages, PenTool } from "lucide-react";
 
-type Tab = "pdf" | "bgremove" | "upscale" | "colorize";
+type Tab = "pdf" | "bgremove" | "upscale" | "colorize" | "romanize" | "signature";
 
 export default function ClientApp() {
   const [file, setFile] = useState<File | null>(null);
@@ -45,6 +48,8 @@ export default function ClientApp() {
     { id: "bgremove", label: "누끼따기", icon: <Scissors className="w-3.5 h-3.5" />, color: "text-gray-600", activeBg: "bg-white text-gray-900 shadow-sm" },
     { id: "upscale", label: "업스케일링", icon: <ZoomIn className="w-3.5 h-3.5" />, color: "text-gray-600", activeBg: "bg-white text-gray-900 shadow-sm" },
     { id: "colorize", label: "색상 변경", icon: <Palette className="w-3.5 h-3.5" />, color: "text-gray-600", activeBg: "bg-white text-gray-900 shadow-sm" },
+    { id: "romanize", label: "영문명 변환", icon: <Languages className="w-3.5 h-3.5" />, color: "text-gray-600", activeBg: "bg-white text-gray-900 shadow-sm" },
+    { id: "signature", label: "서명 그리기", icon: <PenTool className="w-3.5 h-3.5" />, color: "text-gray-600", activeBg: "bg-white text-gray-900 shadow-sm" },
   ];
 
   return (
@@ -132,6 +137,8 @@ export default function ClientApp() {
         {activeTab === "bgremove" && <BgRemover />}
         {activeTab === "upscale" && <ImageUpscaler />}
         {activeTab === "colorize" && <ImageColorizer />}
+        {activeTab === "romanize" && <RomanizerTab />}
+        {activeTab === "signature" && <SignatureTab />}
       </main>
 
       {/* 푸터 */}
