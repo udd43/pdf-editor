@@ -8,6 +8,21 @@ interface ChangelogModalProps {
 
 const CHANGELOG_DATA = [
   {
+    version: "v1.0.42",
+    date: "2026-05-28",
+    changes: [
+      "지분율 계산기 - 보통주 및 우선주 입력 분리 적용",
+      "보통주 기준 의결권 지분율 및 보통주+우선주 기준 전체 경제적 지분율 동시 확인 기능 추가"
+    ]
+  },
+  {
+    version: "v1.0.41",
+    date: "2026-05-28",
+    changes: [
+      "좌측 하단 버전명 클릭 시 업데이트 내역 모달 표시 기능 추가"
+    ]
+  },
+  {
     version: "v1.0.40",
     date: "2026-05-28",
     changes: [

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Calculator, PieChart, RotateCcw, Delete } from "lucide-react";
+import { Calculator, PieChart, RotateCcw, Delete, Info } from "lucide-react";
 
 type CalcMode = "general" | "equity";
 
@@ -16,10 +16,15 @@ export default function CalculatorTab() {
   const [waitingForNewValue, setWaitingForNewValue] = useState(false);
 
   // === 주식 지분율 계산기 상태 ===
-  const [totalShares, setTotalShares] = useState<string>("");
-  const [myShares, setMyShares] = useState<string>("");
-  const [newIssuedShares, setNewIssuedShares] = useState<string>("");
-  const [newBuyShares, setNewBuyShares] = useState<string>("");
+  const [totalCommon, setTotalCommon] = useState<string>("");
+  const [totalPreferred, setTotalPreferred] = useState<string>("");
+  const [myCommon, setMyCommon] = useState<string>("");
+  const [myPreferred, setMyPreferred] = useState<string>("");
+
+  const [newIssuedCommon, setNewIssuedCommon] = useState<string>("");
+  const [newIssuedPreferred, setNewIssuedPreferred] = useState<string>("");
+  const [newBuyCommon, setNewBuyCommon] = useState<string>("");
+  const [newBuyPreferred, setNewBuyPreferred] = useState<string>("");
 
   // ==============================
   // 일반 계산기 로직
@@ -101,22 +106,48 @@ export default function CalculatorTab() {
   // ==============================
   // 지분율 계산 로직
   // ==============================
-  const currentEquity = () => {
-    const total = parseFloat(totalShares.replace(/,/g, "")) || 0;
-    const mine = parseFloat(myShares.replace(/,/g, "")) || 0;
+  const currentVotingEquity = () => {
+    const total = parseFloat(totalCommon.replace(/,/g, "")) || 0;
+    const mine = parseFloat(myCommon.replace(/,/g, "")) || 0;
     if (total === 0) return 0;
     return (mine / total) * 100;
   };
 
-  const expectedEquity = () => {
-    const total = parseFloat(totalShares.replace(/,/g, "")) || 0;
-    const mine = parseFloat(myShares.replace(/,/g, "")) || 0;
-    const newIssued = parseFloat(newIssuedShares.replace(/,/g, "")) || 0;
-    const newBuy = parseFloat(newBuyShares.replace(/,/g, "")) || 0;
+  const currentTotalEquity = () => {
+    const tC = parseFloat(totalCommon.replace(/,/g, "")) || 0;
+    const tP = parseFloat(totalPreferred.replace(/,/g, "")) || 0;
+    const mC = parseFloat(myCommon.replace(/,/g, "")) || 0;
+    const mP = parseFloat(myPreferred.replace(/,/g, "")) || 0;
+    const total = tC + tP;
+    const mine = mC + mP;
+    if (total === 0) return 0;
+    return (mine / total) * 100;
+  };
+
+  const expectedVotingEquity = () => {
+    const total = parseFloat(totalCommon.replace(/,/g, "")) || 0;
+    const mine = parseFloat(myCommon.replace(/,/g, "")) || 0;
+    const newIssued = parseFloat(newIssuedCommon.replace(/,/g, "")) || 0;
+    const newBuy = parseFloat(newBuyCommon.replace(/,/g, "")) || 0;
     
     const expectedTotal = total + newIssued;
     const expectedMine = mine + newBuy;
+    if (expectedTotal === 0) return 0;
+    return (expectedMine / expectedTotal) * 100;
+  };
 
+  const expectedTotalEquity = () => {
+    const tC = parseFloat(totalCommon.replace(/,/g, "")) || 0;
+    const tP = parseFloat(totalPreferred.replace(/,/g, "")) || 0;
+    const mC = parseFloat(myCommon.replace(/,/g, "")) || 0;
+    const mP = parseFloat(myPreferred.replace(/,/g, "")) || 0;
+    const nIC = parseFloat(newIssuedCommon.replace(/,/g, "")) || 0;
+    const nIP = parseFloat(newIssuedPreferred.replace(/,/g, "")) || 0;
+    const nBC = parseFloat(newBuyCommon.replace(/,/g, "")) || 0;
+    const nBP = parseFloat(newBuyPreferred.replace(/,/g, "")) || 0;
+    
+    const expectedTotal = tC + tP + nIC + nIP;
+    const expectedMine = mC + mP + nBC + nBP;
     if (expectedTotal === 0) return 0;
     return (expectedMine / expectedTotal) * 100;
   };
@@ -128,11 +159,17 @@ export default function CalculatorTab() {
   };
 
   const clearEquity = () => {
-    setTotalShares("");
-    setMyShares("");
-    setNewIssuedShares("");
-    setNewBuyShares("");
+    setTotalCommon("");
+    setTotalPreferred("");
+    setMyCommon("");
+    setMyPreferred("");
+    setNewIssuedCommon("");
+    setNewIssuedPreferred("");
+    setNewBuyCommon("");
+    setNewBuyPreferred("");
   };
+
+  const showExpected = !!(newIssuedCommon || newIssuedPreferred || newBuyCommon || newBuyPreferred);
 
   return (
     <div className="w-full max-w-4xl mx-auto py-8 px-4">
@@ -206,110 +243,175 @@ export default function CalculatorTab() {
             </div>
           ) : (
             /* ================= 지분율 계산기 UI ================= */
-            <div className="max-w-2xl mx-auto bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-200">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-bold text-gray-800">📈 주식 지분율 계산</h3>
-                <button onClick={clearEquity} className="flex items-center gap-1 text-xs font-semibold text-gray-500 hover:text-gray-800 bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-lg transition-colors">
+            <div className="max-w-4xl mx-auto bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-200">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
+                <div>
+                  <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                    📈 보통주 및 우선주 지분율 계산
+                  </h3>
+                  <p className="text-xs text-gray-500 mt-1 flex items-center gap-1.5">
+                    <Info className="w-3.5 h-3.5" /> 의결권은 보통주에만 부여되며, 경제적 지분율은 둘 다 합산됩니다.
+                  </p>
+                </div>
+                <button onClick={clearEquity} className="flex items-center gap-1 text-xs font-semibold text-gray-500 hover:text-gray-800 bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-lg transition-colors shrink-0">
                   <RotateCcw className="w-3.5 h-3.5" /> 초기화
                 </button>
               </div>
 
-              <div className="space-y-6">
+              <div className="space-y-8">
                 {/* 현재 상태 */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50 p-4 rounded-2xl border border-gray-100">
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1.5">현재 총 발행 주식 수</label>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        value={totalShares}
-                        onChange={(e) => setTotalShares(formatNumberInput(e.target.value))}
-                        placeholder="0"
-                        className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-right pr-8 font-mono text-sm"
-                      />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">주</span>
+                <div>
+                  <h4 className="text-sm font-bold text-gray-800 mb-3 border-b pb-2">1. 현재 주식 상태</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-gray-50 p-5 rounded-2xl border border-gray-100">
+                    <div className="space-y-4">
+                      <div className="text-sm font-bold text-gray-700 mb-1">🏢 총 발행 주식 수</div>
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-500 mb-1.5">보통주 (의결권 O)</label>
+                        <div className="relative">
+                          <input type="text" value={totalCommon} onChange={(e) => setTotalCommon(formatNumberInput(e.target.value))} placeholder="0" className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl outline-none focus:border-blue-500 text-right pr-8 font-mono text-sm" />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">주</span>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-500 mb-1.5">우선주 (의결권 X)</label>
+                        <div className="relative">
+                          <input type="text" value={totalPreferred} onChange={(e) => setTotalPreferred(formatNumberInput(e.target.value))} placeholder="0" className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl outline-none focus:border-blue-500 text-right pr-8 font-mono text-sm" />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">주</span>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1.5">보유 주식 수 (내 지분)</label>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        value={myShares}
-                        onChange={(e) => setMyShares(formatNumberInput(e.target.value))}
-                        placeholder="0"
-                        className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-right pr-8 font-mono text-sm"
-                      />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">주</span>
+                    
+                    <div className="space-y-4">
+                      <div className="text-sm font-bold text-gray-700 mb-1">👤 내 보유 주식 수</div>
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-500 mb-1.5">보통주 (의결권 O)</label>
+                        <div className="relative">
+                          <input type="text" value={myCommon} onChange={(e) => setMyCommon(formatNumberInput(e.target.value))} placeholder="0" className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl outline-none focus:border-blue-500 text-right pr-8 font-mono text-sm" />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">주</span>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-500 mb-1.5">우선주 (의결권 X)</label>
+                        <div className="relative">
+                          <input type="text" value={myPreferred} onChange={(e) => setMyPreferred(formatNumberInput(e.target.value))} placeholder="0" className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl outline-none focus:border-blue-500 text-right pr-8 font-mono text-sm" />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">주</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
 
                 {/* 추가 변동 (선택) */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-blue-50/50 p-4 rounded-2xl border border-blue-100">
-                  <div>
-                    <label className="block text-xs font-semibold text-blue-800 mb-1.5">추가 발행 예정 주식 수 (증자 등)</label>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        value={newIssuedShares}
-                        onChange={(e) => setNewIssuedShares(formatNumberInput(e.target.value))}
-                        placeholder="0"
-                        className="w-full px-4 py-2.5 bg-white border border-blue-200 rounded-xl outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-right pr-8 font-mono text-sm text-blue-900"
-                      />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-blue-400 text-xs">주</span>
+                <div>
+                  <h4 className="text-sm font-bold text-blue-800 mb-3 border-b border-blue-100 pb-2">2. 추가 변동 입력 (증자/매수 등 선택사항)</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-blue-50/50 p-5 rounded-2xl border border-blue-100">
+                    <div className="space-y-4">
+                      <div className="text-sm font-bold text-blue-800 mb-1">🏢 추가 발행 예정 주식 수</div>
+                      <div>
+                        <label className="block text-xs font-semibold text-blue-600 mb-1.5">추가 발행 보통주</label>
+                        <div className="relative">
+                          <input type="text" value={newIssuedCommon} onChange={(e) => setNewIssuedCommon(formatNumberInput(e.target.value))} placeholder="0" className="w-full px-4 py-2.5 bg-white border border-blue-200 rounded-xl outline-none focus:border-blue-500 text-right pr-8 font-mono text-sm text-blue-900" />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-blue-400 text-xs">주</span>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-blue-600 mb-1.5">추가 발행 우선주</label>
+                        <div className="relative">
+                          <input type="text" value={newIssuedPreferred} onChange={(e) => setNewIssuedPreferred(formatNumberInput(e.target.value))} placeholder="0" className="w-full px-4 py-2.5 bg-white border border-blue-200 rounded-xl outline-none focus:border-blue-500 text-right pr-8 font-mono text-sm text-blue-900" />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-blue-400 text-xs">주</span>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-blue-800 mb-1.5">추가 매수 예정 주식 수</label>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        value={newBuyShares}
-                        onChange={(e) => setNewBuyShares(formatNumberInput(e.target.value))}
-                        placeholder="0"
-                        className="w-full px-4 py-2.5 bg-white border border-blue-200 rounded-xl outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-right pr-8 font-mono text-sm text-blue-900"
-                      />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-blue-400 text-xs">주</span>
+
+                    <div className="space-y-4">
+                      <div className="text-sm font-bold text-blue-800 mb-1">👤 내 추가 매수 주식 수</div>
+                      <div>
+                        <label className="block text-xs font-semibold text-blue-600 mb-1.5">추가 매수 보통주</label>
+                        <div className="relative">
+                          <input type="text" value={newBuyCommon} onChange={(e) => setNewBuyCommon(formatNumberInput(e.target.value))} placeholder="0" className="w-full px-4 py-2.5 bg-white border border-blue-200 rounded-xl outline-none focus:border-blue-500 text-right pr-8 font-mono text-sm text-blue-900" />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-blue-400 text-xs">주</span>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-blue-600 mb-1.5">추가 매수 우선주</label>
+                        <div className="relative">
+                          <input type="text" value={newBuyPreferred} onChange={(e) => setNewBuyPreferred(formatNumberInput(e.target.value))} placeholder="0" className="w-full px-4 py-2.5 bg-white border border-blue-200 rounded-xl outline-none focus:border-blue-500 text-right pr-8 font-mono text-sm text-blue-900" />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-blue-400 text-xs">주</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
 
                 {/* 결과 영역 */}
-                <div className="pt-4 border-t border-gray-100">
-                  <div className="flex flex-col md:flex-row gap-4 items-stretch justify-between">
-                    <div className="flex-1 bg-gray-900 rounded-2xl p-5 shadow-lg border border-gray-800 relative overflow-hidden">
-                      <div className="relative z-10">
-                        <p className="text-gray-400 text-xs font-semibold mb-1">현재 지분율</p>
-                        <p className="text-3xl font-bold text-white font-mono tracking-tight">
-                          {currentEquity().toFixed(4)}<span className="text-lg text-gray-400 ml-1">%</span>
-                        </p>
+                <div>
+                  <h4 className="text-sm font-bold text-gray-800 mb-3 border-b pb-2">3. 지분율 분석 결과</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* 의결권 지분율 */}
+                    <div className="bg-gray-900 rounded-2xl p-5 shadow-lg border border-gray-800 relative overflow-hidden flex flex-col justify-between min-h-[140px]">
+                      <div className="relative z-10 flex justify-between items-start">
+                        <div>
+                          <p className="text-blue-300 text-sm font-bold mb-1">의결권 지분율</p>
+                          <p className="text-gray-400 text-xs">(보통주 기준)</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-3xl font-bold text-white font-mono tracking-tight">
+                            {currentVotingEquity().toFixed(4)}<span className="text-lg text-gray-400 ml-1">%</span>
+                          </p>
+                          {showExpected && (
+                            <div className="mt-1 pt-2 border-t border-gray-700/50">
+                              <p className="text-[10px] text-gray-400 mb-0.5">변동 후 예상</p>
+                              <div className="flex items-center justify-end gap-1.5">
+                                <span className="text-xl font-bold text-blue-200 font-mono">{expectedVotingEquity().toFixed(4)}%</span>
+                                {(() => {
+                                  const diff = expectedVotingEquity() - currentVotingEquity();
+                                  if (diff === 0) return null;
+                                  return (
+                                    <span className={`text-[10px] font-bold px-1 py-0.5 rounded ${diff > 0 ? 'bg-green-500/20 text-green-300' : 'bg-red-500/20 text-red-300'}`}>
+                                      {diff > 0 ? '+' : ''}{diff.toFixed(4)}%p
+                                    </span>
+                                  );
+                                })()}
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      <PieChart className="absolute -right-4 -bottom-4 w-24 h-24 text-gray-800/50" />
+                      <PieChart className="absolute -left-4 -bottom-4 w-24 h-24 text-gray-800/50" />
                     </div>
 
-                    {(newIssuedShares || newBuyShares) && (
-                      <div className="flex-1 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl p-5 shadow-lg border border-blue-800 relative overflow-hidden">
-                        <div className="relative z-10">
-                          <p className="text-blue-200 text-xs font-semibold mb-1">예상 지분율 (변동 후)</p>
-                          <div className="flex items-end gap-2">
-                            <p className="text-3xl font-bold text-white font-mono tracking-tight">
-                              {expectedEquity().toFixed(4)}<span className="text-lg text-blue-300 ml-1">%</span>
-                            </p>
-                            {(() => {
-                              const diff = expectedEquity() - currentEquity();
-                              if (diff === 0) return null;
-                              return (
-                                <span className={`text-xs font-bold mb-1.5 px-1.5 py-0.5 rounded ${diff > 0 ? 'bg-green-500/20 text-green-300' : 'bg-red-500/20 text-red-300'}`}>
-                                  {diff > 0 ? '+' : ''}{diff.toFixed(4)}%p
-                                </span>
-                              );
-                            })()}
-                          </div>
+                    {/* 전체(경제적) 지분율 */}
+                    <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-200 relative overflow-hidden flex flex-col justify-between min-h-[140px]">
+                      <div className="relative z-10 flex justify-between items-start">
+                        <div>
+                          <p className="text-gray-800 text-sm font-bold mb-1">경제적 지분율</p>
+                          <p className="text-gray-500 text-xs">(보통주+우선주 전체 기준)</p>
                         </div>
-                        <PieChart className="absolute -right-4 -bottom-4 w-24 h-24 text-blue-900/20" />
+                        <div className="text-right">
+                          <p className="text-3xl font-bold text-gray-900 font-mono tracking-tight">
+                            {currentTotalEquity().toFixed(4)}<span className="text-lg text-gray-500 ml-1">%</span>
+                          </p>
+                          {showExpected && (
+                            <div className="mt-1 pt-2 border-t border-gray-100">
+                              <p className="text-[10px] text-gray-500 mb-0.5">변동 후 예상</p>
+                              <div className="flex items-center justify-end gap-1.5">
+                                <span className="text-xl font-bold text-gray-700 font-mono">{expectedTotalEquity().toFixed(4)}%</span>
+                                {(() => {
+                                  const diff = expectedTotalEquity() - currentTotalEquity();
+                                  if (diff === 0) return null;
+                                  return (
+                                    <span className={`text-[10px] font-bold px-1 py-0.5 rounded ${diff > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                                      {diff > 0 ? '+' : ''}{diff.toFixed(4)}%p
+                                    </span>
+                                  );
+                                })()}
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    )}
+                      <PieChart className="absolute -left-4 -bottom-4 w-24 h-24 text-gray-50" />
+                    </div>
                   </div>
                 </div>
               </div>
