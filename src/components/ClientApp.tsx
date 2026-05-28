@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { FileText, Scissors, ZoomIn, Palette, Moon, Sun } from "lucide-react";
+import { FileText, Scissors, ZoomIn, Palette, Moon, Sun, Menu, X } from "lucide-react";
 import PdfUploader from "@/components/PdfUploader";
 import PdfEditor from "@/components/PdfEditor";
 import BgRemover from "@/components/BgRemover";
@@ -21,6 +21,7 @@ export default function ClientApp() {
   const [referenceFile, setReferenceFile] = useState<File | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>("pdf");
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
   const [secretClickCount, setSecretClickCount] = useState(0);
   const [showEasterEgg, setShowEasterEgg] = useState(false);
@@ -112,8 +113,8 @@ export default function ClientApp() {
             </button>
           </div>
 
-          {/* 중앙 네비게이션 탭 */}
-          <nav className="shrink-0 flex items-center bg-gray-200/50 dark:bg-gray-800/50 rounded-full p-1 border border-gray-200 dark:border-gray-700 gap-1 transition-colors duration-300">
+          {/* 중앙 네비게이션 탭 (데스크톱 전용) */}
+          <nav className="hidden lg:flex shrink-0 items-center bg-gray-200/50 dark:bg-gray-800/50 rounded-full p-1 border border-gray-200 dark:border-gray-700 gap-1 transition-colors duration-300">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
@@ -151,6 +152,14 @@ export default function ClientApp() {
               title={isDarkMode ? "라이트 모드로 전환" : "다크 모드로 전환"}
             >
               {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </button>
+            
+            {/* 모바일 햄버거 메뉴 버튼 */}
+            <button 
+              onClick={() => setIsMobileMenuOpen(true)}
+              className="lg:hidden p-2 ml-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 transition-colors"
+            >
+              <Menu className="w-5 h-5" />
             </button>
           </div>
         </div>
@@ -225,6 +234,40 @@ export default function ClientApp() {
             <p className="text-xl font-bold text-gray-700 leading-relaxed max-w-2xl break-keep">
               현지, 요한, 지연, 시우, 비헌, 상아, 강희, 정민, 백천, 보원, 경주, 나경, 희진, 준수, 성범
             </p>
+          </div>
+        </div>
+      )}
+
+      {/* 모바일 사이드바 (우측) */}
+      {isMobileMenuOpen && (
+        <div className="lg:hidden fixed inset-0 z-50 flex justify-end">
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsMobileMenuOpen(false)} />
+          <div className="relative w-64 bg-white dark:bg-gray-900 h-full shadow-2xl flex flex-col p-4 animate-in slide-in-from-right duration-200">
+            <div className="flex justify-between items-center mb-6">
+              <span className="font-bold text-lg text-gray-900 dark:text-white" style={{ fontFamily: "Inter, sans-serif" }}>메뉴</span>
+              <button onClick={() => setIsMobileMenuOpen(false)} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
+                <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+              </button>
+            </div>
+            <nav className="flex flex-col gap-2 flex-1 overflow-y-auto">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => {
+                    setActiveTab(tab.id);
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
+                    activeTab === tab.id
+                      ? "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-bold"
+                      : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 font-medium"
+                  }`}
+                >
+                  {tab.icon}
+                  <span>{tab.label}</span>
+                </button>
+              ))}
+            </nav>
           </div>
         </div>
       )}

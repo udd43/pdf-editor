@@ -308,8 +308,8 @@ export default function SignaturePad({ isOpen, onClose, onSave }: SignaturePadPr
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-[640px] mx-4 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-[640px] overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
         {/* 헤더 */}
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-100 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-900/80">
           <div className="flex items-center gap-2">
@@ -322,7 +322,7 @@ export default function SignaturePad({ isOpen, onClose, onSave }: SignaturePadPr
         </div>
 
         {/* 도구 모음 */}
-        <div className="flex items-center gap-4 px-5 py-3 border-b border-gray-100 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-900/80">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-3 px-5 py-3 border-b border-gray-100 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-900/80 overflow-y-auto max-h-[30vh]">
           {/* 굵기 선택 */}
           <div className="flex items-center gap-1">
             <span className="text-xs text-gray-500 dark:text-gray-400 font-medium mr-1">굵기</span>
@@ -366,28 +366,30 @@ export default function SignaturePad({ isOpen, onClose, onSave }: SignaturePadPr
             />
           </div>
 
-          <div className="flex-1" />
+          <div className="flex-1 hidden sm:block" />
 
           {/* 실행취소 & 전체 지우기 */}
-          <button
-            onClick={handleUndo}
-            disabled={strokes.length === 0}
-            className="flex items-center gap-1 px-2.5 py-1.5 text-xs text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 disabled:opacity-40 transition-colors"
-          >
-            <Undo2 className="w-3.5 h-3.5" /> 되돌리기
-          </button>
-          <button
-            onClick={handleClear}
-            disabled={strokes.length === 0}
-            className="flex items-center gap-1 px-2.5 py-1.5 text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/50 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/40 disabled:opacity-40 transition-colors"
-          >
-            <Trash2 className="w-3.5 h-3.5" /> 지우기
-          </button>
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <button
+              onClick={handleUndo}
+              disabled={strokes.length === 0}
+              className="flex-1 sm:flex-none flex justify-center items-center gap-1 px-2.5 py-1.5 text-xs text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 disabled:opacity-40 transition-colors"
+            >
+              <Undo2 className="w-3.5 h-3.5" /> 되돌리기
+            </button>
+            <button
+              onClick={handleClear}
+              disabled={strokes.length === 0}
+              className="flex-1 sm:flex-none flex justify-center items-center gap-1 px-2.5 py-1.5 text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/50 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/40 disabled:opacity-40 transition-colors"
+            >
+              <Trash2 className="w-3.5 h-3.5" /> 지우기
+            </button>
+          </div>
         </div>
 
         {/* 캔버스 영역 */}
-        <div className="p-5 bg-gray-100/50 dark:bg-gray-900/50">
-          <div className="relative rounded-xl overflow-hidden border-2 border-dashed border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-inner">
+        <div className="p-4 sm:p-5 bg-gray-100/50 dark:bg-gray-900/50 overflow-y-auto">
+          <div className="relative rounded-xl overflow-hidden border-2 border-dashed border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-inner w-full">
             <canvas
               ref={canvasRef}
               width={CANVAS_WIDTH}
@@ -411,27 +413,30 @@ export default function SignaturePad({ isOpen, onClose, onSave }: SignaturePadPr
         </div>
 
         {/* 하단 버튼 */}
-        <div className="flex items-center justify-end gap-2 px-5 py-3.5 border-t border-gray-100 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-900/80">
+        <div className="flex items-center justify-end gap-2 px-5 py-3.5 border-t border-gray-100 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-900/80 shrink-0">
           <button
             onClick={handleDownload}
             disabled={strokes.length === 0}
-            className="flex items-center gap-1.5 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 disabled:opacity-40 transition-colors font-medium mr-auto"
+            className="hidden sm:flex items-center gap-1.5 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 disabled:opacity-40 transition-colors font-medium mr-auto"
           >
             <Download className="w-4 h-4 text-gray-600 dark:text-gray-300" /> 그림 다운로드
           </button>
-          <button
-            onClick={onClose}
-            className="px-5 py-2 text-sm text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors font-medium"
-          >
-            취소
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={strokes.length === 0}
-            className="flex items-center gap-1.5 px-5 py-2 text-sm text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-40 transition-colors font-semibold shadow-sm"
-          >
-            <Check className="w-4 h-4" /> PDF에 삽입
-          </button>
+          
+          <div className="flex flex-1 sm:flex-none justify-end gap-2">
+            <button
+              onClick={onClose}
+              className="px-5 py-2 text-sm text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors font-medium"
+            >
+              취소
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={strokes.length === 0}
+              className="flex items-center gap-1.5 px-5 py-2 text-sm text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-40 transition-colors font-semibold shadow-sm"
+            >
+              <Check className="w-4 h-4" /> PDF에 삽입
+            </button>
+          </div>
         </div>
       </div>
     </div>
