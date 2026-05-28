@@ -8,11 +8,11 @@ export default function RomanizerTab() {
   const [koreanName, setKoreanName] = useState("");
   const [copied, setCopied] = useState(false);
 
-  // 로마자 변환 후 단어 첫 글자를 대문자로
+  // 로마자 변환 후 전체를 대문자로
   const romanized = koreanName.trim() === "" ? "" : koreanToRoman(koreanName.trim())
     .split('_')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
+    .join(' ')
+    .toUpperCase();
 
   const handleCopy = async () => {
     if (!romanized) return;
@@ -84,7 +84,7 @@ export default function RomanizerTab() {
           <ul className="list-disc pl-4 space-y-1">
             <li>일반적으로 쓰이는 성씨(Kim, Lee, Park 등)는 널리 쓰이는 표기로 자동 변환됩니다.</li>
             <li>이름 부분은 국어의 로마자 표기법에 따라 변환됩니다.</li>
-            <li>공백은 띄어쓰기로 처리되며, 첫 글자는 대문자로 표기됩니다.</li>
+            <li>공백은 띄어쓰기로 처리되며, 모든 글자는 대문자로 표기됩니다.</li>
           </ul>
         </div>
       </div>
