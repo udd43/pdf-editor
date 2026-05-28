@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState, useCallback } from "react";
 import * as pdfjsLib from "pdfjs-dist";
 import Tesseract from "tesseract.js";
 import { Download, Loader2, Plus, Image as ImageIcon, Scissors, Trash2, Move, Minus, ZoomIn, Pen } from "lucide-react";
+import toast from "react-hot-toast";
 import { exportEditedPdf } from "@/lib/pdfUtils";
 import { koreanToRoman } from "@/lib/romanize";
 import ImageOverlayComponent, { ImageOverlayData } from "./ImageOverlay";
@@ -640,16 +641,23 @@ export default function PdfEditor({ file }: PdfEditorProps) {
     const finalFileName = exportName.trim() === "" ? file.name : `${exportName.trim()}.pdf`;
 
     setStatus("rendering");
-    setStatusMsg("새 PDF를 생성하는 중...");
+    setStatusMsg("새 PDF를 생성하는 중 (백그라운드 처리 중)...");
+    
+    // Toast를 이용해 내보내기 진행 상태 표시
+    const toastId = toast.loading("PDF를 병합하고 있습니다. 잠시만 기다려주세요...");
+
     try {
+      // 이제 Web Worker가 메인 스레드 프리징 없이 PDF를 만듭니다.
       await exportEditedPdf(pdfBuffer, textBoxes, imageOverlays, 1, finalFileName);
       setStatus("done");
       setStatusMsg("PDF가 다운로드되었습니다!");
+      toast.success("성공적으로 다운로드되었습니다!", { id: toastId });
     } catch (e: any) {
       console.error(e);
       setStatus("error");
       setStatusMsg("PDF 내보내기 실패");
       setErrorDetail(e?.message || String(e));
+      toast.error("다운로드에 실패했습니다.", { id: toastId });
     }
   };
 
