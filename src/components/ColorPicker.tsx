@@ -22,10 +22,10 @@ export default function ColorPicker({ onColorChange, onClose }: ColorPickerProps
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-lg border p-4 w-64">
+    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-4 w-64 transition-colors">
       <div className="flex justify-between items-center mb-3">
-        <h4 className="text-sm font-bold text-gray-800">색상 변경</h4>
-        <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-lg leading-none">&times;</button>
+        <h4 className="text-sm font-bold text-gray-800 dark:text-white">색상 변경</h4>
+        <button onClick={onClose} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 text-lg leading-none">&times;</button>
       </div>
 
       {/* 프리셋 컬러 */}
@@ -35,7 +35,7 @@ export default function ColorPicker({ onColorChange, onClose }: ColorPickerProps
             key={c}
             onClick={() => setColor(c)}
             className={`w-8 h-8 rounded-full border-2 transition-transform hover:scale-110 ${
-              color === c ? "border-blue-500 scale-110" : "border-gray-200"
+              color === c ? "border-blue-500 dark:border-blue-400 scale-110" : "border-gray-200 dark:border-gray-600"
             }`}
             style={{ backgroundColor: c }}
           />
@@ -50,26 +50,26 @@ export default function ColorPicker({ onColorChange, onClose }: ColorPickerProps
           onChange={(e) => setColor(e.target.value)}
           className="w-10 h-8 rounded cursor-pointer border-0"
         />
-        <span className="text-xs text-gray-500 font-mono">{color}</span>
+        <span className="text-xs text-gray-500 dark:text-gray-400 font-mono">{color}</span>
       </div>
 
       {/* 투명도 */}
       <div className="mb-4">
-        <label className="text-xs text-gray-500 mb-1 block">투명도: {opacity}%</label>
+        <label className="text-xs text-gray-500 dark:text-gray-400 mb-1 block">투명도: {opacity}%</label>
         <input
           type="range"
           min={10}
           max={100}
           value={opacity}
           onChange={(e) => setOpacity(Number(e.target.value))}
-          className="w-full"
+          className="w-full accent-blue-600"
         />
       </div>
 
       {/* 미리보기 & 적용 */}
       <div className="flex gap-2">
         <div
-          className="w-10 h-10 rounded-lg border border-gray-200"
+          className="w-10 h-10 rounded-lg border border-gray-200 dark:border-gray-600"
           style={{ backgroundColor: color, opacity: opacity / 100 }}
         />
         <button

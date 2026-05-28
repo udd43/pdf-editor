@@ -26,13 +26,37 @@ export default function ClientApp() {
   const [showEasterEgg, setShowEasterEgg] = useState(false);
   const [showChangelog, setShowChangelog] = useState(false);
 
+  // localStorage에서 다크모드 초기값 로드
+  useEffect(() => {
+    const stored = localStorage.getItem("darkMode");
+    if (stored === "true") {
+      setIsDarkMode(true);
+      document.documentElement.classList.add("dark");
+    } else {
+      setIsDarkMode(false);
+      document.documentElement.classList.remove("dark");
+    }
+  }, []);
+
+  // 다크모드 토글 시 localStorage 저장 및 클래스 반영
   useEffect(() => {
     if (isDarkMode) {
       document.documentElement.classList.add("dark");
     } else {
       document.documentElement.classList.remove("dark");
     }
+    localStorage.setItem("darkMode", String(isDarkMode));
   }, [isDarkMode]);
+
+  // 새 버전일 때 자동으로 업데이트 내역 팝업
+  useEffect(() => {
+    const currentVersion = process.env.NEXT_PUBLIC_APP_VERSION || "";
+    const lastSeenVersion = localStorage.getItem("lastSeenVersion");
+    if (currentVersion && currentVersion !== lastSeenVersion) {
+      setShowChangelog(true);
+      localStorage.setItem("lastSeenVersion", currentVersion);
+    }
+  }, []);
 
   const handleSecretClick = () => {
     if (showEasterEgg) return;
@@ -168,8 +192,9 @@ export default function ClientApp() {
         <div className="max-w-6xl mx-auto px-6 flex items-center justify-between text-gray-400 dark:text-gray-500 text-xs">
           <button 
             onClick={() => setShowChangelog(true)}
-            className="font-mono bg-gray-100 dark:bg-gray-800 hover:bg-blue-50 dark:hover:bg-gray-700 hover:text-blue-600 dark:hover:text-blue-400 hover:border-blue-200 dark:hover:border-gray-600 border border-gray-200 dark:border-gray-700 px-2 py-0.5 rounded-md text-gray-500 dark:text-gray-400 transition-colors cursor-pointer"
+            className="font-mono bg-gray-100 dark:bg-gray-800 hover:bg-blue-50 dark:hover:bg-gray-700 hover:text-blue-600 dark:hover:text-blue-400 hover:border-blue-200 dark:hover:border-gray-600 border border-gray-200 dark:border-gray-700 px-2.5 py-1 rounded-lg text-gray-500 dark:text-gray-400 transition-colors cursor-pointer flex items-center gap-1.5"
           >
+            <span className="inline-block w-2 h-2 rounded-full bg-green-400 animate-pulse" />
             v{process.env.NEXT_PUBLIC_APP_VERSION}
           </button>
           <span className="font-medium">&copy; 2026 PDF Editor &middot; Private by default.</span>

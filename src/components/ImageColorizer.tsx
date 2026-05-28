@@ -76,18 +76,15 @@ export default function ImageColorizer() {
       if (data[i + 3] < 10) continue; // 투명 픽셀 건너뜀
 
       if (applyMode === "overlay") {
-        // 색상 오버레이: 원본 밝기를 일부 유지하며 색 블렌딩
         data[i]     = Math.round(data[i]     * (1 - t) + r * t);
         data[i + 1] = Math.round(data[i + 1] * (1 - t) + g * t);
         data[i + 2] = Math.round(data[i + 2] * (1 - t) + b * t);
       } else if (applyMode === "tint") {
-        // 틴트: 픽셀의 밝기를 계산하여 선택 색상에 적용
         const brightness = (data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114) / 255;
         data[i]     = Math.round(r * brightness * t + data[i]     * (1 - t));
         data[i + 1] = Math.round(g * brightness * t + data[i + 1] * (1 - t));
         data[i + 2] = Math.round(b * brightness * t + data[i + 2] * (1 - t));
       } else if (applyMode === "replace") {
-        // 완전 교체: 알파 유지하고 색상만 바꿈
         const brightness = (data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114) / 255;
         data[i]     = Math.round(r * brightness);
         data[i + 1] = Math.round(g * brightness);
@@ -102,7 +99,6 @@ export default function ImageColorizer() {
     if (!originalImageData || !originalSrc) return;
     setIsProcessing(true);
 
-    // setTimeout으로 UI 업데이트 선행
     setTimeout(() => {
       const newData = applyColor(selectedColor, opacity, mode, originalImageData);
       const canvas = document.createElement("canvas");
@@ -142,15 +138,15 @@ export default function ImageColorizer() {
       {!originalSrc && (
         <div
           onClick={() => fileInputRef.current?.click()}
-          className="w-full max-w-4xl min-h-[400px] sm:min-h-[500px] p-12 sm:p-20 border border-gray-200 rounded-3xl bg-white hover:border-gray-300 hover:shadow-md transition-all cursor-pointer flex flex-col items-center justify-center shadow-sm relative overflow-hidden group"
+          className="w-full max-w-4xl min-h-[400px] sm:min-h-[500px] p-12 sm:p-20 border border-gray-200 dark:border-gray-700 rounded-3xl bg-white dark:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-md transition-all cursor-pointer flex flex-col items-center justify-center shadow-sm relative overflow-hidden group"
         >
-          <div className="w-24 h-24 mb-8 rounded-3xl bg-gray-50 border border-gray-100 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-            <Palette className="w-12 h-12 text-blue-500" />
+          <div className="w-24 h-24 mb-8 rounded-3xl bg-gray-50 dark:bg-gray-700 border border-gray-100 dark:border-gray-600 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+            <Palette className="w-12 h-12 text-blue-500 dark:text-blue-400" />
           </div>
-          <h3 className="text-2xl font-bold text-gray-900 mb-3 text-center" style={{ fontFamily: "Inter, sans-serif" }}>
+          <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-3 text-center" style={{ fontFamily: "Inter, sans-serif" }}>
             이미지를 업로드하세요
           </h3>
-          <p className="text-gray-500 text-sm sm:text-base text-center mb-10">
+          <p className="text-gray-500 dark:text-gray-400 text-sm sm:text-base text-center mb-10">
             이미지의 색상을 원하는 대로 바꿔드립니다
           </p>
           <button className="px-8 py-3.5 bg-blue-600 text-white rounded-full font-semibold text-base shadow-sm hover:bg-blue-700 transition-all duration-300 hover:scale-[1.02] active:scale-95">
@@ -163,17 +159,17 @@ export default function ImageColorizer() {
       {originalSrc && (
         <>
           {/* 상단 도구 바 */}
-          <div className="w-full flex flex-wrap justify-between items-center mb-6 bg-white p-4 rounded-2xl border border-gray-200 gap-3 shadow-sm">
-            <h3 className="text-sm font-bold text-gray-900 truncate max-w-xs px-2" style={{ fontFamily: "Inter, sans-serif" }}>
+          <div className="w-full flex flex-wrap justify-between items-center mb-6 bg-white dark:bg-gray-800 p-4 rounded-2xl border border-gray-200 dark:border-gray-700 gap-3 shadow-sm transition-colors">
+            <h3 className="text-sm font-bold text-gray-900 dark:text-white truncate max-w-xs px-2" style={{ fontFamily: "Inter, sans-serif" }}>
               🎨 {fileName}
             </h3>
             <div className="flex gap-2 flex-wrap items-center">
               <button onClick={handleReset}
-                className="flex items-center gap-1.5 px-4 py-2 bg-white border border-gray-200 text-gray-700 text-xs font-semibold rounded-full hover:bg-gray-50 transition-all shadow-sm">
+                className="flex items-center gap-1.5 px-4 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-xs font-semibold rounded-full hover:bg-gray-50 dark:hover:bg-gray-600 transition-all shadow-sm">
                 <RotateCcw className="w-3.5 h-3.5" /> 다시하기
               </button>
               <button onClick={() => fileInputRef.current?.click()}
-                className="flex items-center gap-1.5 px-4 py-2 bg-white border border-gray-200 text-gray-700 text-xs font-semibold rounded-full hover:bg-gray-50 transition-all shadow-sm">
+                className="flex items-center gap-1.5 px-4 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-xs font-semibold rounded-full hover:bg-gray-50 dark:hover:bg-gray-600 transition-all shadow-sm">
                 <Upload className="w-3.5 h-3.5" /> 다른 이미지
               </button>
               {resultSrc && (
@@ -186,11 +182,11 @@ export default function ImageColorizer() {
           </div>
 
           {/* 색상 설정 패널 */}
-          <div className="w-full mb-6 bg-white rounded-2xl border border-gray-200 p-5 shadow-sm">
+          <div className="w-full mb-6 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-5 shadow-sm transition-colors">
             <div className="flex flex-wrap gap-6 items-start">
               {/* 색상 선택 */}
               <div className="flex-1 min-w-[200px]">
-                <label className="text-xs font-semibold text-gray-600 mb-3 block">🎨 색상 선택</label>
+                <label className="text-xs font-semibold text-gray-600 dark:text-gray-300 mb-3 block">🎨 색상 선택</label>
                 <div className="flex flex-wrap gap-2 mb-3">
                   {PRESET_COLORS.map((c) => (
                     <button
@@ -199,8 +195,8 @@ export default function ImageColorizer() {
                       title={c.label}
                       className={`w-7 h-7 rounded-full border-2 transition-all hover:scale-110 ${
                         selectedColor === c.hex
-                          ? "border-blue-500 scale-110 shadow-md"
-                          : "border-gray-200"
+                          ? "border-blue-500 dark:border-blue-400 scale-110 shadow-md"
+                          : "border-gray-200 dark:border-gray-600"
                       }`}
                       style={{ backgroundColor: c.hex }}
                     />
@@ -215,7 +211,7 @@ export default function ImageColorizer() {
                       title="사용자 지정 색상"
                     />
                     <div
-                      className="w-7 h-7 rounded-full border-2 border-dashed border-gray-400 flex items-center justify-center text-gray-500 text-[10px] font-bold pointer-events-none"
+                      className="w-7 h-7 rounded-full border-2 border-dashed border-gray-400 dark:border-gray-500 flex items-center justify-center text-gray-500 text-[10px] font-bold pointer-events-none"
                       style={{
                         background: `linear-gradient(135deg, #EF4444 0%, #3B82F6 50%, #22C55E 100%)`,
                       }}
@@ -223,14 +219,14 @@ export default function ImageColorizer() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-5 h-5 rounded border border-gray-200" style={{ backgroundColor: selectedColor }} />
-                  <span className="text-xs font-mono text-gray-500">{selectedColor.toUpperCase()}</span>
+                  <div className="w-5 h-5 rounded border border-gray-200 dark:border-gray-600" style={{ backgroundColor: selectedColor }} />
+                  <span className="text-xs font-mono text-gray-500 dark:text-gray-400">{selectedColor.toUpperCase()}</span>
                 </div>
               </div>
 
               {/* 적용 모드 */}
               <div className="flex-1 min-w-[200px]">
-                <label className="text-xs font-semibold text-gray-600 mb-3 block">⚙️ 적용 방식</label>
+                <label className="text-xs font-semibold text-gray-600 dark:text-gray-300 mb-3 block">⚙️ 적용 방식</label>
                 <div className="flex flex-col gap-1.5">
                   {([
                     { value: "tint", label: "틴트", desc: "밝기 유지하며 색상 입히기" },
@@ -242,8 +238,8 @@ export default function ImageColorizer() {
                       onClick={() => setMode(m.value)}
                       className={`text-left px-3 py-2 rounded-lg border text-xs transition-all ${
                         mode === m.value
-                          ? "bg-blue-50 border-blue-200 text-blue-700 font-semibold"
-                          : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"
+                          ? "bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 font-semibold"
+                          : "bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600"
                       }`}
                     >
                       <span className="font-semibold">{m.label}</span>
@@ -255,8 +251,8 @@ export default function ImageColorizer() {
 
               {/* 강도 슬라이더 */}
               <div className="flex-1 min-w-[160px]">
-                <label className="text-xs font-semibold text-gray-600 mb-3 block">
-                  💪 색상 강도: <span className="text-blue-600">{opacity}%</span>
+                <label className="text-xs font-semibold text-gray-600 dark:text-gray-300 mb-3 block">
+                  💪 색상 강도: <span className="text-blue-600 dark:text-blue-400">{opacity}%</span>
                 </label>
                 <input
                   type="range"
@@ -266,7 +262,7 @@ export default function ImageColorizer() {
                   onChange={(e) => setOpacity(Number(e.target.value))}
                   className="w-full accent-blue-600"
                 />
-                <div className="flex justify-between text-[10px] text-gray-400 mt-1">
+                <div className="flex justify-between text-[10px] text-gray-400 dark:text-gray-500 mt-1">
                   <span>연하게</span>
                   <span>진하게</span>
                 </div>
@@ -289,8 +285,8 @@ export default function ImageColorizer() {
           {/* 비교 뷰 */}
           <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* 원본 */}
-            <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
-              <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 text-xs font-bold text-gray-700">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm transition-colors">
+              <div className="px-4 py-3 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 text-xs font-bold text-gray-700 dark:text-gray-300">
                 📷 원본 이미지
               </div>
               <div className="p-4 flex items-center justify-center min-h-[350px]"
@@ -304,11 +300,11 @@ export default function ImageColorizer() {
             </div>
 
             {/* 결과 */}
-            <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
-              <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 text-xs font-bold text-gray-700 flex justify-between items-center">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm transition-colors">
+              <div className="px-4 py-3 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 text-xs font-bold text-gray-700 dark:text-gray-300 flex justify-between items-center">
                 <span>🎨 색상 변경 결과</span>
                 {resultSrc && (
-                  <div className="w-4 h-4 rounded-full border border-gray-300" style={{ backgroundColor: selectedColor }} />
+                  <div className="w-4 h-4 rounded-full border border-gray-300 dark:border-gray-500" style={{ backgroundColor: selectedColor }} />
                 )}
               </div>
               <div className="p-4 flex items-center justify-center min-h-[350px]"
@@ -320,14 +316,14 @@ export default function ImageColorizer() {
                 {isProcessing ? (
                   <div className="flex flex-col items-center">
                     <Loader2 className="w-10 h-10 text-blue-500 animate-spin mb-4" />
-                    <p className="text-xs font-semibold text-gray-600">색상을 적용하는 중...</p>
+                    <p className="text-xs font-semibold text-gray-600 dark:text-gray-300">색상을 적용하는 중...</p>
                   </div>
                 ) : resultSrc ? (
                   <img src={resultSrc} alt="결과" className="max-w-full max-h-[450px] object-contain rounded-xl shadow-sm" />
                 ) : (
-                  <p className="text-gray-400 text-sm text-center">
+                  <p className="text-gray-400 dark:text-gray-500 text-sm text-center">
                     색상을 선택하고<br />
-                    <span className="font-semibold text-blue-500">'색상 적용하기'</span>를 클릭하세요
+                    <span className="font-semibold text-blue-500 dark:text-blue-400">'색상 적용하기'</span>를 클릭하세요
                   </p>
                 )}
               </div>
@@ -335,7 +331,7 @@ export default function ImageColorizer() {
           </div>
 
           {resultSrc && !isProcessing && (
-            <div className="w-full mt-6 bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3.5 rounded-xl text-xs font-semibold text-center">
+            <div className="w-full mt-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-300 px-4 py-3.5 rounded-xl text-xs font-semibold text-center">
               ✨ 색상 변경 완료! <strong>다운로드</strong>로 PNG 파일을 저장하거나, 색상을 다시 조절해 재적용할 수 있습니다.
             </div>
           )}

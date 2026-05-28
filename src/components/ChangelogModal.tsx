@@ -8,6 +8,27 @@ interface ChangelogModalProps {
 
 const CHANGELOG_DATA = [
   {
+    version: "v1.0.45",
+    date: "2026-05-29",
+    changes: [
+      "다크 모드 토글 버그 수정 (Tailwind v4 @custom-variant 적용)",
+      "다크 모드 전체 컴포넌트 일관성 개선 (누끼따기, 업스케일러, 색상변경, 서명 등)",
+      "업데이트 내역 모달 다크모드 적용 및 새 버전 시 자동 팝업",
+      "다크 모드 설정 localStorage 유지",
+    ]
+  },
+  {
+    version: "v1.0.44",
+    date: "2026-05-29",
+    changes: [
+      "PDF 페이지 썸네일 네비게이션 사이드바 추가",
+      "드래그 앤 드롭 PDF 병합 기능 추가 (pdf-lib 활용)",
+      "다크 모드 지원 추가 (전체 UI 테마 토글)",
+      "키보드 방향키 1px 정밀 이동 지원",
+      "Ctrl+Z / Ctrl+Y 실행 취소 / 다시 실행 지원",
+    ]
+  },
+  {
     version: "v1.0.42",
     date: "2026-05-28",
     changes: [
@@ -77,55 +98,58 @@ export default function ChangelogModal({ isOpen, onClose }: ChangelogModalProps)
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
       <div 
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-lg flex flex-col animate-in fade-in zoom-in-95 duration-200"
+        className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-lg flex flex-col animate-in fade-in zoom-in-95 duration-200"
         style={{ maxHeight: "80vh" }}
       >
         {/* 헤더 */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gray-50/80 rounded-t-2xl shrink-0">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-900/80 rounded-t-2xl shrink-0">
           <div className="flex items-center gap-2">
-            <History className="w-5 h-5 text-blue-500" />
-            <h3 className="text-lg font-bold text-gray-800" style={{ fontFamily: "Inter, sans-serif" }}>업데이트 내역</h3>
+            <History className="w-5 h-5 text-blue-500 dark:text-blue-400" />
+            <h3 className="text-lg font-bold text-gray-800 dark:text-white" style={{ fontFamily: "Inter, sans-serif" }}>업데이트 내역</h3>
           </div>
           <button 
             onClick={onClose} 
-            className="p-1.5 hover:bg-gray-200 rounded-lg transition-colors"
+            className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
           >
-            <X className="w-5 h-5 text-gray-500" />
+            <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
           </button>
         </div>
 
         {/* 내용 */}
-        <div className="flex-1 overflow-y-auto p-6 bg-white">
+        <div className="flex-1 overflow-y-auto p-6 bg-white dark:bg-gray-800">
           <div className="space-y-8">
             {CHANGELOG_DATA.map((log, index) => (
               <div key={log.version} className="relative">
                 {/* 연결선 */}
                 {index !== CHANGELOG_DATA.length - 1 && (
-                  <div className="absolute left-[11px] top-6 bottom-[-24px] w-0.5 bg-gray-100" />
+                  <div className="absolute left-[11px] top-6 bottom-[-24px] w-0.5 bg-gray-100 dark:bg-gray-700" />
                 )}
                 
                 <div className="flex gap-4">
                   {/* 타임라인 점 */}
                   <div className="relative z-10 mt-1.5 shrink-0">
-                    <div className={`w-6 h-6 rounded-full flex items-center justify-center border-2 ${index === 0 ? "border-blue-500 bg-blue-50" : "border-gray-200 bg-white"}`}>
-                      <div className={`w-2 h-2 rounded-full ${index === 0 ? "bg-blue-500" : "bg-gray-300"}`} />
+                    <div className={`w-6 h-6 rounded-full flex items-center justify-center border-2 ${index === 0 ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30" : "border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700"}`}>
+                      <div className={`w-2 h-2 rounded-full ${index === 0 ? "bg-blue-500" : "bg-gray-300 dark:bg-gray-500"}`} />
                     </div>
                   </div>
                   
                   {/* 업데이트 내용 */}
                   <div className="flex-1 pb-1">
                     <div className="flex items-center gap-2 mb-2">
-                      <span className={`font-mono font-bold text-sm ${index === 0 ? "text-blue-600" : "text-gray-800"}`}>
+                      <span className={`font-mono font-bold text-sm ${index === 0 ? "text-blue-600 dark:text-blue-400" : "text-gray-800 dark:text-gray-200"}`}>
                         {log.version}
                       </span>
-                      <span className="text-xs text-gray-400 font-medium bg-gray-100 px-2 py-0.5 rounded-md">
+                      <span className="text-xs text-gray-400 dark:text-gray-500 font-medium bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-md">
                         {log.date}
                       </span>
+                      {index === 0 && (
+                        <span className="text-[10px] font-bold text-white bg-blue-500 px-2 py-0.5 rounded-full">NEW</span>
+                      )}
                     </div>
                     <ul className="space-y-1.5">
                       {log.changes.map((change, i) => (
-                        <li key={i} className="text-sm text-gray-600 flex items-start gap-2 leading-relaxed">
-                          <span className="text-gray-300 mt-0.5">•</span>
+                        <li key={i} className="text-sm text-gray-600 dark:text-gray-300 flex items-start gap-2 leading-relaxed">
+                          <span className="text-gray-300 dark:text-gray-600 mt-0.5">•</span>
                           <span>{change}</span>
                         </li>
                       ))}
@@ -138,10 +162,10 @@ export default function ChangelogModal({ isOpen, onClose }: ChangelogModalProps)
         </div>
 
         {/* 푸터 */}
-        <div className="px-6 py-4 border-t border-gray-100 bg-gray-50/80 rounded-b-2xl shrink-0 flex justify-end">
+        <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-900/80 rounded-b-2xl shrink-0 flex justify-end">
           <button
             onClick={onClose}
-            className="px-5 py-2 text-sm text-gray-700 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors font-medium shadow-sm"
+            className="px-5 py-2 text-sm text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors font-medium shadow-sm"
           >
             닫기
           </button>
