@@ -12,6 +12,7 @@ import SignatureTab from "@/components/SignatureTab";
 import CalculatorTab from "@/components/CalculatorTab";
 import ChangelogModal from "@/components/ChangelogModal";
 import { Languages, PenTool, Calculator } from "lucide-react";
+import { Toaster } from "react-hot-toast";
 
 type Tab = "pdf" | "bgremove" | "upscale" | "colorize" | "romanize" | "signature" | "calculator";
 
@@ -189,6 +190,9 @@ export default function ClientApp() {
 
       {/* 업데이트 내역 모달 */}
       <ChangelogModal isOpen={showChangelog} onClose={() => setShowChangelog(false)} />
+      
+      {/* Toast 알림 */}
+      <Toaster position="bottom-center" toastOptions={{ duration: 3000, style: { borderRadius: '10px', background: '#333', color: '#fff', fontSize: '14px' } }} />
     </div>
   );
 }

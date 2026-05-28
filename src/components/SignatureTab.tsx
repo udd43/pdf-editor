@@ -2,6 +2,7 @@
 
 import React, { useRef, useState, useEffect, useCallback } from "react";
 import { Trash2, Undo2, Download, PenTool, Type, Edit3 } from "lucide-react";
+import toast from "react-hot-toast";
 
 interface Point {
   x: number;
@@ -63,6 +64,19 @@ export default function SignatureTab() {
     handleResize();
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // 모바일 터치 스크롤 방지
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const preventScroll = (e: TouchEvent) => e.preventDefault();
+    canvas.addEventListener('touchstart', preventScroll, { passive: false });
+    canvas.addEventListener('touchmove', preventScroll, { passive: false });
+    return () => {
+      canvas.removeEventListener('touchstart', preventScroll);
+      canvas.removeEventListener('touchmove', preventScroll);
+    };
   }, []);
 
   const drawTextOnCanvas = useCallback(async () => {
@@ -206,6 +220,7 @@ export default function SignatureTab() {
       if (strokes.length > 0 && confirm("모든 서명을 지우시겠습니까?")) {
         setStrokes([]);
         setCurrentStroke([]);
+        toast.success("서명이 초기화되었습니다.");
       }
     } else {
       setTypedText("");
@@ -217,8 +232,14 @@ export default function SignatureTab() {
     if (!canvas) return;
     
     // 그리기 모드일 때 스트로크가 없으면 불가, 텍스트 모드일 때 텍스트가 없으면 불가
-    if (mode === "draw" && strokes.length === 0) return;
-    if (mode === "type" && !typedText) return;
+    if (mode === "draw" && strokes.length === 0) {
+      toast.error("그려진 서명이 없습니다.");
+      return;
+    }
+    if (mode === "type" && !typedText) {
+      toast.error("입력된 텍스트가 없습니다.");
+      return;
+    }
 
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
@@ -250,7 +271,10 @@ export default function SignatureTab() {
     const cropW = maxX - minX;
     const cropH = maxY - minY;
 
-    if (cropW <= 0 || cropH <= 0) return;
+    if (cropW <= 0 || cropH <= 0) {
+      toast.error("다운로드할 이미지가 없습니다.");
+      return;
+    }
 
     const cropCanvas = document.createElement("canvas");
     cropCanvas.width = cropW;
@@ -268,6 +292,7 @@ export default function SignatureTab() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    toast.success("투명 PNG 이미지가 다운로드되었습니다!");
   };
 
   return (

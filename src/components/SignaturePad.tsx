@@ -2,24 +2,25 @@
  
 import React, { useRef, useState, useEffect, useCallback } from "react";
 import { X, Trash2, Check, Undo2, Download } from "lucide-react";
- 
+import toast from "react-hot-toast";
+
 interface SignaturePadProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (dataUrl: string, width: number, height: number) => void;
 }
- 
+
 interface Point {
   x: number;
   y: number;
 }
- 
+
 interface Stroke {
   points: Point[];
   color: string;
   width: number;
 }
- 
+
 export default function SignaturePad({ isOpen, onClose, onSave }: SignaturePadProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -72,6 +73,19 @@ export default function SignaturePad({ isOpen, onClose, onSave }: SignaturePadPr
   useEffect(() => {
     redrawCanvas();
   }, [redrawCanvas]);
+
+  // 모바일 터치 스크롤 방지
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const preventScroll = (e: TouchEvent) => e.preventDefault();
+    canvas.addEventListener('touchstart', preventScroll, { passive: false });
+    canvas.addEventListener('touchmove', preventScroll, { passive: false });
+    return () => {
+      canvas.removeEventListener('touchstart', preventScroll);
+      canvas.removeEventListener('touchmove', preventScroll);
+    };
+  }, []);
 
   // 모달이 열릴 때 초기화
   useEffect(() => {
@@ -159,11 +173,15 @@ export default function SignaturePad({ isOpen, onClose, onSave }: SignaturePadPr
   const handleClear = () => {
     setStrokes([]);
     setCurrentStroke([]);
+    toast.success("초기화되었습니다.");
   };
 
   const handleSave = () => {
     const canvas = canvasRef.current;
-    if (!canvas || strokes.length === 0) return;
+    if (!canvas || strokes.length === 0) {
+      toast.error("그려진 내용이 없습니다.");
+      return;
+    }
 
     // 그려진 영역만 잘라내기 (투명 배경)
     const ctx = canvas.getContext("2d");
@@ -190,7 +208,10 @@ export default function SignaturePad({ isOpen, onClose, onSave }: SignaturePadPr
     const cropW = maxX - minX;
     const cropH = maxY - minY;
 
-    if (cropW <= 0 || cropH <= 0) return;
+    if (cropW <= 0 || cropH <= 0) {
+      toast.error("저장할 이미지가 없습니다.");
+      return;
+    }
 
     // 잘라낸 영역을 새 캔버스에 그리기 (투명 배경)
     const cropCanvas = document.createElement("canvas");
@@ -216,12 +237,16 @@ export default function SignaturePad({ isOpen, onClose, onSave }: SignaturePadPr
 
     const dataUrl = cropCanvas.toDataURL("image/png");
     onSave(dataUrl, cropW, cropH);
+    toast.success("PDF에 서명이 추가되었습니다.");
     onClose();
   };
 
   const handleDownload = () => {
     const canvas = canvasRef.current;
-    if (!canvas || strokes.length === 0) return;
+    if (!canvas || strokes.length === 0) {
+      toast.error("그려진 내용이 없습니다.");
+      return;
+    }
 
     // 그려진 영역의 바운딩 박스 계산
     let minX = CANVAS_WIDTH, minY = CANVAS_HEIGHT, maxX = 0, maxY = 0;
@@ -244,7 +269,10 @@ export default function SignaturePad({ isOpen, onClose, onSave }: SignaturePadPr
     const cropW = maxX - minX;
     const cropH = maxY - minY;
 
-    if (cropW <= 0 || cropH <= 0) return;
+    if (cropW <= 0 || cropH <= 0) {
+      toast.error("다운로드할 이미지가 없습니다.");
+      return;
+    }
 
     const cropCanvas = document.createElement("canvas");
     cropCanvas.width = cropW;
@@ -274,6 +302,7 @@ export default function SignaturePad({ isOpen, onClose, onSave }: SignaturePadPr
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    toast.success("이미지가 다운로드되었습니다.");
   };
 
   if (!isOpen) return null;

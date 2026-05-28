@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { Languages, Copy, Check, ArrowRight } from "lucide-react";
 import { koreanToRoman } from "@/lib/romanize";
+import toast from "react-hot-toast";
 
 export default function RomanizerTab() {
   const [koreanName, setKoreanName] = useState("");
@@ -19,9 +20,11 @@ export default function RomanizerTab() {
     try {
       await navigator.clipboard.writeText(romanized);
       setCopied(true);
+      toast.success("영문명이 복사되었습니다!");
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
       console.error("Failed to copy", err);
+      toast.error("복사에 실패했습니다.");
     }
   };
 
