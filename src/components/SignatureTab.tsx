@@ -296,29 +296,29 @@ export default function SignatureTab() {
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto py-8 px-4" ref={containerRef}>
+    <div className="w-full max-w-4xl mx-auto py-8 px-4 transition-colors" ref={containerRef}>
       <style dangerouslySetInnerHTML={{ __html: `
         @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Nanum+Brush+Script&family=Nanum+Pen+Script&family=Hi+Melody&display=swap');
       `}} />
-      <div className="bg-white rounded-3xl shadow-sm border border-gray-200 overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
         {/* 헤더 */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-8 py-6 border-b border-gray-100">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-8 py-6 border-b border-gray-100 dark:border-gray-700">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-blue-50 text-blue-500 rounded-2xl flex items-center justify-center border border-blue-100 shrink-0">
+            <div className="w-12 h-12 bg-blue-50 dark:bg-blue-900/30 text-blue-500 dark:text-blue-400 rounded-2xl flex items-center justify-center border border-blue-100 dark:border-blue-800/50 shrink-0">
               <PenTool className="w-6 h-6" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-gray-900" style={{ fontFamily: "Inter, sans-serif" }}>서명 만들기</h2>
-              <p className="text-sm text-gray-500">투명 배경의 서명 이미지를 만들어 저장하세요</p>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white" style={{ fontFamily: "Inter, sans-serif" }}>서명 만들기</h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400">투명 배경의 서명 이미지를 만들어 저장하세요</p>
             </div>
           </div>
           
           {/* 모드 전환 토글 */}
-          <div className="flex bg-gray-100 p-1 rounded-xl shrink-0">
+          <div className="flex bg-gray-100 dark:bg-gray-900 p-1 rounded-xl shrink-0">
             <button
               onClick={() => setMode("draw")}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
-                mode === "draw" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"
+                mode === "draw" ? "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm" : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
               }`}
             >
               <Edit3 className="w-4 h-4" />
@@ -327,7 +327,7 @@ export default function SignatureTab() {
             <button
               onClick={() => setMode("type")}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
-                mode === "type" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"
+                mode === "type" ? "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm" : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
               }`}
             >
               <Type className="w-4 h-4" />
@@ -337,10 +337,10 @@ export default function SignatureTab() {
         </div>
 
         {/* 툴바 */}
-        <div className="flex flex-wrap items-center gap-6 px-8 py-4 bg-gray-50/50 border-b border-gray-100">
+        <div className="flex flex-wrap items-center gap-6 px-8 py-4 bg-gray-50/50 dark:bg-gray-900/50 border-b border-gray-100 dark:border-gray-700">
           {mode === "draw" && (
             <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-gray-600 w-8">굵기</span>
+              <span className="text-xs font-semibold text-gray-600 dark:text-gray-300 w-8">굵기</span>
               <div className="flex gap-1.5">
                 {widths.map((w) => (
                   <button
@@ -349,7 +349,7 @@ export default function SignatureTab() {
                     className={`px-3 py-1.5 text-xs rounded-lg transition-all font-medium ${
                       penWidth === w.value
                         ? "bg-blue-600 text-white shadow-sm"
-                        : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
+                        : "bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
                     }`}
                   >
                     {w.label}
@@ -367,15 +367,15 @@ export default function SignatureTab() {
                   value={typedText}
                   onChange={(e) => setTypedText(e.target.value)}
                   placeholder="서명할 이름을 입력하세요 (예: 김길동)"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-sm"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg outline-none focus:border-blue-500 dark:focus:border-blue-400 focus:ring-1 focus:ring-blue-500 text-sm"
                 />
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold text-gray-600">폰트</span>
+                <span className="text-xs font-semibold text-gray-600 dark:text-gray-300">폰트</span>
                 <select
                   value={selectedFont}
                   onChange={(e) => setSelectedFont(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-lg outline-none focus:border-blue-500 text-sm"
+                  className="px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg outline-none focus:border-blue-500 dark:focus:border-blue-400 text-sm"
                   style={{ fontFamily: selectedFont }}
                 >
                   {FONTS.map(f => (
@@ -389,7 +389,7 @@ export default function SignatureTab() {
           )}
 
           <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-gray-600 w-8">색상</span>
+            <span className="text-xs font-semibold text-gray-600 dark:text-gray-300 w-8">색상</span>
             <div className="flex gap-2">
               {presetColors.map((c) => (
                 <button
@@ -397,8 +397,8 @@ export default function SignatureTab() {
                   onClick={() => setPenColor(c.value)}
                   className={`w-7 h-7 rounded-full border-2 transition-all ${
                     penColor === c.value
-                      ? "border-blue-500 scale-110 shadow-sm"
-                      : "border-gray-200 hover:scale-105"
+                      ? "border-blue-500 dark:border-blue-400 scale-110 shadow-sm"
+                      : "border-gray-200 dark:border-gray-600 hover:scale-105"
                   }`}
                   style={{ backgroundColor: c.value }}
                   title={c.label}
@@ -408,7 +408,7 @@ export default function SignatureTab() {
                 type="color"
                 value={penColor}
                 onChange={(e) => setPenColor(e.target.value)}
-                className="w-7 h-7 rounded-full border-2 border-gray-200 cursor-pointer overflow-hidden p-0 bg-transparent outline-none"
+                className="w-7 h-7 rounded-full border-2 border-gray-200 dark:border-gray-600 cursor-pointer overflow-hidden p-0 bg-transparent outline-none"
                 title="사용자 지정 색상"
               />
             </div>
@@ -421,7 +421,7 @@ export default function SignatureTab() {
               <button
                 onClick={handleUndo}
                 disabled={strokes.length === 0}
-                className="flex items-center gap-1.5 px-3 py-2 text-sm text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 disabled:opacity-40 transition-colors shadow-sm"
+                className="flex items-center gap-1.5 px-3 py-2 text-sm text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-40 transition-colors shadow-sm"
               >
                 <Undo2 className="w-4 h-4" /> 되돌리기
               </button>
@@ -429,7 +429,7 @@ export default function SignatureTab() {
             <button
               onClick={handleClear}
               disabled={mode === "draw" ? strokes.length === 0 : typedText.length === 0}
-              className="flex items-center gap-1.5 px-3 py-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl hover:bg-red-100 disabled:opacity-40 transition-colors shadow-sm font-medium"
+              className="flex items-center gap-1.5 px-3 py-2 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/50 rounded-xl hover:bg-red-100 dark:hover:bg-red-900/40 disabled:opacity-40 transition-colors shadow-sm font-medium"
             >
               <Trash2 className="w-4 h-4" /> 지우기
             </button>
@@ -437,8 +437,8 @@ export default function SignatureTab() {
         </div>
 
         {/* 캔버스 */}
-        <div className="p-8 bg-gray-50">
-          <div className="relative rounded-2xl overflow-hidden border-2 border-dashed border-gray-300 bg-white shadow-sm mx-auto" style={{ width: dimensions.width, height: dimensions.height }}>
+        <div className="p-8 bg-gray-50 dark:bg-gray-900">
+          <div className="relative rounded-2xl overflow-hidden border-2 border-dashed border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-sm mx-auto" style={{ width: dimensions.width, height: dimensions.height }}>
             <canvas
               ref={canvasRef}
               width={dimensions.width}
@@ -454,7 +454,7 @@ export default function SignatureTab() {
             />
             {((mode === "draw" && strokes.length === 0 && !isDrawing) || (mode === "type" && !typedText)) && (
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <p className="text-gray-400 font-medium select-none bg-white/80 px-4 py-2 rounded-full backdrop-blur-sm">
+                <p className="text-gray-400 dark:text-gray-500 font-medium select-none bg-white/80 dark:bg-gray-800/80 px-4 py-2 rounded-full backdrop-blur-sm">
                   {mode === "draw" ? "이 영역에 서명을 그려보세요" : "위 입력칸에 이름을 입력하면 서명이 생성됩니다"}
                 </p>
               </div>
@@ -463,8 +463,8 @@ export default function SignatureTab() {
         </div>
 
         {/* 푸터 */}
-        <div className="flex items-center justify-between px-8 py-5 border-t border-gray-100 bg-white">
-          <p className="text-xs text-gray-500">다운로드 시 빈 여백은 자동으로 잘라내어 투명 배경으로 저장됩니다.</p>
+        <div className="flex items-center justify-between px-8 py-5 border-t border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800">
+          <p className="text-xs text-gray-500 dark:text-gray-400">다운로드 시 빈 여백은 자동으로 잘라내어 투명 배경으로 저장됩니다.</p>
           <button
             onClick={handleDownload}
             disabled={mode === "draw" ? strokes.length === 0 : typedText.length === 0}

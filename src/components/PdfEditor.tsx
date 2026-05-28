@@ -5,7 +5,7 @@ import * as pdfjsLib from "pdfjs-dist";
 import Tesseract from "tesseract.js";
 import { Download, Loader2, Plus, Image as ImageIcon, Scissors, Trash2, Move, Minus, ZoomIn, Pen } from "lucide-react";
 import toast from "react-hot-toast";
-import { exportEditedPdf } from "@/lib/pdfUtils";
+import { exportEditedPdf, mergePdfs } from "@/lib/pdfUtils";
 import { koreanToRoman } from "@/lib/romanize";
 import ImageOverlayComponent, { ImageOverlayData } from "./ImageOverlay";
 import SignaturePad from "./SignaturePad";
@@ -35,6 +35,47 @@ interface PdfEditorProps {
   file: File;
 }
 
+const Thumbnail = ({ pdfDoc, pageNumber, isActive, onClick }: { pdfDoc: pdfjsLib.PDFDocumentProxy, pageNumber: number, isActive: boolean, onClick: () => void }) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    const renderThumb = async () => {
+      try {
+        const page = await pdfDoc.getPage(pageNumber);
+        const viewport = page.getViewport({ scale: 0.2 });
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const context = canvas.getContext("2d");
+        if (!context) return;
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        await page.render({ canvasContext: context, viewport } as any).promise;
+      } catch (err) {
+        console.error("Thumbnail render error", err);
+      }
+    };
+    renderThumb();
+    return () => { isMounted = false; };
+  }, [pdfDoc, pageNumber]);
+
+  return (
+    <div 
+      onClick={onClick}
+      className={`relative cursor-pointer rounded-lg overflow-hidden border-2 transition-all group ${
+        isActive ? "border-blue-500 shadow-md ring-2 ring-blue-500/20" : "border-transparent hover:border-gray-300 dark:hover:border-gray-600"
+      }`}
+    >
+      <canvas ref={canvasRef} className="w-full h-auto bg-white block" />
+      <div className={`absolute bottom-0 left-0 right-0 py-1 text-center text-[10px] font-bold ${
+        isActive ? "bg-blue-500 text-white" : "bg-gray-100/90 dark:bg-gray-800/90 text-gray-600 dark:text-gray-300 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity"
+      }`}>
+        {pageNumber}
+      </div>
+    </div>
+  );
+};
+
 export default function PdfEditor({ file }: PdfEditorProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -61,8 +102,20 @@ export default function PdfEditor({ file }: PdfEditorProps) {
     setImageOverlays,
     selectedImageId,
     setSelectedImageId,
+    selectedTextId,
+    setSelectedTextId,
     nextId,
     setNextId,
+    addTextBox,
+    updateTextBox,
+    removeTextBox,
+    addImageOverlay,
+    updateImageOverlay,
+    removeImageOverlay,
+    undo,
+    redo,
+    saveHistory,
+    resetElements,
   } = usePdfElements();
   const [isUpscaling, setIsUpscaling] = useState(false);
   const [isSignatureOpen, setIsSignatureOpen] = useState(false);
@@ -241,7 +294,7 @@ export default function PdfEditor({ file }: PdfEditorProps) {
     setIsDragOver(false);
   };
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragOver(false);
     if (status !== "done") return;
@@ -249,6 +302,32 @@ export default function PdfEditor({ file }: PdfEditorProps) {
     const files = e.dataTransfer.files;
     if (files && files.length > 0) {
       const file = files[0];
+      
+      // PDF 병합 처리
+      if (file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")) {
+        try {
+          setStatus("rendering");
+          setStatusMsg("PDF 병합 중...");
+          const droppedBuffer = await file.arrayBuffer();
+          const mergedBuffer = await mergePdfs(pdfBuffer!, droppedBuffer);
+          setPdfBuffer(mergedBuffer);
+          
+          const loadingTask = pdfjsLib.getDocument({ data: mergedBuffer });
+          const pdf = await loadingTask.promise;
+          setPdfDoc(pdf);
+          setNumPages(pdf.numPages);
+          
+          setStatus("done");
+          setStatusMsg("PDF가 성공적으로 병합되었습니다!");
+        } catch (err: any) {
+          console.error("PDF 병합 오류:", err);
+          setStatus("error");
+          setStatusMsg("PDF 병합 실패");
+          setErrorDetail(err?.message || String(err));
+        }
+        return;
+      }
+
       if (file.type.startsWith("image/")) {
         const container = containerRef.current;
         if (!container) return;
@@ -311,23 +390,28 @@ export default function PdfEditor({ file }: PdfEditorProps) {
   };
 
   const handleTextChange = useCallback((id: string, newText: string) => {
+    saveHistory(textBoxes, imageOverlays);
     setTextBoxes((prev) => prev.map((b) => b.id === id ? { ...b, text: newText, isEdited: true } : b));
-  }, [setTextBoxes]);
+  }, [setTextBoxes, saveHistory, textBoxes, imageOverlays]);
 
   const handleDeleteBox = useCallback((id: string) => {
+    saveHistory(textBoxes, imageOverlays);
     setTextBoxes((prev) => prev.filter((b) => b.id !== id));
-  }, [setTextBoxes]);
+    setSelectedTextId((prev) => prev === id ? null : prev);
+  }, [setTextBoxes, saveHistory, textBoxes, imageOverlays, setSelectedTextId]);
 
   // 폰트 크기 변경
   const handleFontSizeChange = useCallback((id: string, delta: number) => {
+    saveHistory(textBoxes, imageOverlays);
     setTextBoxes((prev) => prev.map((b) =>
       b.id === id ? { ...b, fontSize: Math.max(8, Math.min(72, b.fontSize + delta)), isEdited: true } : b
     ));
-  }, [setTextBoxes]);
+  }, [setTextBoxes, saveHistory, textBoxes, imageOverlays]);
 
   const handleFontFamilyChange = useCallback((id: string, fontFamily: string) => {
+    saveHistory(textBoxes, imageOverlays);
     setTextBoxes((prev) => prev.map((b) => b.id === id ? { ...b, fontFamily, isEdited: true } : b));
-  }, [setTextBoxes]);
+  }, [setTextBoxes, saveHistory, textBoxes, imageOverlays]);
 
   // 수동 OCR 실행 (표 내부 텍스트 인식률 향상을 위해 PSM 11 사용)
   const handleRunOcr = async () => {
@@ -385,6 +469,7 @@ export default function PdfEditor({ file }: PdfEditorProps) {
   // 텍스트 추가 버튼
   const handleAddText = (isTransparent: boolean = false, initialText: string = "텍스트 입력") => {
     if (status !== "done") return;
+    saveHistory(textBoxes, imageOverlays);
     const newBox: TextBox = {
       id: `new-${nextId}`, text: initialText,
       x: 100 + (nextId % 5) * 20, y: 100 + (nextId % 5) * 20, 
@@ -394,6 +479,8 @@ export default function PdfEditor({ file }: PdfEditorProps) {
       pageIndex: currentPage,
     };
     setTextBoxes((prev) => [...prev, newBox]);
+    setSelectedTextId(newBox.id);
+    setSelectedImageId(null);
     setNextId((prev) => prev + 1);
   };
 
@@ -413,12 +500,14 @@ export default function PdfEditor({ file }: PdfEditorProps) {
   };
 
   const handleToggleTransparent = useCallback((id: string) => {
+    saveHistory(textBoxes, imageOverlays);
     setTextBoxes((prev) => prev.map((b) => b.id === id ? { ...b, isTransparent: !b.isTransparent, isEdited: true } : b));
-  }, [setTextBoxes]);
+  }, [setTextBoxes, saveHistory, textBoxes, imageOverlays]);
 
   // 더블클릭으로 텍스트 추가
   const handleCanvasDoubleClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (status !== "done") return;
+    saveHistory(textBoxes, imageOverlays);
     const canvas = canvasRef.current;
     if (!canvas) return;
     const rect = canvas.getBoundingClientRect();
@@ -431,14 +520,18 @@ export default function PdfEditor({ file }: PdfEditorProps) {
       pageIndex: currentPage,
     };
     setTextBoxes((prev) => [...prev, newBox]);
-    setNextId((prev) => prev + 1);
+    setSelectedTextId(newBox.id);
     setSelectedImageId(null);
+    setNextId((prev) => prev + 1);
   };
 
   // 텍스트 박스 드래그 이동
   const handleTextDragStart = useCallback((e: React.MouseEvent, boxId: string, startBoxX: number, startBoxY: number) => {
     e.preventDefault();
     e.stopPropagation();
+    saveHistory(textBoxes, imageOverlays);
+    setSelectedTextId(boxId);
+    setSelectedImageId(null);
     setDraggingTextId(boxId);
     
     const startX = e.clientX;
@@ -462,6 +555,9 @@ export default function PdfEditor({ file }: PdfEditorProps) {
   const handleTextResizeStart = useCallback((e: React.MouseEvent, boxId: string, startW: number, startH: number) => {
     e.preventDefault();
     e.stopPropagation();
+    saveHistory(textBoxes, imageOverlays);
+    setSelectedTextId(boxId);
+    setSelectedImageId(null);
     setResizingTextId(boxId);
     
     const startX = e.clientX;
@@ -580,52 +676,103 @@ export default function PdfEditor({ file }: PdfEditorProps) {
   };
 
   const handleImageUpdate = (id: string, updates: Partial<ImageOverlayData>) => {
+    // We shouldn't save history on EVERY pixel of drag. ImageOverlayComponent needs to handle dragStart differently.
+    // For now, if we use handleImageUpdate on drag, it doesn't save history to avoid spam.
     setImageOverlays((prev) => prev.map((o) => (o.id === id ? { ...o, ...updates } : o)));
   };
   const handleImageDelete = (id: string) => {
+    saveHistory(textBoxes, imageOverlays);
     setImageOverlays((prev) => prev.filter((o) => o.id !== id));
     if (selectedImageId === id) setSelectedImageId(null);
   };
 
-  // 단축키 지원 (삭제, 복사, 붙여넣기)
+  // 단축키 지원 (삭제, 복사, 붙여넣기, Undo/Redo, 정밀이동)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (status !== "done") return;
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
 
+      // Undo / Redo
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") {
+        if (e.shiftKey) {
+          e.preventDefault();
+          redo();
+        } else {
+          e.preventDefault();
+          undo();
+        }
+        return;
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "y") {
+        e.preventDefault();
+        redo();
+        return;
+      }
+
+      // 방향키 정밀 이동
+      if (e.key === "ArrowUp" || e.key === "ArrowDown" || e.key === "ArrowLeft" || e.key === "ArrowRight") {
+        if (selectedTextId || selectedImageId) {
+          e.preventDefault();
+          saveHistory(textBoxes, imageOverlays);
+          const dx = e.key === "ArrowLeft" ? -1 : e.key === "ArrowRight" ? 1 : 0;
+          const dy = e.key === "ArrowUp" ? -1 : e.key === "ArrowDown" ? 1 : 0;
+          
+          if (selectedTextId) {
+            setTextBoxes(prev => prev.map(b => b.id === selectedTextId ? { ...b, x: b.x + dx, y: b.y + dy } : b));
+          } else if (selectedImageId) {
+            setImageOverlays(prev => prev.map(o => o.id === selectedImageId ? { ...o, x: o.x + dx, y: o.y + dy } : o));
+          }
+        }
+        return;
+      }
+
       if (e.key === "Delete" || e.key === "Backspace") {
         if (selectedImageId) {
+          saveHistory(textBoxes, imageOverlays);
           setImageOverlays((prev) => prev.filter((o) => o.id !== selectedImageId));
           setSelectedImageId(null);
+        } else if (selectedTextId) {
+          saveHistory(textBoxes, imageOverlays);
+          setTextBoxes((prev) => prev.filter((b) => b.id !== selectedTextId));
+          setSelectedTextId(null);
         }
       }
 
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "c") {
         if (selectedImageId) {
           const target = imageOverlays.find(o => o.id === selectedImageId);
-          if (target) sessionStorage.setItem("pdfitor_clipboard_overlay", JSON.stringify(target));
+          if (target) sessionStorage.setItem("pdfitor_clipboard_overlay", JSON.stringify({ type: "image", data: target }));
+        } else if (selectedTextId) {
+          const target = textBoxes.find(b => b.id === selectedTextId);
+          if (target) sessionStorage.setItem("pdfitor_clipboard_overlay", JSON.stringify({ type: "text", data: target }));
         }
       }
 
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "v") {
         const copied = sessionStorage.getItem("pdfitor_clipboard_overlay");
         if (copied) {
-          const target = JSON.parse(copied) as ImageOverlayData;
-          const newOverlay: ImageOverlayData = {
-            ...target,
-            id: `copy-${Date.now()}`,
-            x: target.x + 20,
-            y: target.y + 20,
-            pageIndex: currentPage,
-          };
-          setImageOverlays(prev => [...prev, newOverlay]);
-          setSelectedImageId(newOverlay.id);
+          const parsed = JSON.parse(copied);
+          saveHistory(textBoxes, imageOverlays);
+          if (parsed.type === "image") {
+            const target = parsed.data as ImageOverlayData;
+            const newOverlay: ImageOverlayData = { ...target, id: `copy-${Date.now()}`, x: target.x + 20, y: target.y + 20, pageIndex: currentPage };
+            setImageOverlays(prev => [...prev, newOverlay]);
+            setSelectedImageId(newOverlay.id);
+            setSelectedTextId(null);
+          } else if (parsed.type === "text") {
+            const target = parsed.data as TextBox;
+            const newBox: TextBox = { ...target, id: `new-${nextId}`, x: target.x + 20, y: target.y + 20, pageIndex: currentPage };
+            setTextBoxes(prev => [...prev, newBox]);
+            setNextId(prev => prev + 1);
+            setSelectedTextId(newBox.id);
+            setSelectedImageId(null);
+          }
         }
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [status, selectedImageId, imageOverlays]);
+  }, [status, selectedImageId, selectedTextId, imageOverlays, textBoxes, undo, redo, saveHistory, nextId]);
 
   const handleExport = async () => {
     if (!pdfBuffer) return;
@@ -694,91 +841,91 @@ export default function PdfEditor({ file }: PdfEditorProps) {
         @font-face { font-family: "Jua"; src: url("/Jua.ttf"); }
       `}</style>
       {/* 툴바 */}
-      <div className="w-full flex flex-wrap justify-between items-center mb-6 bg-white p-4 rounded-2xl border border-gray-200 gap-3 shadow-sm">
-        <h2 className="text-sm font-bold text-gray-900 truncate max-w-xs px-2" style={{ fontFamily: "Inter, sans-serif" }}>
+      <div className="w-full flex flex-wrap justify-between items-center mb-6 bg-white dark:bg-gray-800 p-4 rounded-2xl border border-gray-200 dark:border-gray-700 gap-3 shadow-sm transition-colors">
+        <h2 className="text-sm font-bold text-gray-900 dark:text-white truncate max-w-xs px-2" style={{ fontFamily: "Inter, sans-serif" }}>
           📄 {file.name}
         </h2>
         <div className="flex gap-2 flex-wrap items-center">
           <button onClick={handleRunOcr} disabled={status !== "done"}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-white border border-gray-200 text-gray-700 text-xs font-semibold rounded-full hover:bg-gray-50 disabled:opacity-30 transition-all shadow-sm"
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-xs font-semibold rounded-full hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-30 transition-all shadow-sm"
             title="문서 내의 글자를 자동으로 인식하여 편집 가능한 박스로 만듭니다">
             📝 텍스트 자동 추출
           </button>
           <button onClick={() => handleAddText(false)} disabled={status !== "done"}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-white border border-gray-200 text-gray-700 text-xs font-semibold rounded-full hover:bg-gray-50 disabled:opacity-30 transition-all shadow-sm">
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-xs font-semibold rounded-full hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-30 transition-all shadow-sm">
             텍스트 추가(흰배경)
           </button>
           <button onClick={() => handleAddText(true)} disabled={status !== "done"}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-white border border-gray-200 text-gray-700 text-xs font-semibold rounded-full hover:bg-gray-50 disabled:opacity-30 transition-all shadow-sm">
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-xs font-semibold rounded-full hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-30 transition-all shadow-sm">
             텍스트 추가(투명)
           </button>
           <button onClick={handleAddRomanizedName} disabled={status !== "done"}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-blue-50 border border-blue-200 text-blue-700 text-xs font-bold rounded-full hover:bg-blue-100 disabled:opacity-30 transition-all shadow-sm"
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-400 text-xs font-bold rounded-full hover:bg-blue-100 dark:hover:bg-blue-800/50 disabled:opacity-30 transition-all shadow-sm"
             title="한글 이름을 입력하면 소리나는 대로 영문으로 변환하여 추가합니다">
             영문명 변환
           </button>
           <button onClick={() => imageInputRef.current?.click()} disabled={status !== "done"}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-white border border-gray-200 text-gray-700 text-xs font-semibold rounded-full hover:bg-gray-50 disabled:opacity-30 transition-all shadow-sm">
-            <ImageIcon className="w-3.5 h-3.5 text-blue-500" /> 이미지 추가
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-xs font-semibold rounded-full hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-30 transition-all shadow-sm">
+            <ImageIcon className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400" /> 이미지 추가
           </button>
           <input ref={imageInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
           
           <button onClick={() => bgRemoveInputRef.current?.click()} disabled={status !== "done" || isRemovingBg}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-white border border-gray-200 text-gray-700 text-xs font-semibold rounded-full hover:bg-gray-50 disabled:opacity-30 transition-all shadow-sm">
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-xs font-semibold rounded-full hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-30 transition-all shadow-sm">
             {isRemovingBg ? <Loader2 className="w-3.5 h-3.5 animate-spin text-pink-500" /> : <Scissors className="w-3.5 h-3.5 text-pink-500" />}
             누끼따기
           </button>
           <input ref={bgRemoveInputRef} type="file" accept="image/*" className="hidden" onChange={handleBgRemoveUpload} />
           
           <button onClick={() => upscaleInputRef.current?.click()} disabled={status !== "done" || isUpscaling}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-white border border-gray-200 text-gray-700 text-xs font-semibold rounded-full hover:bg-gray-50 disabled:opacity-30 transition-all shadow-sm">
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-xs font-semibold rounded-full hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-30 transition-all shadow-sm">
             {isUpscaling ? <Loader2 className="w-3.5 h-3.5 animate-spin text-purple-500" /> : <ZoomIn className="w-3.5 h-3.5 text-purple-500" />}
             업스케일링
           </button>
           <input ref={upscaleInputRef} type="file" accept="image/*" className="hidden" onChange={handleUpscaleUpload} />
           
           <button onClick={() => setIsSignatureOpen(true)} disabled={status !== "done"}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-white border border-gray-200 text-gray-700 text-xs font-semibold rounded-full hover:bg-gray-50 disabled:opacity-30 transition-all shadow-sm">
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-xs font-semibold rounded-full hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-30 transition-all shadow-sm">
             <Pen className="w-3.5 h-3.5 text-emerald-500" /> 서명/그리기
           </button>
           
-          <div className="w-[1px] h-6 bg-gray-200 mx-1" />
+          <div className="w-[1px] h-6 bg-gray-200 dark:bg-gray-600 mx-1" />
           
           {/* 페이지 이동 (여러 장일 경우) */}
           {numPages > 1 && (
-            <div className="flex items-center bg-white border border-gray-200 rounded-full overflow-hidden mr-1 shadow-sm">
+            <div className="flex items-center bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-full overflow-hidden mr-1 shadow-sm">
               <button onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))} disabled={currentPage <= 1 || status !== "done"}
-                className="px-3 py-1.5 hover:bg-gray-50 disabled:opacity-30 text-xs font-bold text-gray-600 border-r border-gray-200">
+                className="px-3 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-30 text-xs font-bold text-gray-600 dark:text-gray-300 border-r border-gray-200 dark:border-gray-600">
                 이전
               </button>
-              <span className="text-[11px] font-mono px-3 py-1.5 text-gray-800 bg-gray-50 select-none">
+              <span className="text-[11px] font-mono px-3 py-1.5 text-gray-800 dark:text-gray-200 bg-gray-50 dark:bg-gray-800 select-none">
                 {currentPage} / {numPages}
               </span>
               <button onClick={() => setCurrentPage(prev => Math.min(numPages, prev + 1))} disabled={currentPage >= numPages || status !== "done"}
-                className="px-3 py-1.5 hover:bg-gray-50 disabled:opacity-30 text-xs font-bold text-gray-600 border-l border-gray-200">
+                className="px-3 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-30 text-xs font-bold text-gray-600 dark:text-gray-300 border-l border-gray-200 dark:border-gray-600">
                 다음
               </button>
             </div>
           )}
           
           {/* 확대 축소 버튼 */}
-          <div className="flex items-center bg-white border border-gray-200 rounded-full overflow-hidden mr-1 shadow-sm">
+          <div className="flex items-center bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-full overflow-hidden mr-1 shadow-sm">
             <button onClick={() => handleZoom("out")} disabled={status !== "done" || scale <= 0.5}
-              className="p-2 hover:bg-gray-50 disabled:opacity-30 text-gray-600" title="축소">
+              className="p-2 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-30 text-gray-600 dark:text-gray-300" title="축소">
               <Minus className="w-3.5 h-3.5" />
             </button>
             <span onClick={() => handleZoom("reset")} 
-              className="text-[10px] font-mono px-3 py-1.5 text-gray-800 bg-white border-x border-gray-200 cursor-pointer hover:bg-gray-50 select-none font-bold" title="원래 크기 (1.5x)">
+              className="text-[10px] font-mono px-3 py-1.5 text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-700 border-x border-gray-200 dark:border-gray-600 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-600 select-none font-bold" title="원래 크기 (1.5x)">
               {Math.round(scale * 100)}%
             </span>
             <button onClick={() => handleZoom("in")} disabled={status !== "done" || scale >= 3.0}
-              className="p-2 hover:bg-gray-50 disabled:opacity-30 text-gray-600" title="확대">
+              className="p-2 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-30 text-gray-600 dark:text-gray-300" title="확대">
               <Plus className="w-3.5 h-3.5" />
             </button>
           </div>
 
           <button onClick={handleExport} disabled={isLoading || !hasContent}
-            className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white text-xs font-semibold rounded-full shadow-sm hover:bg-blue-700 transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-40 disabled:pointer-events-none">
+            className="flex items-center gap-2 px-6 py-2 bg-blue-600 dark:bg-blue-500 text-white text-xs font-semibold rounded-full shadow-sm hover:bg-blue-700 dark:hover:bg-blue-600 transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-40 disabled:pointer-events-none">
             <Download className="w-3.5 h-3.5" /> 내보내기
           </button>
         </div>
@@ -786,10 +933,10 @@ export default function PdfEditor({ file }: PdfEditorProps) {
 
       {/* 상태 메시지 */}
       <div className={`w-full mb-4 px-4 py-3 rounded-xl text-xs font-semibold border ${
-        status === "error" ? "bg-red-50 border-red-200 text-red-700"
-        : status === "done" && hasContent ? "bg-blue-50 border-blue-200 text-blue-700"
-        : status === "done" ? "bg-gray-50 border-gray-200 text-gray-700"
-        : "bg-indigo-50 border-indigo-200 text-indigo-700"
+        status === "error" ? "bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-800 text-red-700 dark:text-red-400"
+        : status === "done" && hasContent ? "bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-400"
+        : status === "done" ? "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300"
+        : "bg-indigo-50 dark:bg-indigo-900/30 border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-400"
       }`}>
         {isLoading && <span className="inline-block mr-2 animate-spin">⏳</span>}
         {status === "done" && hasContent && "✏️ "}
@@ -818,6 +965,34 @@ export default function PdfEditor({ file }: PdfEditorProps) {
       )}
 
       <div className={`flex w-full gap-6 items-start ${extractedTexts.length > 0 ? "justify-start" : "justify-center"} overflow-x-auto pb-8`}>
+        
+        {/* 좌측 썸네일 사이드바 */}
+        {pdfDoc && numPages > 0 && (
+          <div className="w-32 shrink-0 flex flex-col bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 shadow-sm rounded-2xl h-[80vh] sticky top-24 overflow-hidden transition-colors"
+               onDragOver={handleDragOver}
+               onDragLeave={handleDragLeave}
+               onDrop={handleDrop}
+          >
+            <div className="bg-gray-100 dark:bg-gray-900 px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center text-xs font-bold text-gray-700 dark:text-gray-300">
+              페이지
+            </div>
+            <div className="flex-1 overflow-y-auto p-3 space-y-3">
+              {Array.from(new Array(numPages), (el, index) => (
+                <Thumbnail 
+                  key={index} 
+                  pdfDoc={pdfDoc} 
+                  pageNumber={index + 1} 
+                  isActive={currentPage === index + 1}
+                  onClick={() => setCurrentPage(index + 1)} 
+                />
+              ))}
+              <div className="pt-2 pb-4 text-center text-[10px] text-gray-400 dark:text-gray-500 font-medium">
+                다른 PDF를<br/>여기로 드래그하여 병합
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* PDF 컨테이너 */}
         <div 
           ref={containerRef}
@@ -825,7 +1000,7 @@ export default function PdfEditor({ file }: PdfEditorProps) {
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
-          className={`relative border shadow-2xl bg-white overflow-auto rounded-lg shrink-0 transition-all ${
+          className={`relative border border-gray-300 dark:border-gray-600 shadow-2xl bg-white overflow-auto rounded-lg shrink-0 transition-all ${
             isDragOver ? "ring-4 ring-indigo-500 ring-offset-2 scale-[1.01]" : ""
           }`}
           style={{ minHeight: "600px" }}
@@ -853,6 +1028,8 @@ export default function PdfEditor({ file }: PdfEditorProps) {
               key={box.id}
               box={box}
               scale={scale}
+              isSelected={selectedTextId === box.id}
+              onSelect={() => { setSelectedTextId(box.id); setSelectedImageId(null); }}
               isDragging={draggingTextId === box.id}
               isResizing={resizingTextId === box.id}
               onDragStart={handleTextDragStart}
@@ -869,34 +1046,36 @@ export default function PdfEditor({ file }: PdfEditorProps) {
           {status === "done" && imageOverlays.filter(overlay => overlay.pageIndex === currentPage).map((overlay) => (
             <ImageOverlayComponent key={overlay.id} overlay={overlay} scale={scale}
               onUpdate={handleImageUpdate} onDelete={handleImageDelete}
-              isSelected={selectedImageId === overlay.id} onSelect={setSelectedImageId} />
+              isSelected={selectedImageId === overlay.id} 
+              onSelect={(id) => { setSelectedImageId(id); setSelectedTextId(null); }} 
+              onDragStart={() => saveHistory(textBoxes, imageOverlays)} />
           ))}
         </div>
 
         {/* 텍스트 목록 사이드바 */}
         {extractedTexts.length > 0 && (
-          <div className="w-80 shrink-0 flex flex-col bg-white border border-gray-200 shadow-sm rounded-2xl h-[80vh] sticky top-24 overflow-hidden">
-            <div className="bg-gray-50 px-4 py-3 border-b border-gray-200 flex justify-between items-center">
-              <span className="text-xs font-bold text-gray-700">📑 추출된 텍스트 ({extractedTexts.length})</span>
+          <div className="w-80 shrink-0 flex flex-col bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm rounded-2xl h-[80vh] sticky top-24 overflow-hidden transition-colors">
+            <div className="bg-gray-50 dark:bg-gray-900 px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+              <span className="text-xs font-bold text-gray-700 dark:text-gray-300">📑 추출된 텍스트 ({extractedTexts.length})</span>
               <button 
                 onClick={() => {
                   navigator.clipboard.writeText(extractedTexts.join('\n'));
                   alert('클립보드에 전체 텍스트가 복사되었습니다!');
                 }}
-                className="text-[10px] px-2.5 py-1 bg-white text-gray-700 rounded-full border border-gray-200 hover:bg-gray-50 font-semibold transition-all shadow-sm"
+                className="text-[10px] px-2.5 py-1 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-full border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 font-semibold transition-all shadow-sm"
               >
                 전체 복사
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-white">
+            <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-white dark:bg-gray-800">
               {extractedTexts.map((text, idx) => (
                 <div key={idx} 
                   onDoubleClick={() => handleAddText(true, text)}
                   title="더블클릭하여 PDF에 텍스트 상자로 추가"
-                  className="p-3 bg-gray-50 rounded-xl border border-gray-100 text-xs text-gray-700 whitespace-pre-wrap shadow-sm cursor-pointer hover:bg-blue-50 hover:border-blue-200 transition-all group relative"
+                  className="p-3 bg-gray-50 dark:bg-gray-700 rounded-xl border border-gray-100 dark:border-gray-600 text-xs text-gray-700 dark:text-gray-200 whitespace-pre-wrap shadow-sm cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/40 hover:border-blue-200 dark:hover:border-blue-700 transition-all group relative"
                 >
                   {text}
-                  <div className="text-[9px] text-blue-600 opacity-0 group-hover:opacity-100 mt-1.5 font-bold transition-opacity">
+                  <div className="text-[9px] text-blue-600 dark:text-blue-400 opacity-0 group-hover:opacity-100 mt-1.5 font-bold transition-opacity">
                     ✨ 더블클릭하여 PDF에 추가
                   </div>
                 </div>

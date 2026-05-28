@@ -120,3 +120,22 @@ export async function exportEditedPdf(
     }
   });
 }
+
+/**
+ * Merge two PDF ArrayBuffers into one by appending the second PDF's pages to the first.
+ * @param buffer1 The original PDF ArrayBuffer
+ * @param buffer2 The newly dropped PDF ArrayBuffer
+ * @returns A new ArrayBuffer containing the merged PDF
+ */
+export async function mergePdfs(buffer1: ArrayBuffer, buffer2: ArrayBuffer): Promise<ArrayBuffer> {
+  const pdf1 = await PDFDocument.load(buffer1);
+  const pdf2 = await PDFDocument.load(buffer2);
+
+  const copiedPages = await pdf1.copyPages(pdf2, pdf2.getPageIndices());
+  copiedPages.forEach((page) => {
+    pdf1.addPage(page);
+  });
+
+  const mergedBytes = await pdf1.save();
+  return mergedBytes.buffer.slice(mergedBytes.byteOffset, mergedBytes.byteOffset + mergedBytes.byteLength) as ArrayBuffer;
+}

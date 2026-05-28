@@ -5,6 +5,8 @@ import { TextBox } from './PdfEditor';
 interface TextBoxOverlayProps {
   box: TextBox;
   scale: number;
+  isSelected: boolean;
+  onSelect: () => void;
   isDragging: boolean;
   isResizing: boolean;
   onDragStart: (e: React.MouseEvent, id: string, startX: number, startY: number) => void;
@@ -19,6 +21,8 @@ interface TextBoxOverlayProps {
 const TextBoxOverlay: React.FC<TextBoxOverlayProps> = ({
   box,
   scale,
+  isSelected,
+  onSelect,
   isDragging,
   isResizing,
   onDragStart,
@@ -31,14 +35,18 @@ const TextBoxOverlay: React.FC<TextBoxOverlayProps> = ({
 }) => {
   return (
     <div
-      className="absolute group"
+      className={`absolute group ${isSelected ? 'ring-2 ring-blue-500 ring-offset-1' : ''}`}
       onDoubleClick={(e) => e.stopPropagation()}
+      onClick={(e) => {
+        e.stopPropagation();
+        onSelect();
+      }}
       style={{
         left: `${box.x * scale}px`,
         top: `${box.y * scale}px`,
         width: `${box.width * scale}px`,
         height: `${box.height * scale}px`,
-        zIndex: isDragging || isResizing ? 30 : 10,
+        zIndex: isDragging || isResizing || isSelected ? 30 : 10,
       }}
     >
       {/* 상단 컨트롤 바 */}

@@ -23,6 +23,7 @@ interface ImageOverlayProps {
   onDelete: (id: string) => void;
   isSelected: boolean;
   onSelect: (id: string) => void;
+  onDragStart?: () => void;
 }
 
 export default function ImageOverlay({
@@ -32,6 +33,7 @@ export default function ImageOverlay({
   onDelete,
   isSelected,
   onSelect,
+  onDragStart,
 }: ImageOverlayProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
@@ -42,6 +44,7 @@ export default function ImageOverlay({
   const handleDragStart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    if (onDragStart) onDragStart();
     setIsDragging(true);
     const startX = e.clientX;
     const startY = e.clientY;
@@ -66,6 +69,7 @@ export default function ImageOverlay({
   const handleResizeStart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    if (onDragStart) onDragStart();
     setIsResizing(true);
     const startX = e.clientX;
     const startY = e.clientY;
