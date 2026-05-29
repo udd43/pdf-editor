@@ -8,6 +8,15 @@ interface ChangelogModalProps {
 
 const CHANGELOG_DATA = [
   {
+    version: "v1.0.46",
+    date: "2026-05-29",
+    changes: [
+      "모바일 환경 최적화 (서명 탭 캔버스 크기 및 여백 개선)",
+      "모바일 우측 슬라이드 햄버거 메뉴 추가 (작은 화면에서 탭 내비게이션 숨김)",
+      "서명 모달 및 하단 도구 모음 줄바꿈 등 반응형 레이아웃 적용"
+    ]
+  },
+  {
     version: "v1.0.45",
     date: "2026-05-29",
     changes: [
