@@ -36,7 +36,8 @@ export default function SignatureTab() {
   const [strokes, setStrokes] = useState<Stroke[]>([]);
   const [currentStroke, setCurrentStroke] = useState<Point[]>([]);
   
-  const [dimensions, setDimensions] = useState({ width: 800, height: 400 });
+  const CANVAS_WIDTH = 800;
+  const CANVAS_HEIGHT = 400;
 
   const presetColors = [
     { value: "#000000", label: "검정" },
@@ -51,20 +52,6 @@ export default function SignatureTab() {
     { value: 6, label: "굵게" },
     { value: 10, label: "아주 굵게" },
   ];
-
-  useEffect(() => {
-    const handleResize = () => {
-      if (containerRef.current) {
-        setDimensions({
-          width: containerRef.current.clientWidth - 40, // padding
-          height: 400,
-        });
-      }
-    };
-    handleResize();
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
 
   // 모바일 터치 스크롤 방지
   useEffect(() => {
@@ -85,7 +72,7 @@ export default function SignatureTab() {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    ctx.clearRect(0, 0, dimensions.width, dimensions.height);
+    ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
     if (mode === "type" && typedText) {
       const fontSize = 80;
@@ -104,9 +91,9 @@ export default function SignatureTab() {
       ctx.textBaseline = "middle";
       
       // 텍스트를 캔버스 중앙에 배치
-      ctx.fillText(typedText, dimensions.width / 2, dimensions.height / 2);
+      ctx.fillText(typedText, CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
     }
-  }, [typedText, selectedFont, penColor, dimensions, mode]);
+  }, [typedText, selectedFont, penColor, mode]);
 
   const redrawCanvas = useCallback(() => {
     const canvas = canvasRef.current;
@@ -114,7 +101,7 @@ export default function SignatureTab() {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    ctx.clearRect(0, 0, dimensions.width, dimensions.height);
+    ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
     if (mode === "draw") {
       for (const stroke of strokes) {
@@ -133,7 +120,7 @@ export default function SignatureTab() {
     } else {
       drawTextOnCanvas();
     }
-  }, [strokes, dimensions, mode, drawTextOnCanvas]);
+  }, [strokes, mode, drawTextOnCanvas]);
 
   useEffect(() => {
     redrawCanvas();
@@ -143,8 +130,8 @@ export default function SignatureTab() {
     const canvas = canvasRef.current;
     if (!canvas) return { x: 0, y: 0 };
     const rect = canvas.getBoundingClientRect();
-    const scaleX = dimensions.width / rect.width;
-    const scaleY = dimensions.height / rect.height;
+    const scaleX = CANVAS_WIDTH / rect.width;
+    const scaleY = CANVAS_HEIGHT / rect.height;
 
     if ("touches" in e) {
       const touch = e.touches[0];
@@ -245,14 +232,14 @@ export default function SignatureTab() {
     if (!ctx) return;
 
     // 이미지 데이터에서 실제 픽셀이 있는 영역 찾기
-    const imgData = ctx.getImageData(0, 0, dimensions.width, dimensions.height);
+    const imgData = ctx.getImageData(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
     const data = imgData.data;
 
-    let minX = dimensions.width, minY = dimensions.height, maxX = 0, maxY = 0;
+    let minX = CANVAS_WIDTH, minY = CANVAS_HEIGHT, maxX = 0, maxY = 0;
     
-    for (let y = 0; y < dimensions.height; y++) {
-      for (let x = 0; x < dimensions.width; x++) {
-        const alpha = data[(y * dimensions.width + x) * 4 + 3];
+    for (let y = 0; y < CANVAS_HEIGHT; y++) {
+      for (let x = 0; x < CANVAS_WIDTH; x++) {
+        const alpha = data[(y * CANVAS_WIDTH + x) * 4 + 3];
         if (alpha > 10) {
           minX = Math.min(minX, x);
           minY = Math.min(minY, y);
@@ -265,8 +252,8 @@ export default function SignatureTab() {
     const padding = 16;
     minX = Math.max(0, minX - padding);
     minY = Math.max(0, minY - padding);
-    maxX = Math.min(dimensions.width, maxX + padding);
-    maxY = Math.min(dimensions.height, maxY + padding);
+    maxX = Math.min(CANVAS_WIDTH, maxX + padding);
+    maxY = Math.min(CANVAS_HEIGHT, maxY + padding);
 
     const cropW = maxX - minX;
     const cropH = maxY - minY;
@@ -296,13 +283,13 @@ export default function SignatureTab() {
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto py-8 px-4 transition-colors" ref={containerRef}>
+    <div className="w-full max-w-4xl mx-auto py-4 sm:py-8 px-2 sm:px-4 transition-colors" ref={containerRef}>
       <style dangerouslySetInnerHTML={{ __html: `
         @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Nanum+Brush+Script&family=Nanum+Pen+Script&family=Hi+Melody&display=swap');
       `}} />
-      <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden w-full">
         {/* 헤더 */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-8 py-6 border-b border-gray-100 dark:border-gray-700">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-4 sm:px-8 py-4 sm:py-6 border-b border-gray-100 dark:border-gray-700">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 bg-blue-50 dark:bg-blue-900/30 text-blue-500 dark:text-blue-400 rounded-2xl flex items-center justify-center border border-blue-100 dark:border-blue-800/50 shrink-0">
               <PenTool className="w-6 h-6" />
@@ -337,7 +324,7 @@ export default function SignatureTab() {
         </div>
 
         {/* 툴바 */}
-        <div className="flex flex-wrap items-center gap-6 px-8 py-4 bg-gray-50/50 dark:bg-gray-900/50 border-b border-gray-100 dark:border-gray-700">
+        <div className="flex flex-wrap items-center justify-between gap-4 px-4 sm:px-8 py-4 bg-gray-50/50 dark:bg-gray-900/50 border-b border-gray-100 dark:border-gray-700">
           {mode === "draw" && (
             <div className="flex items-center gap-2">
               <span className="text-xs font-semibold text-gray-600 dark:text-gray-300 w-8">굵기</span>
@@ -437,12 +424,12 @@ export default function SignatureTab() {
         </div>
 
         {/* 캔버스 */}
-        <div className="p-8 bg-gray-50 dark:bg-gray-900">
-          <div className="relative rounded-2xl overflow-hidden border-2 border-dashed border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-sm mx-auto" style={{ width: dimensions.width, height: dimensions.height }}>
+        <div className="p-4 sm:p-8 bg-gray-50 dark:bg-gray-900 overflow-x-hidden">
+          <div className="relative rounded-2xl overflow-hidden border-2 border-dashed border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-sm mx-auto w-full aspect-[2/1] sm:aspect-auto sm:max-h-[400px]">
             <canvas
               ref={canvasRef}
-              width={dimensions.width}
-              height={dimensions.height}
+              width={CANVAS_WIDTH}
+              height={CANVAS_HEIGHT}
               className={`block w-full h-full touch-none ${mode === "draw" ? "cursor-crosshair" : "cursor-default"}`}
               onMouseDown={handlePointerDown}
               onMouseMove={handlePointerMove}
@@ -463,7 +450,7 @@ export default function SignatureTab() {
         </div>
 
         {/* 푸터 */}
-        <div className="flex items-center justify-between px-8 py-5 border-t border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 sm:px-8 py-4 sm:py-5 border-t border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 text-center sm:text-left">
           <p className="text-xs text-gray-500 dark:text-gray-400">다운로드 시 빈 여백은 자동으로 잘라내어 투명 배경으로 저장됩니다.</p>
           <button
             onClick={handleDownload}
