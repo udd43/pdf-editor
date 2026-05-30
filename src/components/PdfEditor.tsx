@@ -172,8 +172,9 @@ export default function PdfEditor({ file }: PdfEditorProps) {
 
   // 주주명부 전용 상태
   const [shareholderData, setShareholderData] = useState({
-    name: "", engName: "", gender: "", birth: "", nationality: "", shares: "",
-    pricePerShare: "", ownership: "", totalShares: "", totalOwnership: "",
+    name: "", engName: "", gender: "", birth: "", nationality: "", shares: "", ownership: "",
+    name2: "", engName2: "", gender2: "", birth2: "", nationality2: "", shares2: "", ownership2: "",
+    pricePerShare: "", totalShares: "", totalOwnership: "",
     today: "", company: "", address: "", repName: ""
   });
 
@@ -181,14 +182,26 @@ export default function PdfEditor({ file }: PdfEditorProps) {
     saveHistory(textBoxes, imageOverlays);
     
     const fields = [
+      // 주주 1
       { key: 'name', x: 37, y: 205, w: 81, h: 28 },
       { key: 'engName', x: 126, y: 201, w: 61, h: 34 },
       { key: 'gender', x: 191, y: 200, w: 20, h: 37 },
       { key: 'birth', x: 220, y: 202, w: 60, h: 35 },
       { key: 'nationality', x: 280, y: 201, w: 60, h: 35 },
       { key: 'shares', x: 328, y: 204, w: 60, h: 35 },
-      { key: 'pricePerShare', x: 333, y: 143, w: 91, h: 20 },
       { key: 'ownership', x: 394, y: 201, w: 60, h: 32 },
+
+      // 주주 2 (y: 242)
+      { key: 'name2', x: 37, y: 242, w: 81, h: 28 },
+      { key: 'engName2', x: 126, y: 242, w: 61, h: 34 },
+      { key: 'gender2', x: 191, y: 242, w: 20, h: 37 },
+      { key: 'birth2', x: 220, y: 242, w: 60, h: 35 },
+      { key: 'nationality2', x: 280, y: 242, w: 60, h: 35 },
+      { key: 'shares2', x: 328, y: 242, w: 60, h: 35 },
+      { key: 'ownership2', x: 394, y: 242, w: 60, h: 32 },
+
+      // 공통 / 기타
+      { key: 'pricePerShare', x: 333, y: 140, w: 91, h: 20 },
       { key: 'totalShares', x: 326, y: 471, w: 60, h: 32 },
       { key: 'totalOwnership', x: 394, y: 469, w: 60, h: 36 },
       { key: 'today', x: 248, y: 563, w: 119, h: 20 },
@@ -200,7 +213,7 @@ export default function PdfEditor({ file }: PdfEditorProps) {
     const newBoxes: TextBox[] = [];
     
     fields.forEach((f, idx) => {
-      const val = shareholderData[f.key as keyof typeof shareholderData];
+      const val = (shareholderData as any)[f.key];
       if (val) {
         newBoxes.push({
           id: `shareholder-${Date.now()}-${idx}`, text: val,
@@ -1051,44 +1064,74 @@ export default function PdfEditor({ file }: PdfEditorProps) {
 
         {/* 주주명부 매크로 폼 */}
         {isShareholderDoc && status === "done" && (
-          <div className="flex flex-col gap-3 p-4 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800/50 rounded-xl w-full">
-            <div className="text-sm font-bold text-indigo-700 dark:text-indigo-300">주주명부 일괄 생성기 (자동 위치 지정)</div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-              {[
-                { label: '성명', key: 'name' },
-                { label: '영문명', key: 'engName' },
-                { label: '성별', key: 'gender' },
-                { label: '생년월일', key: 'birth', placeholder: 'YYMMDD' },
-                { label: '국적', key: 'nationality' },
-                { label: '주식수', key: 'shares' },
-                { label: '1주 당 금액', key: 'pricePerShare' },
-                { label: '지분율', key: 'ownership' },
-                { label: '총주식수', key: 'totalShares' },
-                { label: '총지분율', key: 'totalOwnership' },
-                { label: '금일 날짜', key: 'today', placeholder: 'YYYY. MM. DD.' },
-                { label: '상호', key: 'company' },
-                { label: '주소', key: 'address' },
-                { label: '이름(대표)', key: 'repName' },
-              ].map((field) => (
-                <div key={field.key} className="flex flex-col">
-                  <label className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 mb-1">{field.label}</label>
-                  <input
-                    type="text"
-                    placeholder={field.placeholder || field.label}
-                    className="w-full text-xs px-2 py-1.5 rounded border border-indigo-200 dark:border-indigo-800 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-1 focus:ring-indigo-500"
-                    value={(shareholderData as any)[field.key]}
-                    onChange={(e) => setShareholderData({ ...shareholderData, [field.key]: e.target.value })}
-                  />
-                </div>
-              ))}
-            </div>
-            <div className="flex justify-end mt-1">
+          <div className="flex flex-col gap-4 p-4 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800/50 rounded-xl w-full">
+            <div className="flex justify-between items-center">
+              <div className="text-sm font-bold text-indigo-700 dark:text-indigo-300">주주명부 일괄 생성기 (자동 위치 지정)</div>
               <button
                 onClick={handleShareholderAutoFill}
-                className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg text-sm transition-colors shadow-sm"
+                className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg text-xs transition-colors shadow-sm"
               >
                 텍스트 일괄 생성하기
               </button>
+            </div>
+            
+            <div className="flex flex-col gap-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+              {/* 주주 1 */}
+              <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-indigo-100 dark:border-indigo-800/30">
+                <div className="text-xs font-bold text-gray-600 dark:text-gray-300 mb-2">주주 1 (y: 205)</div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+                  {[
+                    { label: '성명', key: 'name' }, { label: '영문명', key: 'engName' },
+                    { label: '성별', key: 'gender' }, { label: '생년월일', key: 'birth' },
+                    { label: '국적', key: 'nationality' }, { label: '주식수', key: 'shares' },
+                    { label: '지분율', key: 'ownership' },
+                  ].map(f => (
+                    <div key={f.key} className="flex flex-col">
+                      <label className="text-[10px] font-semibold text-gray-500 mb-1">{f.label}</label>
+                      <input type="text" className="w-full text-xs px-2 py-1.5 rounded border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 focus:ring-1 focus:ring-indigo-500"
+                        value={(shareholderData as any)[f.key]} onChange={(e) => setShareholderData({ ...shareholderData, [f.key]: e.target.value })} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* 주주 2 */}
+              <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-indigo-100 dark:border-indigo-800/30">
+                <div className="text-xs font-bold text-gray-600 dark:text-gray-300 mb-2">주주 2 (y: 242)</div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+                  {[
+                    { label: '성명', key: 'name2' }, { label: '영문명', key: 'engName2' },
+                    { label: '성별', key: 'gender2' }, { label: '생년월일', key: 'birth2' },
+                    { label: '국적', key: 'nationality2' }, { label: '주식수', key: 'shares2' },
+                    { label: '지분율', key: 'ownership2' },
+                  ].map(f => (
+                    <div key={f.key} className="flex flex-col">
+                      <label className="text-[10px] font-semibold text-gray-500 mb-1">{f.label}</label>
+                      <input type="text" className="w-full text-xs px-2 py-1.5 rounded border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 focus:ring-1 focus:ring-indigo-500"
+                        value={(shareholderData as any)[f.key]} onChange={(e) => setShareholderData({ ...shareholderData, [f.key]: e.target.value })} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* 공통 정보 */}
+              <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-indigo-100 dark:border-indigo-800/30">
+                <div className="text-xs font-bold text-gray-600 dark:text-gray-300 mb-2">공통/기타 정보</div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+                  {[
+                    { label: '1주 당 금액', key: 'pricePerShare' }, { label: '총주식수', key: 'totalShares' },
+                    { label: '총지분율', key: 'totalOwnership' }, { label: '금일 날짜', key: 'today' },
+                    { label: '상호', key: 'company' }, { label: '주소', key: 'address' },
+                    { label: '이름(대표)', key: 'repName' },
+                  ].map(f => (
+                    <div key={f.key} className="flex flex-col">
+                      <label className="text-[10px] font-semibold text-gray-500 mb-1">{f.label}</label>
+                      <input type="text" className="w-full text-xs px-2 py-1.5 rounded border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 focus:ring-1 focus:ring-indigo-500"
+                        value={(shareholderData as any)[f.key]} onChange={(e) => setShareholderData({ ...shareholderData, [f.key]: e.target.value })} />
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         )}
