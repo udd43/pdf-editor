@@ -34,6 +34,7 @@ export default function SignaturePad({ isOpen, onClose, onSave }: SignaturePadPr
  
   const presetColors = [
     { value: "#000000", label: "검정" },
+    { value: "#FFFFFF", label: "흰색" },
     { value: "#EF4444", label: "빨강" },
     { value: "#3B82F6", label: "파랑" },
     { value: "#22C55E", label: "초록" },
@@ -344,19 +345,29 @@ export default function SignaturePad({ isOpen, onClose, onSave }: SignaturePadPr
           {/* 색상 선택 */}
           <div className="flex items-center gap-1.5 ml-2 border-l pl-4 border-gray-200 dark:border-gray-700">
             <span className="text-xs text-gray-500 dark:text-gray-400 font-medium mr-1">색상</span>
-            {presetColors.map((c) => (
-              <button
-                key={c.value}
-                onClick={() => setPenColor(c.value)}
-                className={`w-5 h-5 rounded-full border transition-all ${
-                  penColor === c.value
-                    ? "ring-2 ring-blue-500 dark:ring-blue-400 ring-offset-1 scale-110"
-                    : "border-gray-300 dark:border-gray-500 hover:scale-105"
-                }`}
-                style={{ backgroundColor: c.value }}
-                title={c.label}
-              />
-            ))}
+            {presetColors.map((c) => {
+              const isWhite = c.value === "#FFFFFF";
+              const isBlack = c.value === "#000000";
+              return (
+                <button
+                  key={c.value}
+                  onClick={() => setPenColor(c.value)}
+                  className={`w-6 h-6 rounded-full transition-all ${
+                    penColor === c.value
+                      ? "ring-2 ring-blue-500 dark:ring-blue-400 ring-offset-2 ring-offset-white dark:ring-offset-gray-900 scale-110"
+                      : "hover:scale-110"
+                  } ${
+                    isWhite
+                      ? "border-2 border-gray-300 dark:border-gray-400"
+                      : isBlack
+                        ? "border-2 border-gray-400 dark:border-gray-300"
+                        : "border-2 border-gray-200 dark:border-gray-600"
+                  }`}
+                  style={{ backgroundColor: c.value }}
+                  title={c.label}
+                />
+              );
+            })}
             <input
               type="color"
               value={penColor}

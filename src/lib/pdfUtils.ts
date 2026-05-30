@@ -59,14 +59,16 @@ export async function exportEditedPdf(
               width: overlay.width,
               height: overlay.height,
               buffer: imgBuffer,
-              isPng: imgDataUrl.includes("image/png") || imgDataUrl.startsWith("blob:")
+              isPng: imgDataUrl.includes("image/png") || imgDataUrl.startsWith("blob:"),
+              rotation: overlay.rotation || 0
             };
           } catch (e) {
             console.warn(`이미지 버퍼 로드 실패 (${overlay.id}):`, e);
             return {
               ...overlay,
               buffer: null,
-              isPng: false
+              isPng: false,
+              rotation: 0
             };
           }
         })

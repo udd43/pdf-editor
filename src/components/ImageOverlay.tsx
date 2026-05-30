@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useCallback } from "react";
 import { Loader2, Scissors, Palette, Trash2, Move, Download } from "lucide-react";
 import ColorPicker from "./ColorPicker";
 
@@ -14,6 +14,7 @@ export interface ImageOverlayData {
   width: number;
   height: number;
   pageIndex: number;
+  rotation?: number; // 0 ~ 360 degrees
 }
 
 interface ImageOverlayProps {
@@ -35,10 +36,23 @@ export default function ImageOverlay({
   onSelect,
   onDragStart,
 }: ImageOverlayProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
+  const [isRotating, setIsRotating] = useState(false);
   const [isRemovingBg, setIsRemovingBg] = useState(false);
   const [showColorPicker, setShowColorPicker] = useState(false);
+
+  // 이미지 중심점 계산 (화면 좌표)
+  const getCenterPoint = useCallback(() => {
+    const el = containerRef.current;
+    if (!el) return { cx: 0, cy: 0 };
+    const rect = el.getBoundingClientRect();
+    return {
+      cx: rect.left + rect.width / 2,
+      cy: rect.top + rect.height / 2,
+    };
+  }, []);
 
   // 드래그 시작
   const handleDragStart = (e: React.MouseEvent) => {
@@ -85,6 +99,39 @@ export default function ImageOverlay({
     };
     const handleUp = () => {
       setIsResizing(false);
+      window.removeEventListener("mousemove", handleMove);
+      window.removeEventListener("mouseup", handleUp);
+    };
+    window.addEventListener("mousemove", handleMove);
+    window.addEventListener("mouseup", handleUp);
+  };
+
+  // 회전 핸들 드래그 - 마우스로 직접 돌리기
+  const handleRotateStart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (onDragStart) onDragStart();
+    setIsRotating(true);
+
+    const { cx, cy } = getCenterPoint();
+    // 드래그 시작 시점의 각도
+    const startAngle = Math.atan2(e.clientY - cy, e.clientX - cx) * (180 / Math.PI);
+    const startRotation = overlay.rotation || 0;
+
+    const handleMove = (ev: MouseEvent) => {
+      const currentAngle = Math.atan2(ev.clientY - cy, ev.clientX - cx) * (180 / Math.PI);
+      let delta = currentAngle - startAngle;
+      let newRotation = startRotation + delta;
+      // 정규화 0~360
+      newRotation = ((newRotation % 360) + 360) % 360;
+      // Shift 키를 누르면 15° 스냅
+      if (ev.shiftKey) {
+        newRotation = Math.round(newRotation / 15) * 15;
+      }
+      onUpdate(overlay.id, { rotation: Math.round(newRotation) });
+    };
+    const handleUp = () => {
+      setIsRotating(false);
       window.removeEventListener("mousemove", handleMove);
       window.removeEventListener("mouseup", handleUp);
     };
@@ -155,15 +202,17 @@ export default function ImageOverlay({
   const handleDownload = () => {
     const link = document.createElement("a");
     link.href = overlay.displaySrc;
-    // Extract base name for custom files
     link.download = `overlay-${overlay.id}.png`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
+  const rotation = overlay.rotation || 0;
+
   return (
     <div
+      ref={containerRef}
       className={`absolute group ${isDragging ? "cursor-grabbing" : "cursor-grab"}`}
       style={{
         left: `${overlay.x * scale}px`,
@@ -174,12 +223,13 @@ export default function ImageOverlay({
       }}
       onClick={(e) => { e.stopPropagation(); onSelect(overlay.id); }}
     >
-      {/* 이미지 */}
+      {/* 이미지 (회전 적용) */}
       <img
         src={overlay.displaySrc}
         alt="overlay"
         className="w-full h-full object-contain pointer-events-none select-none"
         draggable={false}
+        style={{ transform: `rotate(${rotation}deg)` }}
       />
 
       {/* 선택 시 테두리 + 컨트롤 */}
@@ -187,8 +237,43 @@ export default function ImageOverlay({
         <>
           <div className="absolute inset-0 border-2 border-blue-500 rounded pointer-events-none" />
 
+          {/* 회전 핸들: 상단 중앙 위에 줄 + 동그라미 */}
+          <div
+            className="absolute left-1/2 flex flex-col items-center pointer-events-none"
+            style={{ top: "-40px", transform: "translateX(-50%)", zIndex: 62 }}
+          >
+            {/* 연결선 */}
+            <div
+              onMouseDown={handleRotateStart}
+              className="pointer-events-auto flex flex-col items-center cursor-grab active:cursor-grabbing"
+              title={`회전: ${rotation}° (Shift 누르면 15° 단위)`}
+            >
+              {/* 회전 핸들 원 */}
+              <div className={`w-5 h-5 rounded-full border-2 border-blue-500 bg-white shadow-md flex items-center justify-center transition-colors ${
+                isRotating ? "bg-blue-500 border-blue-600" : "hover:bg-blue-50"
+              }`}>
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className={isRotating ? "text-white" : "text-blue-500"}>
+                  <path d="M9.5 3.5C8.7 2.3 7.4 1.5 6 1.5C3.5 1.5 1.5 3.5 1.5 6C1.5 8.5 3.5 10.5 6 10.5C7.9 10.5 9.5 9.3 10.2 7.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+                  <path d="M10 1.5V4H7.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+              {/* 연결 줄 */}
+              <div className="w-px h-3 bg-blue-500" />
+            </div>
+          </div>
+
+          {/* 회전 중일 때 각도 표시 */}
+          {isRotating && (
+            <div
+              className="absolute left-1/2 bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-lg pointer-events-none"
+              style={{ top: "-58px", transform: "translateX(-50%)", zIndex: 63 }}
+            >
+              {rotation}°
+            </div>
+          )}
+
           {/* 상단 도구 모음 */}
-          <div className="absolute -top-10 left-0 flex gap-1 bg-white rounded-lg shadow-md border p-1">
+          <div className="absolute -top-10 left-0 flex gap-1 bg-white rounded-lg shadow-md border p-1" style={{ zIndex: 60 }}>
             {/* 이동 핸들 */}
             <button
               onMouseDown={handleDragStart}
@@ -234,6 +319,20 @@ export default function ImageOverlay({
             >
               <Trash2 className="w-4 h-4" />
             </button>
+
+            {/* 현재 각도 표시 + 리셋 */}
+            {rotation !== 0 && (
+              <>
+                <div className="w-px bg-gray-200 mx-0.5" />
+                <button
+                  onClick={(e) => { e.stopPropagation(); onUpdate(overlay.id, { rotation: 0 }); }}
+                  className="px-1.5 py-1 text-[10px] font-bold text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                  title="회전 초기화"
+                >
+                  {rotation}° ✕
+                </button>
+              </>
+            )}
           </div>
 
           {/* 컬러 피커 팝업 */}

@@ -111,6 +111,7 @@ self.onmessage = async (e: MessageEvent) => {
           const realY = overlay.y;
           const realW = overlay.width;
           const realH = overlay.height;
+          const customRotation = overlay.rotation || 0;
 
           const { rectX, rectY, rectW, rectH, rotate } = getRotatedCoords(realX, realY, realW, realH);
 
@@ -121,7 +122,11 @@ self.onmessage = async (e: MessageEvent) => {
           else if (rotationAngle === 180) { imgDrawX = rectX + rectW; imgDrawY = rectY + rectH; }
           else if (rotationAngle === 270) { imgDrawX = rectX; imgDrawY = rectY + rectH; }
 
-          page.drawImage(embeddedImage, { x: imgDrawX, y: imgDrawY, width: realW, height: realH, rotate: rotate });
+          let finalRotationAngle = rotate.angle + customRotation;
+          // Normalize rotation to 0-360
+          finalRotationAngle = (finalRotationAngle % 360 + 360) % 360;
+
+          page.drawImage(embeddedImage, { x: imgDrawX, y: imgDrawY, width: realW, height: realH, rotate: degrees(finalRotationAngle) });
         } catch (imgError) {
           console.warn(`이미지 삽입 실패 (${overlay.id}):`, imgError);
         }

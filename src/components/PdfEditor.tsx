@@ -163,6 +163,104 @@ export default function PdfEditor({ file }: PdfEditorProps) {
     return () => { isMounted = false; };
   }, [file]);
 
+  // 자동 채우기 폼 상태
+  const isCorporateDoc = file.name.startsWith("doc_");
+  const [autoFillCompany, setAutoFillCompany] = useState("");
+  const [autoFillCeo, setAutoFillCeo] = useState("");
+  const [autoFillDate, setAutoFillDate] = useState("");
+
+  const handleAutoFill = () => {
+    if (!autoFillCompany && !autoFillCeo && !autoFillDate) {
+      toast.error("하나 이상의 정보를 입력해주세요.");
+      return;
+    }
+    
+    saveHistory(textBoxes, imageOverlays);
+    
+    const newBoxes: TextBox[] = [];
+    let currentY = 150;
+    
+    if (autoFillCompany) {
+      newBoxes.push({
+        id: `auto-${Date.now()}-1`, text: autoFillCompany,
+        x: 100, y: currentY, width: 200, height: 36, fontSize: 16,
+        isEdited: true, isNew: true, isTransparent: true, fontFamily: "NotoSansKR",
+        pageIndex: currentPage,
+      });
+      currentY += 40;
+    }
+    if (autoFillCeo) {
+      newBoxes.push({
+        id: `auto-${Date.now()}-2`, text: autoFillCeo,
+        x: 100, y: currentY, width: 200, height: 36, fontSize: 16,
+        isEdited: true, isNew: true, isTransparent: true, fontFamily: "NotoSansKR",
+        pageIndex: currentPage,
+      });
+      currentY += 40;
+    }
+    if (autoFillDate) {
+      newBoxes.push({
+        id: `auto-${Date.now()}-3`, text: autoFillDate,
+        x: 100, y: currentY, width: 200, height: 36, fontSize: 16,
+        isEdited: true, isNew: true, isTransparent: true, fontFamily: "NotoSansKR",
+        pageIndex: currentPage,
+      });
+    }
+
+    setTextBoxes(prev => [...prev, ...newBoxes]);
+    toast.success("입력하신 정보가 생성되었습니다! 원하는 빈칸 위치로 드래그하세요.");
+    setNextId(prev => prev + newBoxes.length);
+  };
+
+  // 자동 채우기 폼 상태
+  const isCorporateDoc = file.name.startsWith("doc_");
+  const [autoFillCompany, setAutoFillCompany] = useState("");
+  const [autoFillCeo, setAutoFillCeo] = useState("");
+  const [autoFillDate, setAutoFillDate] = useState("");
+
+  const handleAutoFill = () => {
+    if (!autoFillCompany && !autoFillCeo && !autoFillDate) {
+      toast.error("하나 이상의 정보를 입력해주세요.");
+      return;
+    }
+    
+    saveHistory(textBoxes, imageOverlays);
+    
+    const newBoxes: TextBox[] = [];
+    let currentY = 150;
+    
+    if (autoFillCompany) {
+      newBoxes.push({
+        id: `auto-${Date.now()}-1`, text: autoFillCompany,
+        x: 100, y: currentY, width: 200, height: 36, fontSize: 16,
+        isEdited: true, isNew: true, isTransparent: true, fontFamily: "NotoSansKR",
+        pageIndex: currentPage,
+      });
+      currentY += 40;
+    }
+    if (autoFillCeo) {
+      newBoxes.push({
+        id: `auto-${Date.now()}-2`, text: autoFillCeo,
+        x: 100, y: currentY, width: 200, height: 36, fontSize: 16,
+        isEdited: true, isNew: true, isTransparent: true, fontFamily: "NotoSansKR",
+        pageIndex: currentPage,
+      });
+      currentY += 40;
+    }
+    if (autoFillDate) {
+      newBoxes.push({
+        id: `auto-${Date.now()}-3`, text: autoFillDate,
+        x: 100, y: currentY, width: 200, height: 36, fontSize: 16,
+        isEdited: true, isNew: true, isTransparent: true, fontFamily: "NotoSansKR",
+        pageIndex: currentPage,
+      });
+    }
+
+    setTextBoxes(prev => [...prev, ...newBoxes]);
+    toast.success("입력하신 정보가 생성되었습니다! 원하는 빈칸 위치로 드래그하세요.");
+    setNextId(prev => prev + newBoxes.length);
+  };
+
   useEffect(() => {
     let isMounted = true;
     const renderPage = async () => {
@@ -846,18 +944,24 @@ export default function PdfEditor({ file }: PdfEditorProps) {
   const hasContent = textBoxes.length > 0 || imageOverlays.length > 0;
 
   return (
-    <div className="flex flex-col items-center w-full max-w-7xl mx-auto py-8">
-      <style>{`
+    <div className="flex flex-col h-full w-full max-w-full">
+      {/* 툴바 */}
+      <div className="flex flex-col gap-4 mb-4">
+        <div className="flex flex-wrap items-center gap-2 p-2 sm:p-3 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 w-full overflow-x-auto custom-scrollbar">
+          <div className="flex items-center gap-2 mr-4 flex-shrink-0">
+            <span className={`inline-flex h-2.5 w-2.5 rounded-full ${status === "done" ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]" : status === "error" ? "bg-red-500" : "bg-yellow-500 animate-pulse"}`} />
+            <span className="text-xs font-semibold text-gray-700 dark:text-gray-200 whitespace-nowrap">
+              {statusMsg}
+            </span>
+          </div>
+
+          <div className="h-6 w-px bg-gray-300 dark:bg-gray-700 mx-2 hidden sm:block" />
+      
+        <style>{`
         @font-face { font-family: "NotoSansKR"; src: url("/NotoSansKR-Regular.otf"); }
         @font-face { font-family: "NanumMyeongjo"; src: url("/NanumMyeongjo.ttf"); }
         @font-face { font-family: "Jua"; src: url("/Jua.ttf"); }
       `}</style>
-      {/* 툴바 */}
-      <div className="w-full flex flex-wrap justify-between items-center mb-6 bg-white dark:bg-gray-800 p-4 rounded-2xl border border-gray-200 dark:border-gray-700 gap-3 shadow-sm transition-colors">
-        <h2 className="text-sm font-bold text-gray-900 dark:text-white truncate max-w-xs px-2" style={{ fontFamily: "Inter, sans-serif" }}>
-          📄 {file.name}
-        </h2>
-        <div className="flex gap-2 flex-wrap items-center">
           <button onClick={handleRunOcr} disabled={status !== "done"}
             className="flex items-center gap-1.5 px-3.5 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-xs font-semibold rounded-full hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-30 transition-all shadow-sm"
             title="문서 내의 글자를 자동으로 인식하여 편집 가능한 박스로 만듭니다">
@@ -941,42 +1045,56 @@ export default function PdfEditor({ file }: PdfEditorProps) {
             <Download className="w-3.5 h-3.5" /> 내보내기
           </button>
         </div>
+
+        {/* 법인 서류 자동 채우기 폼 */}
+        {isCorporateDoc && status === "done" && (
+          <div className="flex flex-wrap items-end gap-3 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/50 rounded-xl w-full">
+            <div className="flex-1 min-w-[150px]">
+              <label className="block text-xs font-bold text-blue-700 dark:text-blue-300 mb-1">회사명</label>
+              <input 
+                type="text" 
+                placeholder="(주)회사이름" 
+                className="w-full text-sm px-3 py-2 rounded-lg border border-blue-200 dark:border-blue-800 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
+                value={autoFillCompany}
+                onChange={e => setAutoFillCompany(e.target.value)}
+              />
+            </div>
+            <div className="flex-1 min-w-[120px]">
+              <label className="block text-xs font-bold text-blue-700 dark:text-blue-300 mb-1">대표자명</label>
+              <input 
+                type="text" 
+                placeholder="홍길동" 
+                className="w-full text-sm px-3 py-2 rounded-lg border border-blue-200 dark:border-blue-800 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
+                value={autoFillCeo}
+                onChange={e => setAutoFillCeo(e.target.value)}
+              />
+            </div>
+            <div className="flex-1 min-w-[120px]">
+              <label className="block text-xs font-bold text-blue-700 dark:text-blue-300 mb-1">날짜</label>
+              <input 
+                type="text" 
+                placeholder="2026. 05. 30." 
+                className="w-full text-sm px-3 py-2 rounded-lg border border-blue-200 dark:border-blue-800 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
+                value={autoFillDate}
+                onChange={e => setAutoFillDate(e.target.value)}
+              />
+            </div>
+            <button
+              onClick={handleAutoFill}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-sm transition-colors whitespace-nowrap shadow-sm h-[38px]"
+            >
+              텍스트 일괄 생성하기
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* 상태 메시지 */}
-      <div className={`w-full mb-4 px-4 py-3 rounded-xl text-xs font-semibold border ${
-        status === "error" ? "bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-800 text-red-700 dark:text-red-400"
-        : status === "done" && hasContent ? "bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-400"
-        : status === "done" ? "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300"
-        : "bg-indigo-50 dark:bg-indigo-900/30 border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-400"
-      }`}>
-        {isLoading && <span className="inline-block mr-2 animate-spin">⏳</span>}
-        {status === "done" && hasContent && "✏️ "}
-        {status === "error" && "❌ "}
-        {statusMsg}
-        {status === "done" && (
-          <span className="ml-2 text-gray-500 text-[10px] font-normal">
-            드래그: 이동 | 우하단: 크기 조절 | A+/A-: 폰트 크기 | 더블클릭: 추가
-          </span>
-        )}
-        {status === "error" && errorDetail && (
-          <span className="block mt-1 text-[10px] text-red-500 font-mono">{errorDetail}</span>
-        )}
-      </div>
-
-      {status === "ocr" && (
-        <div className="w-full mb-4 bg-gray-100 border border-gray-200 rounded-full h-3.5 p-[2px] overflow-hidden">
-          <div className="bg-blue-600 h-full rounded-full transition-all duration-300" style={{ width: `${ocrProgress}%` }} />
-        </div>
-      )}
-
-      {isRemovingBg && (
+      <div className="flex flex-1 gap-6 min-h-0 w-full overflow-hidden">
+        {isRemovingBg && (
         <div className="w-full mb-4 bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-lg text-sm font-medium flex items-center gap-2">
           <Loader2 className="w-4 h-4 animate-spin" /> AI로 배경을 제거하는 중입니다...
         </div>
-      )}
-
-      <div className={`flex w-full gap-6 items-start ${extractedTexts.length > 0 ? "justify-start" : "justify-center"} overflow-x-auto pb-8`}>
+        )}
         
         {/* 좌측 썸네일 사이드바 */}
         {pdfDoc && numPages > 0 && (
