@@ -212,55 +212,6 @@ export default function PdfEditor({ file }: PdfEditorProps) {
     setNextId(prev => prev + newBoxes.length);
   };
 
-  // 자동 채우기 폼 상태
-  const isCorporateDoc = file.name.startsWith("doc_");
-  const [autoFillCompany, setAutoFillCompany] = useState("");
-  const [autoFillCeo, setAutoFillCeo] = useState("");
-  const [autoFillDate, setAutoFillDate] = useState("");
-
-  const handleAutoFill = () => {
-    if (!autoFillCompany && !autoFillCeo && !autoFillDate) {
-      toast.error("하나 이상의 정보를 입력해주세요.");
-      return;
-    }
-    
-    saveHistory(textBoxes, imageOverlays);
-    
-    const newBoxes: TextBox[] = [];
-    let currentY = 150;
-    
-    if (autoFillCompany) {
-      newBoxes.push({
-        id: `auto-${Date.now()}-1`, text: autoFillCompany,
-        x: 100, y: currentY, width: 200, height: 36, fontSize: 16,
-        isEdited: true, isNew: true, isTransparent: true, fontFamily: "NotoSansKR",
-        pageIndex: currentPage,
-      });
-      currentY += 40;
-    }
-    if (autoFillCeo) {
-      newBoxes.push({
-        id: `auto-${Date.now()}-2`, text: autoFillCeo,
-        x: 100, y: currentY, width: 200, height: 36, fontSize: 16,
-        isEdited: true, isNew: true, isTransparent: true, fontFamily: "NotoSansKR",
-        pageIndex: currentPage,
-      });
-      currentY += 40;
-    }
-    if (autoFillDate) {
-      newBoxes.push({
-        id: `auto-${Date.now()}-3`, text: autoFillDate,
-        x: 100, y: currentY, width: 200, height: 36, fontSize: 16,
-        isEdited: true, isNew: true, isTransparent: true, fontFamily: "NotoSansKR",
-        pageIndex: currentPage,
-      });
-    }
-
-    setTextBoxes(prev => [...prev, ...newBoxes]);
-    toast.success("입력하신 정보가 생성되었습니다! 원하는 빈칸 위치로 드래그하세요.");
-    setNextId(prev => prev + newBoxes.length);
-  };
-
   useEffect(() => {
     let isMounted = true;
     const renderPage = async () => {
