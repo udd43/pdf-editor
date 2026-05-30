@@ -165,9 +165,61 @@ export default function PdfEditor({ file }: PdfEditorProps) {
 
   // 자동 채우기 폼 상태
   const isCorporateDoc = file.name.startsWith("doc_");
+  const isShareholderDoc = file.name === "doc_shareholder.pdf";
   const [autoFillCompany, setAutoFillCompany] = useState("");
   const [autoFillCeo, setAutoFillCeo] = useState("");
   const [autoFillDate, setAutoFillDate] = useState("");
+
+  // 주주명부 전용 상태
+  const [shareholderData, setShareholderData] = useState({
+    name: "", engName: "", gender: "", birth: "", nationality: "", shares: "",
+    pricePerShare: "", ownership: "", totalShares: "", totalOwnership: "",
+    today: "", company: "", address: "", repName: ""
+  });
+
+  const handleShareholderAutoFill = () => {
+    saveHistory(textBoxes, imageOverlays);
+    
+    const fields = [
+      { key: 'name', x: 37, y: 205, w: 81, h: 28 },
+      { key: 'engName', x: 126, y: 201, w: 61, h: 34 },
+      { key: 'gender', x: 191, y: 200, w: 20, h: 37 },
+      { key: 'birth', x: 220, y: 202, w: 60, h: 35 },
+      { key: 'nationality', x: 280, y: 201, w: 60, h: 35 },
+      { key: 'shares', x: 328, y: 204, w: 60, h: 35 },
+      { key: 'pricePerShare', x: 333, y: 143, w: 91, h: 20 },
+      { key: 'ownership', x: 394, y: 201, w: 60, h: 32 },
+      { key: 'totalShares', x: 326, y: 471, w: 60, h: 32 },
+      { key: 'totalOwnership', x: 394, y: 469, w: 60, h: 36 },
+      { key: 'today', x: 248, y: 563, w: 119, h: 20 },
+      { key: 'company', x: 252, y: 597, w: 119, h: 20 },
+      { key: 'address', x: 254, y: 625, w: 119, h: 20 },
+      { key: 'repName', x: 208, y: 653, w: 74, h: 20 },
+    ];
+
+    const newBoxes: TextBox[] = [];
+    
+    fields.forEach((f, idx) => {
+      const val = shareholderData[f.key as keyof typeof shareholderData];
+      if (val) {
+        newBoxes.push({
+          id: `shareholder-${Date.now()}-${idx}`, text: val,
+          x: f.x, y: f.y, width: f.w, height: f.h, fontSize: 13,
+          isEdited: true, isNew: true, isTransparent: true, fontFamily: "NotoSansKR",
+          pageIndex: currentPage,
+        });
+      }
+    });
+
+    if (newBoxes.length === 0) {
+      toast.error("하나 이상의 정보를 입력해주세요.");
+      return;
+    }
+
+    setTextBoxes(prev => [...prev, ...newBoxes]);
+    toast.success("입력하신 주주 정보가 일괄 생성되었습니다!");
+    setNextId(prev => prev + newBoxes.length);
+  };
 
   const handleAutoFill = () => {
     if (!autoFillCompany && !autoFillCeo && !autoFillDate) {
@@ -997,8 +1049,52 @@ export default function PdfEditor({ file }: PdfEditorProps) {
           </button>
         </div>
 
-        {/* 법인 서류 자동 채우기 폼 */}
-        {isCorporateDoc && status === "done" && (
+        {/* 주주명부 매크로 폼 */}
+        {isShareholderDoc && status === "done" && (
+          <div className="flex flex-col gap-3 p-4 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800/50 rounded-xl w-full">
+            <div className="text-sm font-bold text-indigo-700 dark:text-indigo-300">주주명부 일괄 생성기 (자동 위치 지정)</div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+              {[
+                { label: '성명', key: 'name' },
+                { label: '영문명', key: 'engName' },
+                { label: '성별', key: 'gender' },
+                { label: '생년월일', key: 'birth', placeholder: 'YYMMDD' },
+                { label: '국적', key: 'nationality' },
+                { label: '주식수', key: 'shares' },
+                { label: '1주 당 금액', key: 'pricePerShare' },
+                { label: '지분율', key: 'ownership' },
+                { label: '총주식수', key: 'totalShares' },
+                { label: '총지분율', key: 'totalOwnership' },
+                { label: '금일 날짜', key: 'today', placeholder: 'YYYY. MM. DD.' },
+                { label: '상호', key: 'company' },
+                { label: '주소', key: 'address' },
+                { label: '이름(대표)', key: 'repName' },
+              ].map((field) => (
+                <div key={field.key} className="flex flex-col">
+                  <label className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 mb-1">{field.label}</label>
+                  <input
+                    type="text"
+                    placeholder={field.placeholder || field.label}
+                    className="w-full text-xs px-2 py-1.5 rounded border border-indigo-200 dark:border-indigo-800 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-1 focus:ring-indigo-500"
+                    value={(shareholderData as any)[field.key]}
+                    onChange={(e) => setShareholderData({ ...shareholderData, [field.key]: e.target.value })}
+                  />
+                </div>
+              ))}
+            </div>
+            <div className="flex justify-end mt-1">
+              <button
+                onClick={handleShareholderAutoFill}
+                className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg text-sm transition-colors shadow-sm"
+              >
+                텍스트 일괄 생성하기
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* 법인 서류 자동 채우기 폼 (일반) */}
+        {!isShareholderDoc && isCorporateDoc && status === "done" && (
           <div className="flex flex-wrap items-end gap-3 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/50 rounded-xl w-full">
             <div className="flex-1 min-w-[150px]">
               <label className="block text-xs font-bold text-blue-700 dark:text-blue-300 mb-1">회사명</label>
