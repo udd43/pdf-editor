@@ -199,13 +199,12 @@ export default function ClientApp() {
       {/* 푸터 */}
       <footer className="bg-gray-50 dark:bg-gray-900 py-8 border-t border-gray-200 dark:border-gray-800 z-10 mt-12 transition-colors">
         <div className="max-w-6xl mx-auto px-6 flex items-center justify-between text-gray-400 dark:text-gray-500 text-xs">
-          <button 
-            onClick={() => setShowChangelog(true)}
-            className="font-mono bg-gray-100 dark:bg-gray-800 hover:bg-blue-50 dark:hover:bg-gray-700 hover:text-blue-600 dark:hover:text-blue-400 hover:border-blue-200 dark:hover:border-gray-600 border border-gray-200 dark:border-gray-700 px-2.5 py-1 rounded-lg text-gray-500 dark:text-gray-400 transition-colors cursor-pointer flex items-center gap-1.5"
+          <div 
+            className="font-mono bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 px-2.5 py-1 rounded-lg text-gray-500 dark:text-gray-400 flex items-center gap-1.5"
           >
             <span className="inline-block w-2 h-2 rounded-full bg-green-400 animate-pulse" />
             v{process.env.NEXT_PUBLIC_APP_VERSION}
-          </button>
+          </div>
           <span className="font-medium">&copy; 2026 PDF Editor &middot; Private by default.</span>
         </div>
       </footer>

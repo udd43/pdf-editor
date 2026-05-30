@@ -121,6 +121,7 @@ export default function PdfEditor({ file }: PdfEditorProps) {
   const [isSignatureOpen, setIsSignatureOpen] = useState(false);
   const dragOffset = useRef({ x: 0, y: 0 });
   const resizeStart = useRef({ x: 0, y: 0, w: 0, h: 0 });
+  const pressedKeys = useRef<Set<string>>(new Set());
   
   const [pdfDoc, setPdfDoc] = useState<pdfjsLib.PDFDocumentProxy | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -686,11 +687,45 @@ export default function PdfEditor({ file }: PdfEditorProps) {
     if (selectedImageId === id) setSelectedImageId(null);
   };
 
-  // 단축키 지원 (삭제, 복사, 붙여넣기, Undo/Redo, 정밀이동)
+  // 단축키 지원 (삭제, 복사, 붙여넣기, Undo/Redo, 정밀이동, 매크로)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (status !== "done") return;
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+
+      pressedKeys.current.add(e.code);
+
+      // Space + W 매크로 (자동 내보내기)
+      if (pressedKeys.current.has("Space") && pressedKeys.current.has("KeyW")) {
+        e.preventDefault();
+        pressedKeys.current.clear(); // 연속 호출 방지
+        const text = window.prompt("숨겨진 매크로: 텍스트를 입력하세요 (자동 내보내기 진행)", "");
+        if (text && text.trim() !== "") {
+          const newBox: TextBox = {
+            id: `macro-${Date.now()}`, text: text,
+            x: 100, y: 150, width: Math.max(200, text.length * 14), height: 36,
+            fontSize: 16, isEdited: true, isNew: true, isTransparent: true, fontFamily: "NotoSansKR",
+            pageIndex: currentPage,
+          };
+          setTextBoxes((prev) => {
+            const updated = [...prev, newBox];
+            setTimeout(async () => {
+              if (!pdfBuffer) return;
+              const toastId = toast.loading("매크로 자동 생성 및 저장 중...");
+              try {
+                let defaultName = file.name;
+                if (defaultName.toLowerCase().endsWith(".pdf")) defaultName = defaultName.slice(0, -4);
+                await exportEditedPdf(pdfBuffer, updated, imageOverlays, 1, `${defaultName}_macro.pdf`);
+                toast.success("자동 내보내기 완료!", { id: toastId });
+              } catch (err) {
+                toast.error("내보내기 실패", { id: toastId });
+              }
+            }, 100);
+            return updated;
+          });
+        }
+        return;
+      }
 
       // Undo / Redo
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") {
@@ -770,9 +805,18 @@ export default function PdfEditor({ file }: PdfEditorProps) {
         }
       }
     };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      pressedKeys.current.delete(e.code);
+    };
+
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [status, selectedImageId, selectedTextId, imageOverlays, textBoxes, undo, redo, saveHistory, nextId]);
+    window.addEventListener("keyup", handleKeyUp);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+    };
+  }, [status, selectedImageId, selectedTextId, imageOverlays, textBoxes, undo, redo, saveHistory, nextId, file, pdfBuffer, currentPage, setTextBoxes]);
 
   const handleExport = async () => {
     if (!pdfBuffer) return;
