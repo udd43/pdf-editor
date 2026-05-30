@@ -119,6 +119,13 @@ const TextBoxOverlay: React.FC<TextBoxOverlayProps> = ({
         onMouseDown={(e) => onResizeStart(e, box.id, box.width, box.height)}
         className="absolute -bottom-1.5 -right-1.5 w-4 h-4 bg-blue-500 rounded-full cursor-se-resize border-2 border-white shadow opacity-0 group-hover:opacity-100 transition-opacity z-30"
       />
+
+      {/* XY 좌표 표시 */}
+      <div className={`absolute -bottom-5 left-0 text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-gray-800 text-white shadow whitespace-nowrap z-30 transition-opacity ${
+        isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+      }`}>
+        x:{Math.round(box.x)} y:{Math.round(box.y)} w:{Math.round(box.width)} h:{Math.round(box.height)}
+      </div>
     </div>
   );
 };
