@@ -101,7 +101,7 @@ export default function ClientApp() {
   const loadCorporateDoc = async (filename: string, displayName: string) => {
     const toastId = toast.loading(`${displayName} 불러오는 중...`);
     try {
-      const res = await fetch(`/${encodeURIComponent(filename)}`);
+      const res = await fetch(`/${filename}`);
       if (!res.ok) throw new Error("파일 로드 실패");
       const blob = await res.blob();
       const loadedFile = new File([blob], filename, { type: "application/pdf" });
@@ -254,9 +254,9 @@ export default function ClientApp() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                 {[
-                  { name: "개인 공동대표 서류", file: "개인_공동대표서류_v1.3.pdf", icon: <FileTextIcon className="w-6 h-6" /> },
-                  { name: "법인 소유 지배자 확인서", file: "법인-소유-지배자-확인서_v1.2.pdf", icon: <FileTextIcon className="w-6 h-6" /> },
-                  { name: "주주명부", file: "주주명부.pdf", icon: <FileTextIcon className="w-6 h-6" /> }
+                  { name: "개인 공동대표 서류", file: "doc_personal_rep.pdf", icon: <FileTextIcon className="w-6 h-6" /> },
+                  { name: "법인 소유 지배자 확인서", file: "doc_corp_owner.pdf", icon: <FileTextIcon className="w-6 h-6" /> },
+                  { name: "주주명부", file: "doc_shareholder.pdf", icon: <FileTextIcon className="w-6 h-6" /> }
                 ].map((doc, idx) => (
                   <button
                     key={idx}
