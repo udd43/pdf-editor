@@ -174,6 +174,7 @@ export default function PdfEditor({ file }: PdfEditorProps) {
   const [shareholderData, setShareholderData] = useState({
     name: "", engName: "", gender: "", birth: "", nationality: "", shares: "", ownership: "",
     name2: "", engName2: "", gender2: "", birth2: "", nationality2: "", shares2: "", ownership2: "",
+    name3: "", engName3: "", gender3: "", birth3: "", nationality3: "", shares3: "", ownership3: "",
     pricePerShare: "", totalShares: "", totalOwnership: "",
     today: "", company: "", address: "", repName: ""
   });
@@ -199,6 +200,15 @@ export default function PdfEditor({ file }: PdfEditorProps) {
       { key: 'nationality2', x: 280, y: 242, w: 60, h: 35 },
       { key: 'shares2', x: 328, y: 242, w: 60, h: 35 },
       { key: 'ownership2', x: 394, y: 242, w: 60, h: 32 },
+
+      // 주주 3 (y: 282)
+      { key: 'name3', x: 37, y: 282, w: 81, h: 28 },
+      { key: 'engName3', x: 126, y: 282, w: 61, h: 34 },
+      { key: 'gender3', x: 191, y: 282, w: 20, h: 37 },
+      { key: 'birth3', x: 220, y: 282, w: 60, h: 35 },
+      { key: 'nationality3', x: 280, y: 282, w: 60, h: 35 },
+      { key: 'shares3', x: 328, y: 282, w: 60, h: 35 },
+      { key: 'ownership3', x: 394, y: 282, w: 60, h: 32 },
 
       // 공통 / 기타
       { key: 'pricePerShare', x: 333, y: 140, w: 91, h: 20 },
@@ -1104,6 +1114,25 @@ export default function PdfEditor({ file }: PdfEditorProps) {
                     { label: '성별', key: 'gender2' }, { label: '생년월일', key: 'birth2' },
                     { label: '국적', key: 'nationality2' }, { label: '주식수', key: 'shares2' },
                     { label: '지분율', key: 'ownership2' },
+                  ].map(f => (
+                    <div key={f.key} className="flex flex-col">
+                      <label className="text-[10px] font-semibold text-gray-500 mb-1">{f.label}</label>
+                      <input type="text" className="w-full text-xs px-2 py-1.5 rounded border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 focus:ring-1 focus:ring-indigo-500"
+                        value={(shareholderData as any)[f.key]} onChange={(e) => setShareholderData({ ...shareholderData, [f.key]: e.target.value })} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* 주주 3 */}
+              <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-indigo-100 dark:border-indigo-800/30">
+                <div className="text-xs font-bold text-gray-600 dark:text-gray-300 mb-2">주주 3 (y: 282)</div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+                  {[
+                    { label: '성명', key: 'name3' }, { label: '영문명', key: 'engName3' },
+                    { label: '성별', key: 'gender3' }, { label: '생년월일', key: 'birth3' },
+                    { label: '국적', key: 'nationality3' }, { label: '주식수', key: 'shares3' },
+                    { label: '지분율', key: 'ownership3' },
                   ].map(f => (
                     <div key={f.key} className="flex flex-col">
                       <label className="text-[10px] font-semibold text-gray-500 mb-1">{f.label}</label>
