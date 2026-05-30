@@ -11,11 +11,10 @@ import RomanizerTab from "@/components/RomanizerTab";
 import SignatureTab from "@/components/SignatureTab";
 import CalculatorTab from "@/components/CalculatorTab";
 import ChangelogModal from "@/components/ChangelogModal";
-import MacroTab from "@/components/MacroTab";
-import { Languages, PenTool, Calculator, Terminal } from "lucide-react";
-import { Toaster } from "react-hot-toast";
+import { Languages, PenTool, Calculator, FileText as FileTextIcon, Building2 } from "lucide-react";
+import toast, { Toaster } from "react-hot-toast";
 
-type Tab = "pdf" | "bgremove" | "upscale" | "colorize" | "romanize" | "signature" | "calculator" | "macro";
+type Tab = "pdf" | "bgremove" | "upscale" | "colorize" | "romanize" | "signature" | "calculator" | "corporate";
 
 export default function ClientApp() {
   const [file, setFile] = useState<File | null>(null);
@@ -23,8 +22,6 @@ export default function ClientApp() {
   const [activeTab, setActiveTab] = useState<Tab>("pdf");
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isSecretMode, setIsSecretMode] = useState(false);
-  
   const [secretClickCount, setSecretClickCount] = useState(0);
   const [showEasterEgg, setShowEasterEgg] = useState(false);
   const [showChangelog, setShowChangelog] = useState(false);
@@ -76,29 +73,22 @@ export default function ClientApp() {
     });
   };
 
-  const pressedKeys = useRef<Set<string>>(new Set());
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
-      pressedKeys.current.add(e.code);
-
-      if (pressedKeys.current.has("Space") && pressedKeys.current.has("KeyW")) {
-        e.preventDefault();
-        pressedKeys.current.clear();
-        setIsSecretMode(prev => !prev);
-      }
-    };
-    const handleKeyUp = (e: KeyboardEvent) => {
-      pressedKeys.current.delete(e.code);
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("keyup", handleKeyUp);
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("keyup", handleKeyUp);
-    };
-  }, []);
+  const loadCorporateDoc = async (filename: string, displayName: string) => {
+    const toastId = toast.loading(`${displayName} 불러오는 중...`);
+    try {
+      const res = await fetch(`/${encodeURIComponent(filename)}`);
+      if (!res.ok) throw new Error("파일 로드 실패");
+      const blob = await res.blob();
+      const loadedFile = new File([blob], filename, { type: "application/pdf" });
+      setFile(loadedFile);
+      setReferenceFile(null);
+      setActiveTab("pdf");
+      toast.success("문서를 성공적으로 불러왔습니다!", { id: toastId });
+    } catch (err) {
+      console.error(err);
+      toast.error("문서를 불러오는 중 오류가 발생했습니다.", { id: toastId });
+    }
+  };
 
   const handleReferenceSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -109,6 +99,7 @@ export default function ClientApp() {
 
   const tabs: { id: Tab; label: string; icon: React.ReactNode; color: string; activeBg: string }[] = [
     { id: "pdf", label: "PDF 편집", icon: <FileText className="w-3.5 h-3.5" />, color: "text-gray-600 dark:text-gray-300", activeBg: "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm" },
+    { id: "corporate", label: "법인 서류", icon: <Building2 className="w-3.5 h-3.5" />, color: "text-blue-600 dark:text-blue-300", activeBg: "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-bold" },
     { id: "bgremove", label: "누끼따기", icon: <Scissors className="w-3.5 h-3.5" />, color: "text-gray-600 dark:text-gray-300", activeBg: "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm" },
     { id: "upscale", label: "업스케일링", icon: <ZoomIn className="w-3.5 h-3.5" />, color: "text-gray-600 dark:text-gray-300", activeBg: "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm" },
     { id: "colorize", label: "색상 변경", icon: <Palette className="w-3.5 h-3.5" />, color: "text-gray-600 dark:text-gray-300", activeBg: "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm" },
@@ -117,12 +108,8 @@ export default function ClientApp() {
     { id: "calculator", label: "계산기", icon: <Calculator className="w-3.5 h-3.5" />, color: "text-gray-600 dark:text-gray-300", activeBg: "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm" },
   ];
 
-  if (isSecretMode) {
-    tabs.push({ id: "macro", label: "문서 매크로", icon: <Terminal className="w-3.5 h-3.5" />, color: "text-red-600 dark:text-red-300", activeBg: "bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 font-bold" });
-  }
-
   return (
-    <div className={`min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 flex flex-col relative font-sans antialiased transition-[colors,filter] duration-300 ${isSecretMode ? 'invert hue-rotate-180' : ''}`}>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 flex flex-col relative font-sans antialiased transition-colors duration-300">
       {/* 헤더 */}
       <header className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-40 transition-colors duration-300">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
@@ -224,8 +211,40 @@ export default function ClientApp() {
         {activeTab === "romanize" && <RomanizerTab />}
         {activeTab === "signature" && <SignatureTab />}
         {activeTab === "calculator" && <CalculatorTab />}
-        {activeTab === "macro" && (
-          !file ? <PdfUploader onFileSelect={setFile} /> : <MacroTab file={file} />
+        {activeTab === "corporate" && (
+          <div className="w-full max-w-4xl mx-auto py-8">
+            <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-gray-200 dark:border-gray-700 p-8">
+              <div className="flex items-center gap-4 mb-8 pb-6 border-b border-gray-100 dark:border-gray-700">
+                <div className="w-14 h-14 bg-blue-50 dark:bg-blue-900/30 text-blue-500 dark:text-blue-400 rounded-2xl flex items-center justify-center border border-blue-100 dark:border-blue-800/50">
+                  <Building2 className="w-7 h-7" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">법인 서류 양식</h2>
+                  <p className="text-gray-500 dark:text-gray-400 mt-1">프로젝트에 등록된 기본 서류 양식을 선택하여 바로 편집할 수 있습니다.</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                {[
+                  { name: "개인 공동대표 서류", file: "개인_공동대표서류_v1.3.pdf", icon: <FileTextIcon className="w-6 h-6" /> },
+                  { name: "법인 소유 지배자 확인서", file: "법인-소유-지배자-확인서_v1.2.pdf", icon: <FileTextIcon className="w-6 h-6" /> },
+                  { name: "주주명부", file: "주주명부.pdf", icon: <FileTextIcon className="w-6 h-6" /> }
+                ].map((doc, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => loadCorporateDoc(doc.file, doc.name)}
+                    className="flex flex-col items-center justify-center p-6 bg-gray-50 dark:bg-gray-900 hover:bg-blue-50 dark:hover:bg-blue-900/20 border-2 border-dashed border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700 rounded-2xl transition-all group text-center"
+                  >
+                    <div className="p-3 bg-white dark:bg-gray-800 text-blue-500 rounded-xl shadow-sm mb-4 group-hover:scale-110 transition-transform">
+                      {doc.icon}
+                    </div>
+                    <span className="font-bold text-gray-800 dark:text-gray-200">{doc.name}</span>
+                    <span className="text-xs text-gray-400 dark:text-gray-500 mt-2 line-clamp-1">{doc.file}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
         )}
       </main>
 
