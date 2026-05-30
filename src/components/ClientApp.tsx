@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { FileText, Scissors, ZoomIn, Palette, Moon, Sun, Menu, X } from "lucide-react";
 import PdfUploader from "@/components/PdfUploader";
 import PdfEditor from "@/components/PdfEditor";
@@ -11,10 +11,11 @@ import RomanizerTab from "@/components/RomanizerTab";
 import SignatureTab from "@/components/SignatureTab";
 import CalculatorTab from "@/components/CalculatorTab";
 import ChangelogModal from "@/components/ChangelogModal";
-import { Languages, PenTool, Calculator } from "lucide-react";
+import MacroTab from "@/components/MacroTab";
+import { Languages, PenTool, Calculator, Terminal } from "lucide-react";
 import { Toaster } from "react-hot-toast";
 
-type Tab = "pdf" | "bgremove" | "upscale" | "colorize" | "romanize" | "signature" | "calculator";
+type Tab = "pdf" | "bgremove" | "upscale" | "colorize" | "romanize" | "signature" | "calculator" | "macro";
 
 export default function ClientApp() {
   const [file, setFile] = useState<File | null>(null);
@@ -22,6 +23,7 @@ export default function ClientApp() {
   const [activeTab, setActiveTab] = useState<Tab>("pdf");
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isSecretMode, setIsSecretMode] = useState(false);
   
   const [secretClickCount, setSecretClickCount] = useState(0);
   const [showEasterEgg, setShowEasterEgg] = useState(false);
@@ -74,6 +76,30 @@ export default function ClientApp() {
     });
   };
 
+  const pressedKeys = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      pressedKeys.current.add(e.code);
+
+      if (pressedKeys.current.has("Space") && pressedKeys.current.has("KeyW")) {
+        e.preventDefault();
+        pressedKeys.current.clear();
+        setIsSecretMode(prev => !prev);
+      }
+    };
+    const handleKeyUp = (e: KeyboardEvent) => {
+      pressedKeys.current.delete(e.code);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+    };
+  }, []);
+
   const handleReferenceSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file && file.type === "application/pdf") {
@@ -91,8 +117,12 @@ export default function ClientApp() {
     { id: "calculator", label: "계산기", icon: <Calculator className="w-3.5 h-3.5" />, color: "text-gray-600 dark:text-gray-300", activeBg: "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm" },
   ];
 
+  if (isSecretMode) {
+    tabs.push({ id: "macro", label: "문서 매크로", icon: <Terminal className="w-3.5 h-3.5" />, color: "text-red-600 dark:text-red-300", activeBg: "bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 font-bold" });
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 flex flex-col relative font-sans antialiased transition-colors duration-300">
+    <div className={`min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 flex flex-col relative font-sans antialiased transition-[colors,filter] duration-300 ${isSecretMode ? 'invert hue-rotate-180' : ''}`}>
       {/* 헤더 */}
       <header className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-40 transition-colors duration-300">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
@@ -194,6 +224,9 @@ export default function ClientApp() {
         {activeTab === "romanize" && <RomanizerTab />}
         {activeTab === "signature" && <SignatureTab />}
         {activeTab === "calculator" && <CalculatorTab />}
+        {activeTab === "macro" && (
+          !file ? <PdfUploader onFileSelect={setFile} /> : <MacroTab file={file} />
+        )}
       </main>
 
       {/* 푸터 */}

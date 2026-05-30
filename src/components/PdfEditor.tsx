@@ -695,38 +695,6 @@ export default function PdfEditor({ file }: PdfEditorProps) {
 
       pressedKeys.current.add(e.code);
 
-      // Space + W 매크로 (자동 내보내기)
-      if (pressedKeys.current.has("Space") && pressedKeys.current.has("KeyW")) {
-        e.preventDefault();
-        pressedKeys.current.clear(); // 연속 호출 방지
-        const text = window.prompt("숨겨진 매크로: 텍스트를 입력하세요 (자동 내보내기 진행)", "");
-        if (text && text.trim() !== "") {
-          const newBox: TextBox = {
-            id: `macro-${Date.now()}`, text: text,
-            x: 100, y: 150, width: Math.max(200, text.length * 14), height: 36,
-            fontSize: 16, isEdited: true, isNew: true, isTransparent: true, fontFamily: "NotoSansKR",
-            pageIndex: currentPage,
-          };
-          setTextBoxes((prev) => {
-            const updated = [...prev, newBox];
-            setTimeout(async () => {
-              if (!pdfBuffer) return;
-              const toastId = toast.loading("매크로 자동 생성 및 저장 중...");
-              try {
-                let defaultName = file.name;
-                if (defaultName.toLowerCase().endsWith(".pdf")) defaultName = defaultName.slice(0, -4);
-                await exportEditedPdf(pdfBuffer, updated, imageOverlays, 1, `${defaultName}_macro.pdf`);
-                toast.success("자동 내보내기 완료!", { id: toastId });
-              } catch (err) {
-                toast.error("내보내기 실패", { id: toastId });
-              }
-            }, 100);
-            return updated;
-          });
-        }
-        return;
-      }
-
       // Undo / Redo
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") {
         if (e.shiftKey) {
