@@ -137,7 +137,14 @@ export default function ClientApp() {
   }
 
   return (
-    <div className={`min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 flex flex-col relative font-sans antialiased transition-[colors,filter] duration-300 ${isSecretMode ? 'invert hue-rotate-180' : ''}`}>
+    <div className={`min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 flex flex-col relative font-sans antialiased transition-[colors,filter] duration-300 ${isSecretMode ? 'secret-mode invert hue-rotate-180' : ''}`}>
+      {isSecretMode && (
+        <style dangerouslySetInnerHTML={{ __html: `
+          .secret-mode .pdf-workspace, .secret-mode .reference-pdf {
+            filter: invert(100%) hue-rotate(180deg);
+          }
+        `}} />
+      )}
       {/* 헤더 */}
       <header className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-40 transition-colors duration-300">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
@@ -216,7 +223,7 @@ export default function ClientApp() {
           !file ? <PdfUploader onFileSelect={setFile} /> : (
             <div className={`w-full flex gap-6 ${referenceFile ? "flex-row" : "justify-center"}`}>
               {referenceFile && (
-                <div className="w-1/2 flex flex-col border border-gray-200 dark:border-gray-700 shadow-sm rounded-2xl overflow-hidden bg-white dark:bg-gray-800 h-[80vh] sticky top-24 transition-colors">
+                <div className="reference-pdf w-1/2 flex flex-col border border-gray-200 dark:border-gray-700 shadow-sm rounded-2xl overflow-hidden bg-white dark:bg-gray-800 h-[80vh] sticky top-24 transition-colors">
                   <div className="bg-gray-50 dark:bg-gray-800 px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center shrink-0">
                     <span className="text-sm font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-1.5">
                       <span className="inline-block w-2 h-2 rounded-full bg-blue-500" />
@@ -227,7 +234,7 @@ export default function ClientApp() {
                   <iframe src={URL.createObjectURL(referenceFile)} className="w-full h-full border-0" />
                 </div>
               )}
-              <div className={`${referenceFile ? "w-1/2" : "w-full"}`}>
+              <div className={`pdf-workspace ${referenceFile ? "w-1/2" : "w-full"}`}>
                 <PdfEditor file={file} />
               </div>
             </div>
