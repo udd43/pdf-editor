@@ -8,6 +8,17 @@ interface ChangelogModalProps {
 
 const CHANGELOG_DATA = [
   {
+    version: "v1.0.48",
+    date: "2026-05-31",
+    changes: [
+      "편집기 툴바를 한 줄 컴팩트 레이아웃으로 개선 (버튼 줄바꿈 제거)",
+      "좌측 썸네일 사이드바 폭 축소 (128px→96px)",
+      "우측 추출 텍스트 패널 폭 축소 (320px→192px)",
+      "PDF 편집 영역 가용 공간 대폭 확대",
+      "상태 메시지를 툴바 위 별도 줄로 분리",
+    ]
+  },
+  {
     version: "v1.0.47",
     date: "2026-05-31",
     changes: [
