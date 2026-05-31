@@ -49,12 +49,12 @@ export default function ClientApp() {
     localStorage.setItem("darkMode", String(isDarkMode));
   }, [isDarkMode]);
 
-  // 새 버전일 때 자동으로 업데이트 내역 팝업
+  // 새 버전일 때 자동으로 업데이트 내역 팝업 (사용자 요청으로 비활성화)
   useEffect(() => {
     const currentVersion = process.env.NEXT_PUBLIC_APP_VERSION || "";
     const lastSeenVersion = localStorage.getItem("lastSeenVersion");
     if (currentVersion && currentVersion !== lastSeenVersion) {
-      setShowChangelog(true);
+      // setShowChangelog(true); // 자동 팝업 비활성화
       localStorage.setItem("lastSeenVersion", currentVersion);
     }
   }, []);

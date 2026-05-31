@@ -8,6 +8,13 @@ interface ChangelogModalProps {
 
 const CHANGELOG_DATA = [
   {
+    version: "v1.0.57",
+    date: "2026-06-01",
+    changes: [
+      "업데이트 패치노트 자동 팝업 기능 비활성화"
+    ]
+  },
+  {
     version: "v1.0.56",
     date: "2026-05-31",
     changes: [
