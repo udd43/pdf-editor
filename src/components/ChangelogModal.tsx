@@ -8,6 +8,14 @@ interface ChangelogModalProps {
 
 const CHANGELOG_DATA = [
   {
+    version: "v1.0.53",
+    date: "2026-05-31",
+    changes: [
+      "우측 추출 텍스트 바 UX 개선: 넓은 모니터(1920px 이상)에서 패널이 화면 밖으로 밀려나 허공에 떠 있던 버그 수정",
+      "추출 텍스트 서랍이 PDF 편집 영역(워크스페이스) 내부에서만 깔끔하게 열리고 닫히도록 absolute 레이아웃으로 변경"
+    ]
+  },
+  {
     version: "v1.0.52",
     date: "2026-05-31",
     changes: [

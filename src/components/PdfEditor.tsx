@@ -1194,7 +1194,7 @@ export default function PdfEditor({ file }: PdfEditorProps) {
         )}
       </div>
 
-      <div className="flex flex-1 gap-6 min-h-0 w-full overflow-hidden">
+      <div className="flex flex-1 gap-6 min-h-0 w-full overflow-hidden relative">
         {isRemovingBg && (
         <div className="w-full mb-4 bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-lg text-sm font-medium flex items-center gap-2">
           <Loader2 className="w-4 h-4 animate-spin" /> AI로 배경을 제거하는 중입니다...
@@ -1294,7 +1294,7 @@ export default function PdfEditor({ file }: PdfEditorProps) {
             {!showTextPanel && (
               <button
                 onClick={() => setShowTextPanel(true)}
-                className="fixed right-4 top-1/2 -translate-y-1/2 z-40 flex items-center gap-1.5 px-3 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-l-xl shadow-lg transition-all hover:scale-105 active:scale-95"
+                className="absolute right-0 top-1/2 -translate-y-1/2 z-40 flex items-center gap-1.5 px-2 py-3 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-l-xl shadow-lg transition-all hover:scale-105 active:scale-95"
                 style={{ writingMode: 'vertical-rl' }}
               >
                 📑 텍스트 ({extractedTexts.length})
@@ -1302,7 +1302,7 @@ export default function PdfEditor({ file }: PdfEditorProps) {
             )}
 
             {/* 오버레이 서랍 */}
-            <div className={`fixed right-0 top-0 h-full z-50 transition-transform duration-300 ease-in-out ${
+            <div className={`absolute right-0 top-0 h-full z-50 transition-transform duration-300 ease-in-out ${
               showTextPanel ? 'translate-x-0' : 'translate-x-full'
             }`}>
               <div className="w-72 h-full flex flex-col bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 shadow-2xl">
@@ -1346,7 +1346,7 @@ export default function PdfEditor({ file }: PdfEditorProps) {
             {/* 배경 딤 */}
             {showTextPanel && (
               <div 
-                className="fixed inset-0 bg-black/20 z-40"
+                className="absolute inset-0 bg-black/20 z-40 rounded-lg"
                 onClick={() => setShowTextPanel(false)}
               />
             )}
