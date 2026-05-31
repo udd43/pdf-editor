@@ -8,6 +8,13 @@ interface ChangelogModalProps {
 
 const CHANGELOG_DATA = [
   {
+    version: "v1.0.58",
+    date: "2026-06-01",
+    changes: [
+      "텍스트 박스 크기 조절 제한 완화: 기존보다 훨씬 더 작게(최소 폭 20px, 높이 10px) 텍스트 박스를 줄일 수 있도록 수정"
+    ]
+  },
+  {
     version: "v1.0.57",
     date: "2026-06-01",
     changes: [

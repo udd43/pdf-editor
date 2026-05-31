@@ -694,8 +694,8 @@ export default function PdfEditor({ file }: PdfEditorProps) {
     const handleMove = (ev: MouseEvent) => {
       const dx = (ev.clientX - startX) / scale;
       const dy = (ev.clientY - startY) / scale;
-      const newW = Math.max(60, startW + dx);
-      const newH = Math.max(20, startH + dy);
+      const newW = Math.max(20, startW + dx);
+      const newH = Math.max(10, startH + dy);
       setTextBoxes((prev) => prev.map((b) => b.id === boxId ? { ...b, width: newW, height: newH } : b));
     };
     const handleUp = () => {
