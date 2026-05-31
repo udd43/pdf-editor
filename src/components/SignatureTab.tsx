@@ -425,7 +425,7 @@ export default function SignatureTab() {
 
         {/* 캔버스 */}
         <div className="p-4 sm:p-8 bg-gray-50 dark:bg-gray-900 overflow-x-hidden">
-          <div className="relative rounded-2xl overflow-hidden border-2 border-dashed border-gray-300 dark:border-gray-600 bg-white shadow-sm mx-auto w-full aspect-[2/1] sm:aspect-auto sm:max-h-[400px]">
+          <div className="relative rounded-2xl overflow-hidden border-2 border-dashed border-gray-300 dark:border-gray-600 shadow-sm mx-auto w-full aspect-[2/1] sm:aspect-auto sm:max-h-[400px]" style={{ backgroundColor: '#e8e8e8' }}>
             <canvas
               ref={canvasRef}
               width={CANVAS_WIDTH}

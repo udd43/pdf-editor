@@ -8,6 +8,16 @@ interface ChangelogModalProps {
 
 const CHANGELOG_DATA = [
   {
+    version: "v1.0.47",
+    date: "2026-05-31",
+    changes: [
+      "이미지 회전 핸들 위치를 우측 상단으로 개선 (UX 향상)",
+      "편집기 상단 도구 바 레이아웃 정돈 (텍스트/이미지/뷰어 그룹 분리)",
+      "업로드 화면에서 AI 모델명 표시 제거",
+      "다크모드 서명/그리기 캔버스 색상 수정 (흰색→회색 배경)",
+    ]
+  },
+  {
     version: "v1.0.46",
     date: "2026-05-29",
     changes: [
