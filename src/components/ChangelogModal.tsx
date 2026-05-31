@@ -8,6 +8,15 @@ interface ChangelogModalProps {
 
 const CHANGELOG_DATA = [
   {
+    version: "v1.0.50",
+    date: "2026-05-31",
+    changes: [
+      "우측 추출 텍스트 패널을 플로팅 오버레이 서랍으로 변경",
+      "PDF 영역을 넓게 사용하면서 텍스트 목록을 원할 때만 열어볼 수 있도록 개선",
+      "고배율 스크롤 시 우측 패널이 잘리거나 화면 밖으로 밀리던 문제 해결"
+    ]
+  },
+  {
     version: "v1.0.48",
     date: "2026-05-31",
     changes: [
