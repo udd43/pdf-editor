@@ -237,36 +237,30 @@ export default function ImageOverlay({
         <>
           <div className="absolute inset-0 border-2 border-blue-500 rounded pointer-events-none" />
 
-          {/* 회전 핸들: 상단 중앙 위에 줄 + 동그라미 */}
+          {/* 회전 핸들: 우측 상단 */}
           <div
-            className="absolute left-1/2 flex flex-col items-center pointer-events-none"
-            style={{ top: "-40px", transform: "translateX(-50%)", zIndex: 62 }}
+            className="absolute pointer-events-none"
+            style={{ top: "-14px", right: "-14px", zIndex: 62 }}
           >
-            {/* 연결선 */}
             <div
               onMouseDown={handleRotateStart}
-              className="pointer-events-auto flex flex-col items-center cursor-grab active:cursor-grabbing"
+              className={`pointer-events-auto flex items-center justify-center w-7 h-7 rounded-full border-2 shadow-md cursor-grab active:cursor-grabbing transition-colors ${
+                isRotating ? "bg-blue-500 border-blue-600 text-white" : "bg-white border-blue-500 text-blue-500 hover:bg-blue-50"
+              }`}
               title={`회전: ${rotation}° (Shift 누르면 15° 단위)`}
             >
-              {/* 회전 핸들 원 */}
-              <div className={`w-5 h-5 rounded-full border-2 border-blue-500 bg-white shadow-md flex items-center justify-center transition-colors ${
-                isRotating ? "bg-blue-500 border-blue-600" : "hover:bg-blue-50"
-              }`}>
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className={isRotating ? "text-white" : "text-blue-500"}>
-                  <path d="M9.5 3.5C8.7 2.3 7.4 1.5 6 1.5C3.5 1.5 1.5 3.5 1.5 6C1.5 8.5 3.5 10.5 6 10.5C7.9 10.5 9.5 9.3 10.2 7.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
-                  <path d="M10 1.5V4H7.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </div>
-              {/* 연결 줄 */}
-              <div className="w-px h-3 bg-blue-500" />
+              <svg width="14" height="14" viewBox="0 0 12 12" fill="none" className="currentColor">
+                <path d="M9.5 3.5C8.7 2.3 7.4 1.5 6 1.5C3.5 1.5 1.5 3.5 1.5 6C1.5 8.5 3.5 10.5 6 10.5C7.9 10.5 9.5 9.3 10.2 7.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+                <path d="M10 1.5V4H7.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
             </div>
           </div>
 
           {/* 회전 중일 때 각도 표시 */}
           {isRotating && (
             <div
-              className="absolute left-1/2 bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-lg pointer-events-none"
-              style={{ top: "-58px", transform: "translateX(-50%)", zIndex: 63 }}
+              className="absolute bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-lg pointer-events-none whitespace-nowrap"
+              style={{ top: "-35px", right: "-20px", zIndex: 63 }}
             >
               {rotation}°
             </div>

@@ -400,7 +400,7 @@ export default function SignaturePad({ isOpen, onClose, onSave }: SignaturePadPr
 
         {/* 캔버스 영역 */}
         <div className="p-4 sm:p-5 bg-gray-100/50 dark:bg-gray-900/50 overflow-y-auto">
-          <div className="relative rounded-xl overflow-hidden border-2 border-dashed border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-inner w-full">
+          <div className="relative rounded-xl overflow-hidden border-2 border-dashed border-gray-300 dark:border-gray-600 bg-white shadow-inner w-full">
             <canvas
               ref={canvasRef}
               width={CANVAS_WIDTH}

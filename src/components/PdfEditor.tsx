@@ -972,103 +972,112 @@ export default function PdfEditor({ file }: PdfEditorProps) {
     <div className="flex flex-col h-full w-full max-w-full">
       {/* 툴바 */}
       <div className="flex flex-col gap-4 mb-4">
-        <div className="flex flex-wrap items-center gap-2 p-2 sm:p-3 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 w-full overflow-x-auto custom-scrollbar">
-          <div className="flex items-center gap-2 mr-4 flex-shrink-0">
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 p-3 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 w-full">
+          {/* 상태 표시 */}
+          <div className="flex items-center gap-2 flex-shrink-0">
             <span className={`inline-flex h-2.5 w-2.5 rounded-full ${status === "done" ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]" : status === "error" ? "bg-red-500" : "bg-yellow-500 animate-pulse"}`} />
             <span className="text-xs font-semibold text-gray-700 dark:text-gray-200 whitespace-nowrap">
               {statusMsg}
             </span>
           </div>
-
-          <div className="h-6 w-px bg-gray-300 dark:bg-gray-700 mx-2 hidden sm:block" />
       
-        <style>{`
-        @font-face { font-family: "NotoSansKR"; src: url("/NotoSansKR-Regular.otf"); }
-        @font-face { font-family: "NanumMyeongjo"; src: url("/NanumMyeongjo.ttf"); }
-        @font-face { font-family: "Jua"; src: url("/Jua.ttf"); }
-      `}</style>
-          <button onClick={handleRunOcr} disabled={status !== "done"}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-xs font-semibold rounded-full hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-30 transition-all shadow-sm"
-            title="문서 내의 글자를 자동으로 인식하여 편집 가능한 박스로 만듭니다">
-            📝 텍스트 자동 추출
-          </button>
-          <button onClick={() => handleAddText(false)} disabled={status !== "done"}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-xs font-semibold rounded-full hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-30 transition-all shadow-sm">
-            텍스트 추가(흰배경)
-          </button>
-          <button onClick={() => handleAddText(true)} disabled={status !== "done"}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-xs font-semibold rounded-full hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-30 transition-all shadow-sm">
-            텍스트 추가(투명)
-          </button>
-          <button onClick={handleAddRomanizedName} disabled={status !== "done"}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-400 text-xs font-bold rounded-full hover:bg-blue-100 dark:hover:bg-blue-800/50 disabled:opacity-30 transition-all shadow-sm"
-            title="한글 이름을 입력하면 소리나는 대로 영문으로 변환하여 추가합니다">
-            영문명 변환
-          </button>
-          <button onClick={() => imageInputRef.current?.click()} disabled={status !== "done"}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-xs font-semibold rounded-full hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-30 transition-all shadow-sm">
-            <ImageIcon className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400" /> 이미지 추가
-          </button>
-          <input ref={imageInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
-          
-          <button onClick={() => bgRemoveInputRef.current?.click()} disabled={status !== "done" || isRemovingBg}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-xs font-semibold rounded-full hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-30 transition-all shadow-sm">
-            {isRemovingBg ? <Loader2 className="w-3.5 h-3.5 animate-spin text-pink-500" /> : <Scissors className="w-3.5 h-3.5 text-pink-500" />}
-            누끼따기
-          </button>
-          <input ref={bgRemoveInputRef} type="file" accept="image/*" className="hidden" onChange={handleBgRemoveUpload} />
-          
-          <button onClick={() => upscaleInputRef.current?.click()} disabled={status !== "done" || isUpscaling}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-xs font-semibold rounded-full hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-30 transition-all shadow-sm">
-            {isUpscaling ? <Loader2 className="w-3.5 h-3.5 animate-spin text-purple-500" /> : <ZoomIn className="w-3.5 h-3.5 text-purple-500" />}
-            업스케일링
-          </button>
-          <input ref={upscaleInputRef} type="file" accept="image/*" className="hidden" onChange={handleUpscaleUpload} />
-          
-          <button onClick={() => setIsSignatureOpen(true)} disabled={status !== "done"}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-xs font-semibold rounded-full hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-30 transition-all shadow-sm">
-            <Pen className="w-3.5 h-3.5 text-emerald-500" /> 서명/그리기
-          </button>
-          
-          <div className="w-[1px] h-6 bg-gray-200 dark:bg-gray-600 mx-1" />
-          
-          {/* 페이지 이동 (여러 장일 경우) */}
-          {numPages > 1 && (
-            <div className="flex items-center bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-full overflow-hidden mr-1 shadow-sm">
-              <button onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))} disabled={currentPage <= 1 || status !== "done"}
-                className="px-3 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-30 text-xs font-bold text-gray-600 dark:text-gray-300 border-r border-gray-200 dark:border-gray-600">
-                이전
+          <style>{`
+            @font-face { font-family: "NotoSansKR"; src: url("/NotoSansKR-Regular.otf"); }
+            @font-face { font-family: "NanumMyeongjo"; src: url("/NanumMyeongjo.ttf"); }
+            @font-face { font-family: "Jua"; src: url("/Jua.ttf"); }
+          `}</style>
+
+          {/* 중앙 도구 그룹 */}
+          <div className="flex flex-wrap items-center gap-3 flex-1 lg:justify-center">
+            {/* 텍스트 도구 그룹 */}
+            <div className="flex flex-wrap items-center gap-1.5 p-1 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-100 dark:border-gray-700/50">
+              <button onClick={handleRunOcr} disabled={status !== "done"}
+                className="flex items-center gap-1 px-3 py-1.5 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-[11px] font-semibold rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-30 transition-all shadow-sm"
+                title="문서 내의 글자를 자동으로 인식하여 편집 가능한 박스로 만듭니다">
+                📝 텍스트 추출
               </button>
-              <span className="text-[11px] font-mono px-3 py-1.5 text-gray-800 dark:text-gray-200 bg-gray-50 dark:bg-gray-800 select-none">
-                {currentPage} / {numPages}
-              </span>
-              <button onClick={() => setCurrentPage(prev => Math.min(numPages, prev + 1))} disabled={currentPage >= numPages || status !== "done"}
-                className="px-3 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-30 text-xs font-bold text-gray-600 dark:text-gray-300 border-l border-gray-200 dark:border-gray-600">
-                다음
+              <button onClick={() => handleAddText(false)} disabled={status !== "done"}
+                className="flex items-center gap-1 px-3 py-1.5 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-[11px] font-semibold rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-30 transition-all shadow-sm">
+                텍스트(흰배경)
+              </button>
+              <button onClick={() => handleAddText(true)} disabled={status !== "done"}
+                className="flex items-center gap-1 px-3 py-1.5 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-[11px] font-semibold rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-30 transition-all shadow-sm">
+                텍스트(투명)
+              </button>
+              <button onClick={handleAddRomanizedName} disabled={status !== "done"}
+                className="flex items-center gap-1 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-400 text-[11px] font-bold rounded-md hover:bg-blue-100 dark:hover:bg-blue-800/50 disabled:opacity-30 transition-all shadow-sm"
+                title="한글 이름을 입력하면 소리나는 대로 영문으로 변환하여 추가합니다">
+                영문명 변환
               </button>
             </div>
-          )}
-          
-          {/* 확대 축소 버튼 */}
-          <div className="flex items-center bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-full overflow-hidden mr-1 shadow-sm">
-            <button onClick={() => handleZoom("out")} disabled={status !== "done" || scale <= 0.5}
-              className="p-2 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-30 text-gray-600 dark:text-gray-300" title="축소">
-              <Minus className="w-3.5 h-3.5" />
-            </button>
-            <span onClick={() => handleZoom("reset")} 
-              className="text-[10px] font-mono px-3 py-1.5 text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-700 border-x border-gray-200 dark:border-gray-600 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-600 select-none font-bold" title="원래 크기 (1.5x)">
-              {Math.round(scale * 100)}%
-            </span>
-            <button onClick={() => handleZoom("in")} disabled={status !== "done" || scale >= 3.0}
-              className="p-2 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-30 text-gray-600 dark:text-gray-300" title="확대">
-              <Plus className="w-3.5 h-3.5" />
-            </button>
+
+            {/* 이미지 도구 그룹 */}
+            <div className="flex flex-wrap items-center gap-1.5 p-1 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-100 dark:border-gray-700/50">
+              <button onClick={() => imageInputRef.current?.click()} disabled={status !== "done"}
+                className="flex items-center gap-1 px-3 py-1.5 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-[11px] font-semibold rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-30 transition-all shadow-sm">
+                <ImageIcon className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400" /> 이미지
+              </button>
+              <input ref={imageInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+              
+              <button onClick={() => bgRemoveInputRef.current?.click()} disabled={status !== "done" || isRemovingBg}
+                className="flex items-center gap-1 px-3 py-1.5 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-[11px] font-semibold rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-30 transition-all shadow-sm">
+                {isRemovingBg ? <Loader2 className="w-3.5 h-3.5 animate-spin text-pink-500" /> : <Scissors className="w-3.5 h-3.5 text-pink-500" />}
+                누끼따기
+              </button>
+              <input ref={bgRemoveInputRef} type="file" accept="image/*" className="hidden" onChange={handleBgRemoveUpload} />
+              
+              <button onClick={() => upscaleInputRef.current?.click()} disabled={status !== "done" || isUpscaling}
+                className="flex items-center gap-1 px-3 py-1.5 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-[11px] font-semibold rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-30 transition-all shadow-sm">
+                {isUpscaling ? <Loader2 className="w-3.5 h-3.5 animate-spin text-purple-500" /> : <ZoomIn className="w-3.5 h-3.5 text-purple-500" />}
+                업스케일링
+              </button>
+              <input ref={upscaleInputRef} type="file" accept="image/*" className="hidden" onChange={handleUpscaleUpload} />
+              
+              <button onClick={() => setIsSignatureOpen(true)} disabled={status !== "done"}
+                className="flex items-center gap-1 px-3 py-1.5 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-[11px] font-semibold rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-30 transition-all shadow-sm">
+                <Pen className="w-3.5 h-3.5 text-emerald-500" /> 서명/그리기
+              </button>
+            </div>
           </div>
 
-          <button onClick={handleExport} disabled={isLoading || !hasContent}
-            className="flex items-center gap-2 px-6 py-2 bg-blue-600 dark:bg-blue-500 text-white text-xs font-semibold rounded-full shadow-sm hover:bg-blue-700 dark:hover:bg-blue-600 transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-40 disabled:pointer-events-none">
-            <Download className="w-3.5 h-3.5" /> 내보내기
-          </button>
+          {/* 우측 뷰어/내보내기 도구 그룹 */}
+          <div className="flex items-center gap-3 flex-shrink-0">
+            {numPages > 1 && (
+              <div className="flex items-center bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md overflow-hidden shadow-sm">
+                <button onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))} disabled={currentPage <= 1 || status !== "done"}
+                  className="px-2 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-30 text-xs font-bold text-gray-600 dark:text-gray-300 border-r border-gray-200 dark:border-gray-600">
+                  이전
+                </button>
+                <span className="text-[11px] font-mono px-2 py-1.5 text-gray-800 dark:text-gray-200 bg-gray-50 dark:bg-gray-800 select-none">
+                  {currentPage} / {numPages}
+                </span>
+                <button onClick={() => setCurrentPage(prev => Math.min(numPages, prev + 1))} disabled={currentPage >= numPages || status !== "done"}
+                  className="px-2 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-30 text-xs font-bold text-gray-600 dark:text-gray-300 border-l border-gray-200 dark:border-gray-600">
+                  다음
+                </button>
+              </div>
+            )}
+            
+            <div className="flex items-center bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md overflow-hidden shadow-sm">
+              <button onClick={() => handleZoom("out")} disabled={status !== "done" || scale <= 0.5}
+                className="p-1.5 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-30 text-gray-600 dark:text-gray-300" title="축소">
+                <Minus className="w-3.5 h-3.5" />
+              </button>
+              <span onClick={() => handleZoom("reset")} 
+                className="text-[10px] font-mono px-2 py-1.5 text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-700 border-x border-gray-200 dark:border-gray-600 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-600 select-none font-bold" title="원래 크기 (1.5x)">
+                {Math.round(scale * 100)}%
+              </span>
+              <button onClick={() => handleZoom("in")} disabled={status !== "done" || scale >= 3.0}
+                className="p-1.5 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-30 text-gray-600 dark:text-gray-300" title="확대">
+                <Plus className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            <button onClick={handleExport} disabled={isLoading || !hasContent}
+              className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 dark:bg-blue-500 text-white text-[11px] font-semibold rounded-md shadow-sm hover:bg-blue-700 dark:hover:bg-blue-600 transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-40 disabled:pointer-events-none">
+              <Download className="w-3.5 h-3.5" /> 내보내기
+            </button>
+          </div>
         </div>
 
         {/* 주주명부 매크로 폼 */}

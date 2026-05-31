@@ -106,8 +106,7 @@ export default function ImageUpscaler() {
           <div className="w-24 h-24 mb-8 rounded-3xl bg-gray-50 dark:bg-gray-700 border border-gray-100 dark:border-gray-600 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
             <ZoomIn className="w-12 h-12 text-blue-500 dark:text-blue-400" />
           </div>
-          <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-3 text-center transition-colors" style={{ fontFamily: "Inter, sans-serif" }}>이미지를 업로드하세요</h3>
-          <p className="text-gray-500 dark:text-gray-400 text-sm sm:text-base text-center mb-10">Real-ESRGAN AI로 빠른 고품질 2배 해상도 업스케일링</p>
+          <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-10 text-center transition-colors" style={{ fontFamily: "Inter, sans-serif" }}>이미지를 업로드하세요</h3>
           <button className="px-8 py-3.5 bg-blue-600 text-white rounded-full font-semibold text-base shadow-sm hover:bg-blue-700 transition-all duration-300 hover:scale-[1.02] active:scale-95">
             이미지 선택
           </button>
