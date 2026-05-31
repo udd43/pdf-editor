@@ -186,14 +186,15 @@ export default function PdfEditor({ file }: PdfEditorProps) {
     saveHistory(textBoxes, imageOverlays);
     
     const newBoxes: TextBox[] = [];
+    // 컬럼별 정확한 x, w 지정 (테이블 칸에 딱 맞게 8~10px 우측 이동)
     const baseFields = [
-      { key: 'name', x: 37, y: 205, w: 81, h: 28 },
-      { key: 'engName', x: 126, y: 201, w: 61, h: 34 },
-      { key: 'gender', x: 191, y: 200, w: 20, h: 37 },
-      { key: 'birth', x: 220, y: 202, w: 60, h: 35 },
-      { key: 'nationality', x: 280, y: 201, w: 60, h: 35 },
-      { key: 'shares', x: 328, y: 204, w: 60, h: 35 },
-      { key: 'ownership', x: 394, y: 201, w: 60, h: 32 },
+      { key: 'name', x: 45, y: 205, w: 85, h: 30 },
+      { key: 'engName', x: 132, y: 205, w: 64, h: 30 },
+      { key: 'gender', x: 198, y: 205, w: 28, h: 30 },
+      { key: 'birth', x: 228, y: 205, w: 58, h: 30 },
+      { key: 'nationality', x: 288, y: 205, w: 46, h: 30 },
+      { key: 'shares', x: 336, y: 205, w: 64, h: 30 },
+      { key: 'ownership', x: 402, y: 205, w: 58, h: 30 },
     ];
 
     // 1~7줄 (주주 1~7) 추가
@@ -201,8 +202,8 @@ export default function PdfEditor({ file }: PdfEditorProps) {
       baseFields.forEach(f => {
         const val = sh[f.key as keyof typeof sh];
         if (val) {
-          // row 1은 기본 y, row 2부터는 242를 기준으로 +40씩 증가
-          const actualY = i === 0 ? f.y : 242 + (i - 1) * 40;
+          // row 1은 205, row 2부터는 정확히 +37 간격으로 증가해야 5,6,7번째 줄이 칸을 벗어나지 않음
+          const actualY = i === 0 ? f.y : 205 + i * 37;
           newBoxes.push({
             id: `shareholder-${i}-${f.key}-${Date.now()}`, text: val,
             x: f.x, y: actualY, width: f.w, height: f.h, fontSize: 13,
@@ -213,15 +214,15 @@ export default function PdfEditor({ file }: PdfEditorProps) {
       });
     });
 
-    // 공통 / 기타 정보
+    // 공통 / 기타 정보 (라벨과 겹치지 않도록 x축 우측 이동 및 y축 미세 조정)
     const commonFields = [
-      { key: 'pricePerShare', x: 333, y: 140, w: 91, h: 20 },
-      { key: 'totalShares', x: 326, y: 471, w: 60, h: 32 },
-      { key: 'totalOwnership', x: 394, y: 469, w: 60, h: 36 },
-      { key: 'today', x: 248, y: 563, w: 119, h: 20 },
-      { key: 'company', x: 252, y: 597, w: 119, h: 20 },
-      { key: 'address', x: 254, y: 625, w: 119, h: 20 },
-      { key: 'repName', x: 208, y: 653, w: 74, h: 20 },
+      { key: 'pricePerShare', x: 345, y: 140, w: 60, h: 20 },
+      { key: 'totalShares', x: 336, y: 466, w: 64, h: 32 },
+      { key: 'totalOwnership', x: 402, y: 466, w: 58, h: 32 },
+      { key: 'today', x: 248, y: 567, w: 119, h: 20 },
+      { key: 'company', x: 265, y: 597, w: 119, h: 20 },
+      { key: 'address', x: 265, y: 625, w: 119, h: 20 },
+      { key: 'repName', x: 265, y: 653, w: 80, h: 20 },
     ];
 
     commonFields.forEach(f => {
