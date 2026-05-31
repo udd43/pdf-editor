@@ -2,6 +2,7 @@
 
 import React, { useRef, useState } from "react";
 import { ZoomIn, Download, Loader2, Upload, RotateCcw } from "lucide-react";
+import Upscaler from "upscaler";
 
 export default function ImageUpscaler() {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -36,35 +37,26 @@ export default function ImageUpscaler() {
     if (!originalFile) return;
 
     setIsProcessing(true);
-    setProgress("서버에 이미지를 전송하는 중...");
+    setProgress("로컬 브라우저 AI 가속 엔진을 준비 중입니다...");
     setResultSrc(null);
 
     try {
-      const formData = new FormData();
-      formData.append("image", originalFile);
-      formData.append("scale", "2");
-      formData.append("noise", "-1");
-
-      setProgress("Real-ESRGAN 초고속 모델 불러오는 중... (최대 10~30초 소요)");
-
-      const res = await fetch("/api/upscale", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || "업스케일링 실패");
-      }
-
-      const blob = await res.blob();
-      const resultUrl = URL.createObjectURL(blob);
-      setResultSrc(resultUrl);
-
-      // 결과 크기 측정
+      // 1. 원본 이미지 로드
       const img = new Image();
-      img.onload = () => setResultSize({ w: img.width, h: img.height });
-      img.src = resultUrl;
+      img.src = originalSrc!;
+      await new Promise((resolve) => (img.onload = resolve));
+
+      setProgress("클라이언트에서 초고해상도 업스케일링 진행 중...");
+      
+      // 2. 브라우저 내부 100% 로컬 연산 (서버 통신 없음)
+      const upscaler = new Upscaler();
+      const upscaledDataUrl = await upscaler.upscale(img);
+      setResultSrc(upscaledDataUrl);
+
+      // 3. 결과 크기 측정
+      const resultImg = new Image();
+      resultImg.onload = () => setResultSize({ w: resultImg.width, h: resultImg.height });
+      resultImg.src = upscaledDataUrl;
 
       setProgress("");
     } catch (err: any) {

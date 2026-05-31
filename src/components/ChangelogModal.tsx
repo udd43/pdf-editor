@@ -8,6 +8,15 @@ interface ChangelogModalProps {
 
 const CHANGELOG_DATA = [
   {
+    version: "v1.0.56",
+    date: "2026-05-31",
+    changes: [
+      "100% 프라이버시 보장 및 AI 최적화: 서버 의존성을 완전히 제거하고 브라우저 내부에서만 초고속으로 작동하도록 설계 전면 개편",
+      "누끼따기 마스크 분리 기법 적용: 이미지를 내부적으로 축소하여 배경을 분석한 뒤 고해상도 원본에 덧씌워 처리 속도 3~5배 향상",
+      "업스케일링 로컬 AI 탑재: 기존 서버 API 의존도를 0%로 줄이고, 브라우저용 upscaler.js(TensorFlow.js 기반) 모델을 심어 오프라인에서도 업스케일링 가능"
+    ]
+  },
+  {
     version: "v1.0.55",
     date: "2026-05-31",
     changes: [

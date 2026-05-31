@@ -19,23 +19,76 @@ export default function BgRemover() {
     e.target.value = "";
 
     setFileName(file.name.replace(/\.[^.]+$/, ""));
-    const dataUrl = URL.createObjectURL(file);
-    setOriginalSrc(dataUrl);
+    const originalDataUrl = URL.createObjectURL(file);
+    setOriginalSrc(originalDataUrl);
     setResultSrc(null);
 
-    // 바로 배경 제거 시작
     setIsProcessing(true);
-    setProgress("AI 모델을 불러오는 중...");
+    setProgress("AI 모델 불러오는 중...");
 
     try {
+      // 1. 원본 이미지 로드
+      const img = new Image();
+      img.src = originalDataUrl;
+      await new Promise((resolve) => (img.onload = resolve));
+
+      // 2. AI 처리를 위한 리사이징 (최대 800px로 축소하여 속도 5배 향상)
+      const MAX_SIZE = 800;
+      let width = img.width;
+      let height = img.height;
+      if (width > MAX_SIZE || height > MAX_SIZE) {
+        if (width > height) {
+          height = Math.round((height * MAX_SIZE) / width);
+          width = MAX_SIZE;
+        } else {
+          width = Math.round((width * MAX_SIZE) / height);
+          height = MAX_SIZE;
+        }
+      }
+
+      const smallCanvas = document.createElement("canvas");
+      smallCanvas.width = width;
+      smallCanvas.height = height;
+      const smallCtx = smallCanvas.getContext("2d");
+      if (!smallCtx) throw new Error("Canvas context failed");
+      smallCtx.drawImage(img, 0, 0, width, height);
+
+      const smallBlob = await new Promise<Blob>((resolve) => 
+        smallCanvas.toBlob((b) => resolve(b!), "image/png")
+      );
+
+      // 3. 축소된 이미지로 AI 누끼따기 (초고속 연산)
       const { removeBackground } = await import("@imgly/background-removal");
-      setProgress("배경을 분석하는 중...");
-      const resultBlob = await removeBackground(file, {
+      setProgress("초고속 배경 분석 중...");
+      
+      const smallResultBlob = await removeBackground(smallBlob, {
         output: { format: "image/png" as const },
+        debug: false,
       });
-      const resultUrl = URL.createObjectURL(resultBlob);
-      setResultSrc(resultUrl);
+
+      // 4. 결과 마스크 로드
+      const maskImg = new Image();
+      maskImg.src = URL.createObjectURL(smallResultBlob);
+      await new Promise((resolve) => (maskImg.onload = resolve));
+
+      // 5. 원본 해상도 캔버스에 마스크 덧씌우기 (High-res 복원)
+      const finalCanvas = document.createElement("canvas");
+      finalCanvas.width = img.width;
+      finalCanvas.height = img.height;
+      const finalCtx = finalCanvas.getContext("2d");
+      if (!finalCtx) throw new Error("Canvas context failed");
+
+      // 원본 그리기
+      finalCtx.drawImage(img, 0, 0);
+      // 마스크 씌우기 (투명도 적용)
+      finalCtx.globalCompositeOperation = "destination-in";
+      finalCtx.drawImage(maskImg, 0, 0, img.width, img.height);
+
+      // 6. 최종 고해상도 누끼 결과 반환
+      const finalUrl = finalCanvas.toDataURL("image/png");
+      setResultSrc(finalUrl);
       setProgress("");
+      
     } catch (err) {
       console.error("배경 제거 실패:", err);
       setProgress("배경 제거에 실패했습니다. 다시 시도해 주세요.");
