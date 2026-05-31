@@ -8,6 +8,14 @@ interface ChangelogModalProps {
 
 const CHANGELOG_DATA = [
   {
+    version: "v1.0.54",
+    date: "2026-05-31",
+    changes: [
+      "주주명부 매크로: 텍스트 상자들이 전체적으로 왼쪽으로 치우쳐 칸을 벗어나던 문제 완벽 수정",
+      "표의 모든 열(성명~지분율)과 공통 정보 위치를 우측으로 20px씩 정밀하게 이동하여 칸 안에 쏙 들어가도록 맞춤"
+    ]
+  },
+  {
     version: "v1.0.53",
     date: "2026-05-31",
     changes: [

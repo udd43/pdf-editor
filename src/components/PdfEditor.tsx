@@ -186,15 +186,15 @@ export default function PdfEditor({ file }: PdfEditorProps) {
     saveHistory(textBoxes, imageOverlays);
     
     const newBoxes: TextBox[] = [];
-    // 컬럼별 정확한 x, w 지정 (테이블 칸에 딱 맞게 8~10px 우측 이동)
+    // 컬럼별 정확한 x, w 지정 (전체적으로 좌측으로 치우쳐 있어서 우측으로 20px씩 이동)
     const baseFields = [
-      { key: 'name', x: 45, y: 205, w: 85, h: 30 },
-      { key: 'engName', x: 132, y: 205, w: 64, h: 30 },
-      { key: 'gender', x: 198, y: 205, w: 28, h: 30 },
-      { key: 'birth', x: 228, y: 205, w: 58, h: 30 },
-      { key: 'nationality', x: 288, y: 205, w: 46, h: 30 },
-      { key: 'shares', x: 336, y: 205, w: 64, h: 30 },
-      { key: 'ownership', x: 402, y: 205, w: 58, h: 30 },
+      { key: 'name', x: 65, y: 205, w: 85, h: 30 },
+      { key: 'engName', x: 152, y: 205, w: 64, h: 30 },
+      { key: 'gender', x: 218, y: 205, w: 28, h: 30 },
+      { key: 'birth', x: 248, y: 205, w: 58, h: 30 },
+      { key: 'nationality', x: 308, y: 205, w: 46, h: 30 },
+      { key: 'shares', x: 356, y: 205, w: 64, h: 30 },
+      { key: 'ownership', x: 422, y: 205, w: 58, h: 30 },
     ];
 
     // 1~7줄 (주주 1~7) 추가
@@ -214,15 +214,15 @@ export default function PdfEditor({ file }: PdfEditorProps) {
       });
     });
 
-    // 공통 / 기타 정보 (라벨과 겹치지 않도록 x축 우측 이동 및 y축 미세 조정)
+    // 공통 / 기타 정보 (전체 x축 20px 우측 이동)
     const commonFields = [
-      { key: 'pricePerShare', x: 345, y: 140, w: 60, h: 20 },
-      { key: 'totalShares', x: 336, y: 466, w: 64, h: 32 },
-      { key: 'totalOwnership', x: 402, y: 466, w: 58, h: 32 },
-      { key: 'today', x: 248, y: 567, w: 119, h: 20 },
-      { key: 'company', x: 265, y: 597, w: 119, h: 20 },
-      { key: 'address', x: 265, y: 625, w: 119, h: 20 },
-      { key: 'repName', x: 265, y: 653, w: 80, h: 20 },
+      { key: 'pricePerShare', x: 365, y: 140, w: 60, h: 20 },
+      { key: 'totalShares', x: 356, y: 466, w: 64, h: 32 },
+      { key: 'totalOwnership', x: 422, y: 466, w: 58, h: 32 },
+      { key: 'today', x: 268, y: 567, w: 119, h: 20 },
+      { key: 'company', x: 285, y: 597, w: 119, h: 20 },
+      { key: 'address', x: 285, y: 625, w: 119, h: 20 },
+      { key: 'repName', x: 285, y: 653, w: 80, h: 20 },
     ];
 
     commonFields.forEach(f => {
