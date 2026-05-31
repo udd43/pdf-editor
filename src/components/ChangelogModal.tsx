@@ -8,6 +8,14 @@ interface ChangelogModalProps {
 
 const CHANGELOG_DATA = [
   {
+    version: "v1.0.51",
+    date: "2026-05-31",
+    changes: [
+      "툴바에 '주주명부 매크로 폼' 수동 열기/닫기 토글 버튼 추가",
+      "파일명이 완벽히 일치하지 않아도 사용자가 원할 때 언제든 매크로를 띄울 수 있도록 조건 개선"
+    ]
+  },
+  {
     version: "v1.0.50",
     date: "2026-05-31",
     changes: [
