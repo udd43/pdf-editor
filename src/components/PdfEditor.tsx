@@ -1012,18 +1012,21 @@ export default function PdfEditor({ file }: PdfEditorProps) {
 
           <div className="w-px h-5 bg-gray-200 dark:bg-gray-600 flex-shrink-0" />
 
-          {/* 매크로 토글 버튼 */}
-          <button onClick={() => setIsShareholderDoc(!isShareholderDoc)} disabled={status !== "done"}
-            className={`flex items-center gap-1 px-2.5 py-1.5 border text-[11px] font-bold rounded-md transition-all shadow-sm whitespace-nowrap flex-shrink-0 ${
-              isShareholderDoc 
-              ? 'bg-indigo-100 dark:bg-indigo-900 border-indigo-300 dark:border-indigo-700 text-indigo-800 dark:text-indigo-300' 
-              : 'bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600'
-            }`}
-            title="주주명부 매크로 양식을 열거나 닫습니다">
-            🏢 매크로 폼
-          </button>
-
-          <div className="w-px h-5 bg-gray-200 dark:bg-gray-600 flex-shrink-0" />
+          {isCorporateDoc && (
+            <>
+              {/* 매크로 토글 버튼 */}
+              <button onClick={() => setIsShareholderDoc(!isShareholderDoc)} disabled={status !== "done"}
+                className={`flex items-center gap-1 px-2.5 py-1.5 border text-[11px] font-bold rounded-md transition-all shadow-sm whitespace-nowrap flex-shrink-0 ${
+                  isShareholderDoc 
+                  ? 'bg-indigo-100 dark:bg-indigo-900 border-indigo-300 dark:border-indigo-700 text-indigo-800 dark:text-indigo-300' 
+                  : 'bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600'
+                }`}
+                title="주주명부 매크로 양식을 열거나 닫습니다">
+                🏢 매크로 폼
+              </button>
+              <div className="w-px h-5 bg-gray-200 dark:bg-gray-600 flex-shrink-0" />
+            </>
+          )}
 
           <button onClick={() => imageInputRef.current?.click()} disabled={status !== "done"}
             className="flex items-center gap-1 px-2.5 py-1.5 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-[11px] font-semibold rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-30 transition-all shadow-sm whitespace-nowrap flex-shrink-0">

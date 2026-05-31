@@ -8,6 +8,14 @@ interface ChangelogModalProps {
 
 const CHANGELOG_DATA = [
   {
+    version: "v1.0.55",
+    date: "2026-05-31",
+    changes: [
+      "매크로 폼 버튼 노출 조건 엄격화: 법인 서류(주주명부 등) 탭을 통해 문서를 열었거나 파일명이 법인 서류 형식일 때만 툴바에 '매크로 폼' 토글 버튼이 나타나도록 수정",
+      "일반 PDF 문서 편집 시 불필요한 매크로 기능이 노출되어 사용성을 해치던 문제 해결"
+    ]
+  },
+  {
     version: "v1.0.54",
     date: "2026-05-31",
     changes: [
