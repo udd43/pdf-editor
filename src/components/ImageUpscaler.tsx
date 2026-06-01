@@ -2,7 +2,6 @@
 
 import React, { useRef, useState } from "react";
 import { ZoomIn, Download, Loader2, Upload, RotateCcw } from "lucide-react";
-import Upscaler from "upscaler";
 
 export default function ImageUpscaler() {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -48,7 +47,8 @@ export default function ImageUpscaler() {
 
       setProgress("클라이언트에서 초고해상도 업스케일링 진행 중...");
       
-      // 2. 브라우저 내부 100% 로컬 연산 (서버 통신 없음)
+      // 2. 브라우저 내부 100% 로컬 연산 (서버 통신 없음) - Dynamic Import to prevent SSR crash
+      const { default: Upscaler } = await import("upscaler");
       const upscaler = new Upscaler();
       const upscaledDataUrl = await upscaler.upscale(img);
       setResultSrc(upscaledDataUrl);

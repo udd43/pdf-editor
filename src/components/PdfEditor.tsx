@@ -5,7 +5,6 @@ import * as pdfjsLib from "pdfjs-dist";
 import Tesseract from "tesseract.js";
 import { Download, Loader2, Plus, Image as ImageIcon, Scissors, Trash2, Move, Minus, ZoomIn, Pen, Sparkles } from "lucide-react";
 import toast from "react-hot-toast";
-import Upscaler from "upscaler";
 import { exportEditedPdf, mergePdfs } from "@/lib/pdfUtils";
 import { koreanToRoman } from "@/lib/romanize";
 import ImageOverlayComponent, { ImageOverlayData } from "./ImageOverlay";
@@ -827,7 +826,8 @@ export default function PdfEditor({ file }: PdfEditorProps) {
 
       setStatusMsg("클라이언트에서 초고해상도 업스케일링 진행 중...");
       
-      // 2. 브라우저 내부 로컬 연산 (서버 통신 없음)
+      // 2. 브라우저 내부 로컬 연산 (서버 통신 없음) - Dynamic Import to prevent SSR crash
+      const { default: Upscaler } = await import("upscaler");
       const upscaler = new Upscaler();
       const upscaledDataUrl = await upscaler.upscale(img);
 

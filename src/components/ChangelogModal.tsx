@@ -8,6 +8,14 @@ interface ChangelogModalProps {
 
 const CHANGELOG_DATA = [
   {
+    version: "v1.0.61",
+    date: "2026-06-01",
+    changes: [
+      "긴급 서버 안정화(502 에러 해결): 브라우저 전용 로컬 AI(upscaler.js) 엔진이 서버 렌더링(SSR) 과정에 개입하여 Vercel 서버를 통째로 다운시키던 치명적 버그 수정",
+      "AI 모델 로딩 방식을 지연 호출(Dynamic Import) 방식으로 변경하여 초기 로딩 속도 최적화 및 서버 충돌 100% 방지"
+    ]
+  },
+  {
     version: "v1.0.60",
     date: "2026-06-01",
     changes: [
