@@ -8,6 +8,14 @@ interface ChangelogModalProps {
 
 const CHANGELOG_DATA = [
   {
+    version: "v1.1.0",
+    date: "2026-06-01",
+    changes: [
+      "정식 버전 1.1.0 릴리즈",
+      "서버 및 클라이언트 안정화, PDF 에디터 내보내기 최적화 및 매크로 기능(지배자 확인서/주주명부) 분리 적용 완료"
+    ]
+  },
+  {
     version: "v1.0.63",
     date: "2026-06-01",
     changes: [
