@@ -19,6 +19,7 @@ type Tab = "pdf" | "bgremove" | "upscale" | "colorize" | "romanize" | "signature
 export default function ClientApp() {
   const [file, setFile] = useState<File | null>(null);
   const [referenceFile, setReferenceFile] = useState<File | null>(null);
+  const [isCorporateMode, setIsCorporateMode] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>("pdf");
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -107,6 +108,7 @@ export default function ClientApp() {
       const loadedFile = new File([blob], filename, { type: "application/pdf" });
       setFile(loadedFile);
       setReferenceFile(null);
+      setIsCorporateMode(true);
       setActiveTab("pdf");
       toast.success("문서를 성공적으로 불러왔습니다!", { id: toastId });
     } catch (err) {
@@ -155,6 +157,7 @@ export default function ClientApp() {
               onClick={() => {
                 setFile(null);
                 setReferenceFile(null);
+                setIsCorporateMode(false);
                 setActiveTab("pdf");
               }}
               className="shrink-0 outline-none flex items-center gap-2"
@@ -192,7 +195,7 @@ export default function ClientApp() {
                   대조 원본 추가
                 </button>
                 <input id="ref-upload" type="file" accept="application/pdf" className="hidden" onChange={handleReferenceSelect} />
-                <button onClick={() => { setFile(null); setReferenceFile(null); }}
+                <button onClick={() => { setFile(null); setReferenceFile(null); setIsCorporateMode(false); }}
                   className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white px-3 py-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-all font-medium">
                   처음으로
                 </button>
@@ -220,7 +223,7 @@ export default function ClientApp() {
       {/* 메인 내용 */}
       <main className="flex-1 flex flex-col items-center justify-start p-4 sm:p-8 z-10 w-full max-w-6xl mx-auto">
         {activeTab === "pdf" && (
-          !file ? <PdfUploader onFileSelect={setFile} /> : (
+          !file ? <PdfUploader onFileSelect={(f) => { setFile(f); setIsCorporateMode(false); }} /> : (
             <div className={`w-full flex gap-6 ${referenceFile ? "flex-row" : "justify-center"}`}>
               {referenceFile && (
                 <div className="reference-pdf w-1/2 flex flex-col border border-gray-200 dark:border-gray-700 shadow-sm rounded-2xl overflow-hidden bg-white dark:bg-gray-800 h-[80vh] sticky top-24 transition-colors">
@@ -235,7 +238,7 @@ export default function ClientApp() {
                 </div>
               )}
               <div className={`pdf-workspace ${referenceFile ? "w-1/2" : "w-full"}`}>
-                <PdfEditor file={file} />
+                <PdfEditor file={file} isCorporateMode={isCorporateMode} />
               </div>
             </div>
           )

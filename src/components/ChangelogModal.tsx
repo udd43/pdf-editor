@@ -8,6 +8,14 @@ interface ChangelogModalProps {
 
 const CHANGELOG_DATA = [
   {
+    version: "v1.1.1",
+    date: "2026-06-01",
+    changes: [
+      "기능 개선: 매크로 폼 버튼 노출 조건 강화",
+      "일반 모드(PDF 편집)에서 이름이 비슷한 파일을 수동 업로드했을 때는 매크로가 뜨지 않게 하고, '법인 서류 양식' 메뉴를 통해서 진입했을 때만 매크로 폼이 작동하도록 엄격히 분리"
+    ]
+  },
+  {
     version: "v1.1.0",
     date: "2026-06-01",
     changes: [

@@ -33,6 +33,7 @@ type Status = "idle" | "rendering" | "ocr" | "done" | "error";
 
 interface PdfEditorProps {
   file: File;
+  isCorporateMode?: boolean;
 }
 
 const Thumbnail = ({ pdfDoc, pageNumber, isActive, onClick }: { pdfDoc: pdfjsLib.PDFDocumentProxy, pageNumber: number, isActive: boolean, onClick: () => void }) => {
@@ -76,7 +77,7 @@ const Thumbnail = ({ pdfDoc, pageNumber, isActive, onClick }: { pdfDoc: pdfjsLib
   );
 };
 
-export default function PdfEditor({ file }: PdfEditorProps) {
+export default function PdfEditor({ file, isCorporateMode = false }: PdfEditorProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -165,9 +166,9 @@ export default function PdfEditor({ file }: PdfEditorProps) {
   }, [file]);
 
   // 자동 채우기 폼 상태
-  const isCorporateDoc = file.name.startsWith("doc_") || file.name.includes("법인") || file.name.includes("확인서");
-  const isShareholderFile = file.name === "doc_shareholder.pdf" || file.name.includes("주주명부");
-  const isCorpOwnerFile = file.name === "doc_corp_owner.pdf" || file.name.includes("지배자");
+  const isCorporateDoc = isCorporateMode && (file.name.startsWith("doc_") || file.name.includes("법인") || file.name.includes("확인서"));
+  const isShareholderFile = isCorporateMode && (file.name === "doc_shareholder.pdf" || file.name.includes("주주명부"));
+  const isCorpOwnerFile = isCorporateMode && (file.name === "doc_corp_owner.pdf" || file.name.includes("지배자"));
 
   const [isMacroFormOpen, setIsMacroFormOpen] = useState(isShareholderFile || isCorpOwnerFile);
   const [autoFillCompany, setAutoFillCompany] = useState("");
