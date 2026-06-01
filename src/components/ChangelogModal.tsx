@@ -8,6 +8,14 @@ interface ChangelogModalProps {
 
 const CHANGELOG_DATA = [
   {
+    version: "v1.0.60",
+    date: "2026-06-01",
+    changes: [
+      "긴급 버그 수정: PDF 에디터 내에서 '이미지 업스케일링 추가' 버튼을 누를 때 발생하던 서버 503 에러 해결",
+      "삭제된 과거 서버 API를 호출하던 잔여 코드를 완전히 제거하고, 100% 로컬 AI 연산으로 통일되도록 구조 수정 완료"
+    ]
+  },
+  {
     version: "v1.0.59",
     date: "2026-06-01",
     changes: [
