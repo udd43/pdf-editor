@@ -79,6 +79,7 @@ const Thumbnail = ({ pdfDoc, pageNumber, isActive, onClick }: { pdfDoc: pdfjsLib
 
 export default function PdfEditor({ file, isCorporateMode = false }: PdfEditorProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const canvasWrapperRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const bgRemoveInputRef = useRef<HTMLInputElement>(null);
@@ -504,11 +505,11 @@ export default function PdfEditor({ file, isCorporateMode = false }: PdfEditorPr
       }
 
       if (file.type.startsWith("image/")) {
-        const container = containerRef.current;
-        if (!container) return;
+        const wrapper = canvasWrapperRef.current;
+        if (!wrapper) return;
 
         // 드롭된 상대 마우스 좌표를 PDF 포인트 단위로 계산
-        const rect = container.getBoundingClientRect();
+        const rect = wrapper.getBoundingClientRect();
         const dropX = (e.clientX - rect.left) / scale;
         const dropY = (e.clientY - rect.top) / scale;
 
@@ -683,9 +684,9 @@ export default function PdfEditor({ file, isCorporateMode = false }: PdfEditorPr
   const handleCanvasDoubleClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (status !== "done") return;
     saveHistory(textBoxes, imageOverlays);
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const rect = canvas.getBoundingClientRect();
+    const wrapper = canvasWrapperRef.current;
+    if (!wrapper) return;
+    const rect = wrapper.getBoundingClientRect();
     const x = (e.clientX - rect.left) / scale;
     const y = (e.clientY - rect.top) / scale;
     const newBox: TextBox = {
@@ -1315,16 +1316,21 @@ export default function PdfEditor({ file, isCorporateMode = false }: PdfEditorPr
         {/* PDF 컨테이너 */}
         <div 
           ref={containerRef}
-          onDoubleClick={handleCanvasDoubleClick}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
-          className={`relative border border-gray-300 dark:border-gray-600 shadow-2xl bg-white overflow-auto rounded-lg flex-1 min-w-0 transition-all ${
+          className={`border border-gray-300 dark:border-gray-600 shadow-2xl bg-gray-100 dark:bg-gray-900 overflow-auto rounded-lg flex-1 min-w-0 transition-all ${
             isDragOver ? "ring-4 ring-indigo-500 ring-offset-2 scale-[1.01]" : ""
           }`}
           style={{ minHeight: "600px" }}
         >
-          <canvas ref={canvasRef} className="block mx-auto" />
+          {/* Canvas Wrapper */}
+          <div 
+            ref={canvasWrapperRef} 
+            onDoubleClick={handleCanvasDoubleClick}
+            className="relative mx-auto w-max bg-white"
+          >
+            <canvas ref={canvasRef} className="block" />
 
           {isLoading && (
             <div className="absolute inset-0 bg-white/70 flex flex-col items-center justify-center z-50 backdrop-blur-sm">
@@ -1369,6 +1375,7 @@ export default function PdfEditor({ file, isCorporateMode = false }: PdfEditorPr
               onSelect={(id) => { setSelectedImageId(id); setSelectedTextId(null); }} 
               onDragStart={() => saveHistory(textBoxes, imageOverlays)} />
           ))}
+          </div> {/* End Canvas Wrapper */}
         </div>
 
         {/* 추출 텍스트 플로팅 버튼 + 오버레이 서랍 */}

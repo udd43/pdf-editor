@@ -8,6 +8,20 @@ interface ChangelogModalProps {
 
 const CHANGELOG_DATA = [
   {
+    version: "v1.1.4",
+    date: "2026-06-02",
+    changes: [
+      "버그 수정: 창 크기 조절 시 화면 중앙 정렬(mx-auto)에 의해 텍스트 박스 좌표계가 틀어지던 현상 최종 해결 (래퍼 컨테이너 분리 및 좌표 원점 캔버스로 고정)"
+    ]
+  },
+  {
+    version: "v1.1.3",
+    date: "2026-06-02",
+    changes: [
+      "자동 배포 스크립트 안정화"
+    ]
+  },
+  {
     version: "v1.1.2",
     date: "2026-06-01",
     changes: [
