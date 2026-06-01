@@ -8,6 +8,14 @@ interface ChangelogModalProps {
 
 const CHANGELOG_DATA = [
   {
+    version: "v1.0.63",
+    date: "2026-06-01",
+    changes: [
+      "버그 수정: PDF 내보내기가 간헐적으로(또는 두 번째 시도 시) 동작하지 않던 현상 수정 (메모리 버퍼 참조 방식 개선)",
+      "버그 수정: 일부 환경에서 폰트 파일을 불러오지 못했을 때 PDF 변환 엔진이 멈추는 현상(에러 핸들링) 수정"
+    ]
+  },
+  {
     version: "v1.0.62",
     date: "2026-06-01",
     changes: [

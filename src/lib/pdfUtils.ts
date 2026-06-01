@@ -24,7 +24,9 @@ export async function exportEditedPdf(
       // 1. 폰트 ArrayBuffer 로드
       const loadFontBuffer = async (url: string) => {
         try {
-          return await fetch(url).then(res => res.arrayBuffer());
+          const res = await fetch(url);
+          if (!res.ok) return null;
+          return await res.arrayBuffer();
         } catch {
           return null;
         }
@@ -101,8 +103,9 @@ export async function exportEditedPdf(
         reject(err);
       };
 
-      // ArrayBuffer는 Transferable 객체이므로 메모리 복사 없이 전달 가능
-      const transferables = [originalPdfBuffer];
+      // ArrayBuffer는 Transferable 객체이므로 복사본을 만들어 전달 (원본 보존)
+      const bufferCopy = originalPdfBuffer.slice(0);
+      const transferables = [bufferCopy];
       if (notoBuffer) transferables.push(notoBuffer);
       if (myeongjoBuffer) transferables.push(myeongjoBuffer);
       if (juaBuffer) transferables.push(juaBuffer);
@@ -111,7 +114,7 @@ export async function exportEditedPdf(
       });
 
       worker.postMessage({
-        originalPdfBuffer,
+        originalPdfBuffer: bufferCopy,
         editedBoxes,
         imageOverlays: overlayDataForWorker,
         fontBuffers
