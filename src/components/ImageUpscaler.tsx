@@ -36,27 +36,35 @@ export default function ImageUpscaler() {
     if (!originalFile) return;
 
     setIsProcessing(true);
-    setProgress("로컬 브라우저 AI 가속 엔진을 준비 중입니다...");
+    setProgress("서버에 이미지를 전송하는 중...");
     setResultSrc(null);
 
     try {
-      // 1. 원본 이미지 로드
+      const formData = new FormData();
+      formData.append("image", originalFile);
+      formData.append("scale", "2");
+      formData.append("noise", "-1");
+
+      setProgress("Real-ESRGAN 초고속 모델 불러오는 중... (최대 10~30초 소요)");
+
+      const res = await fetch("/api/upscale", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "업스케일링 실패");
+      }
+
+      const blob = await res.blob();
+      const resultUrl = URL.createObjectURL(blob);
+      setResultSrc(resultUrl);
+
+      // 결과 크기 측정
       const img = new Image();
-      img.src = originalSrc!;
-      await new Promise((resolve) => (img.onload = resolve));
-
-      setProgress("클라이언트에서 초고해상도 업스케일링 진행 중...");
-      
-      // 2. 브라우저 내부 100% 로컬 연산 (서버 통신 없음) - Dynamic Import to prevent SSR crash
-      const { default: Upscaler } = await import("upscaler");
-      const upscaler = new Upscaler();
-      const upscaledDataUrl = await upscaler.upscale(img);
-      setResultSrc(upscaledDataUrl);
-
-      // 3. 결과 크기 측정
-      const resultImg = new Image();
-      resultImg.onload = () => setResultSize({ w: resultImg.width, h: resultImg.height });
-      resultImg.src = upscaledDataUrl;
+      img.onload = () => setResultSize({ w: img.width, h: img.height });
+      img.src = resultUrl;
 
       setProgress("");
     } catch (err: any) {

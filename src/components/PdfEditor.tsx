@@ -810,41 +810,38 @@ export default function PdfEditor({ file }: PdfEditorProps) {
     }
   };
 
-  // 이미지 업스케일링 (100% 클라이언트 브라우저 로컬 연산)
+  // 이미지 업스케일링 (서버 API 사용)
   const handleUpscaleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const imgFile = e.target.files?.[0];
     if (!imgFile) return;
     e.target.value = "";
     setIsUpscaling(true);
-    setStatusMsg("로컬 브라우저 AI 가속 엔진을 준비 중입니다...");
+    setStatusMsg("Real-ESRGAN 초고속 모델 불러오는 중... (최대 10~30초 소요)");
     try {
-      // 1. 원본 이미지 로드
-      const originalDataUrl = URL.createObjectURL(imgFile);
+      const formData = new FormData();
+      formData.append("image", imgFile);
+      formData.append("scale", "2");
+      formData.append("noise", "1");
+      const res = await fetch("/api/upscale", { method: "POST", body: formData });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "업스케일링 실패");
+      }
+      const blob = await res.blob();
+      const resultUrl = URL.createObjectURL(blob);
       const img = new Image();
-      img.src = originalDataUrl;
-      await new Promise((resolve) => (img.onload = resolve));
-
-      setStatusMsg("클라이언트에서 초고해상도 업스케일링 진행 중...");
-      
-      // 2. 브라우저 내부 로컬 연산 (서버 통신 없음) - Dynamic Import to prevent SSR crash
-      const { default: Upscaler } = await import("upscaler");
-      const upscaler = new Upscaler();
-      const upscaledDataUrl = await upscaler.upscale(img);
-
-      // 3. 업스케일링 결과를 캔버스에 추가
-      const resultImg = new Image();
-      resultImg.onload = () => {
-        const { w, h, x, y } = getOptimizedImageCoords(resultImg.width, resultImg.height, imageOverlays.length);
+      img.onload = () => {
+        const { w, h, x, y } = getOptimizedImageCoords(img.width, img.height, imageOverlays.length);
         const newOverlay: ImageOverlayData = {
-          id: `img-${Date.now()}`, originalSrc: upscaledDataUrl, displaySrc: upscaledDataUrl,
+          id: `img-${Date.now()}`, originalSrc: resultUrl, displaySrc: resultUrl,
           removedBgSrc: null, x, y, width: w, height: h, pageIndex: currentPage,
         };
         setImageOverlays((prev) => [...prev, newOverlay]);
         setSelectedImageId(newOverlay.id);
         setIsUpscaling(false);
-        setStatusMsg("업스케일링 완료! 이미지가 캔버스에 추가되었습니다.");
+        setStatusMsg("업스케일링 완료! 이미지가 추가되었습니다.");
       };
-      resultImg.src = upscaledDataUrl;
+      img.src = resultUrl;
     } catch (err: any) {
       console.error("업스케일 실패:", err);
       setIsUpscaling(false);

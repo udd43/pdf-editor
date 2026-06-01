@@ -8,6 +8,13 @@ interface ChangelogModalProps {
 
 const CHANGELOG_DATA = [
   {
+    version: "v1.0.62",
+    date: "2026-06-01",
+    changes: [
+      "서버 설정 롤백: 자체 서버 환경에서 메모리 부족 등(PM2 크래시)으로 502 에러가 발생하는 문제를 해결하기 위해, 어제 도입했던 로컬 AI 모델(upscaler.js) 및 관련 무거운 의존성 라이브러리를 제거하고 서버 API 방식으로 원상 복구"
+    ]
+  },
+  {
     version: "v1.0.61",
     date: "2026-06-01",
     changes: [
