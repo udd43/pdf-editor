@@ -70,17 +70,17 @@ self.onmessage = async (e: MessageEvent) => {
           const selectedFont = fontCache[box.fontFamily || "NotoSansKR"] || fontCache["NotoSansKR"];
           
           try {
-            const padX = 4;
-            const padY = 4;
             const isLandscape = rotationAngle === 90 || rotationAngle === 270;
-            const verticalCorrection = isLandscape ? (fontSize * 0.15) : 0; 
-            const baselineVisualY = realY + padY + (fontSize * 0.88) + verticalCorrection;
-            const baselineVp = getPdfCoords(realX + padX, baselineVisualY);
+            const verticalCorrection = isLandscape ? (fontSize * 0.15) : 0;
+            // UI uses `leading-snug` (line-height: 1.375) and 0 padding.
+            // Distance to baseline is approximately fontSize * 0.98.
+            const baselineVisualY = realY + (fontSize * 0.98) + verticalCorrection;
+            const baselineVp = getPdfCoords(realX, baselineVisualY);
             const textX = baselineVp.px;
             const textY = baselineVp.py;
 
             page.drawText(box.text, {
-              x: textX, y: textY, size: fontSize, font: selectedFont, color: rgb(0, 0, 0), maxWidth: realW - (padX * 2), rotate: rotate,
+              x: textX, y: textY, size: fontSize, font: selectedFont, color: rgb(0, 0, 0), maxWidth: realW, rotate: rotate,
             });
           } catch (drawError) {
             console.warn(`텍스트 그리기 실패 (${box.id}):`, drawError);

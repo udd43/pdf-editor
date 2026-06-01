@@ -8,6 +8,13 @@ interface ChangelogModalProps {
 
 const CHANGELOG_DATA = [
   {
+    version: "v1.1.2",
+    date: "2026-06-01",
+    changes: [
+      "버그 수정: 화면에서 배치한 텍스트 박스 위치와 실제 내보내기(다운로드)한 PDF의 텍스트 위치가 미세하게 어긋나던 현상 수정 (WYSIWYG 완벽 동기화 적용)"
+    ]
+  },
+  {
     version: "v1.1.1",
     date: "2026-06-01",
     changes: [

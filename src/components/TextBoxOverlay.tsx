@@ -98,19 +98,21 @@ const TextBoxOverlay: React.FC<TextBoxOverlayProps> = ({
       <textarea
         value={box.text}
         onChange={(e) => onChange(box.id, e.target.value)}
-        className="w-full h-full resize-none overflow-hidden p-1 m-0 leading-snug cursor-pointer focus:cursor-text rounded-sm"
+        className="w-full h-full resize-none overflow-hidden m-0 leading-snug cursor-pointer focus:cursor-text"
         style={{
           fontSize: `${box.fontSize * scale}px`,
           fontFamily: box.fontFamily || "NotoSansKR",
           whiteSpace: "pre-wrap",
           backgroundColor: box.isTransparent ? "transparent" : "#fff",
           color: "#000",
-          border: box.isNew
+          outline: box.isNew
             ? "2px solid rgba(34,197,94,0.6)"
             : box.isEdited
             ? "2px solid rgba(245,158,11,0.5)"
             : "1px solid rgba(59,130,246,0.3)",
-          outline: "none",
+          outlineOffset: "-1px",
+          border: "none",
+          padding: 0,
           boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
         }}
       />
