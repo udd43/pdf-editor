@@ -8,6 +8,14 @@ interface ChangelogModalProps {
 
 const CHANGELOG_DATA = [
   {
+    version: "v1.0.59",
+    date: "2026-06-01",
+    changes: [
+      "법인 소유 지배자 확인서 전용 매크로 폼 추가",
+      "문서 종류(주주명부 vs 지배자 확인서)를 자동으로 인식하여 툴바의 '매크로 폼' 버튼 클릭 시 상황에 맞는 서로 다른 매크로 폼이 열리도록 지능형 토글 적용"
+    ]
+  },
+  {
     version: "v1.0.58",
     date: "2026-06-01",
     changes: [
