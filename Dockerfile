@@ -2,7 +2,6 @@
 FROM --platform=linux/amd64 node:20-bookworm-slim AS base
 
 # 시스템 패키지 업데이트 및 설치 (Vulkan 라이브러리 등)
-# node:20-bookworm-slim은 Debian 기반이므로 apt-get을 사용합니다.
 RUN apt-get update && apt-get install -y \
     curl \
     unzip \
@@ -25,13 +24,11 @@ WORKDIR /app
 COPY package.json package-lock.json* ./
 RUN npm ci
 
-# 3. Builder Image: Next.js 빌드
+# 3. Builder Image: Vite 빌드
 FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-# 텔레메트리 끄기 (선택사항)
-ENV NEXT_TELEMETRY_DISABLED 1
 RUN npm run build
 
 # 4. Runner Image: 실제 실행 환경 (최종 이미지)
@@ -39,16 +36,16 @@ FROM base AS runner
 WORKDIR /app
 
 ENV NODE_ENV production
-ENV NEXT_TELEMETRY_DISABLED 1
 
-# 빌드된 결과물 복사
+# 서버 파일 및 빌드된 프론트엔드 복사
 COPY --from=builder /app/package.json ./
 COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/server.js ./server.js
+COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/public ./public
 
 EXPOSE 3000
 ENV PORT 3000
 
-# 서버 실행
+# Express 서버 실행
 CMD ["npm", "start"]

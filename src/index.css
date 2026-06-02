@@ -1,0 +1,4 @@
+@import "tailwindcss";
+
+/* Tailwind v4: dark 모드를 CSS 클래스(.dark) 기반으로 전환 */
+@custom-variant dark (&:where(.dark, .dark *));
