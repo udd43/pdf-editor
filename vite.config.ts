@@ -11,7 +11,7 @@ export default defineConfig({
     tailwindcss(),
   ],
   define: {
-    'import.meta.env.VITE_APP_VERSION': JSON.stringify(pkg.version),
+    __APP_VERSION__: JSON.stringify(pkg.version),
   },
   resolve: {
     alias: {

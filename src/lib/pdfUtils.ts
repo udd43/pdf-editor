@@ -3,6 +3,8 @@ import fontkit from "@pdf-lib/fontkit";
 import { TextBox } from "@/components/PdfEditor";
 import { ImageOverlayData } from "@/components/ImageOverlay";
 
+import { getFontBuffers } from "./fontCache";
+
 /**
  * PDF 내보내기 함수
  * 
@@ -21,28 +23,8 @@ export async function exportEditedPdf(
 ): Promise<void> {
   return new Promise(async (resolve, reject) => {
     try {
-      // 1. 폰트 ArrayBuffer 로드
-      const loadFontBuffer = async (url: string) => {
-        try {
-          const res = await fetch(url);
-          if (!res.ok) return null;
-          return await res.arrayBuffer();
-        } catch {
-          return null;
-        }
-      };
-
-      const [notoBuffer, myeongjoBuffer, juaBuffer] = await Promise.all([
-        loadFontBuffer("/NotoSansKR-Regular.otf"),
-        loadFontBuffer("/NanumMyeongjo.ttf"),
-        loadFontBuffer("/Jua.ttf"),
-      ]);
-
-      const fontBuffers = {
-        NotoSansKR: notoBuffer,
-        NanumMyeongjo: myeongjoBuffer,
-        Jua: juaBuffer,
-      };
+      // 1. 폰트 ArrayBuffer 로드 (캐시 사용)
+      const fontBuffers = await getFontBuffers();
 
       // 2. 이미지들을 ArrayBuffer로 변환
       const overlayDataForWorker = await Promise.all(
@@ -106,9 +88,17 @@ export async function exportEditedPdf(
       // ArrayBuffer는 Transferable 객체이므로 복사본을 만들어 전달 (원본 보존)
       const bufferCopy = originalPdfBuffer.slice(0);
       const transferables = [bufferCopy];
-      if (notoBuffer) transferables.push(notoBuffer);
-      if (myeongjoBuffer) transferables.push(myeongjoBuffer);
-      if (juaBuffer) transferables.push(juaBuffer);
+      
+      const fontsForWorker = {
+        NotoSansKR: fontBuffers.NotoSansKR ? fontBuffers.NotoSansKR.slice(0) : null,
+        NanumMyeongjo: fontBuffers.NanumMyeongjo ? fontBuffers.NanumMyeongjo.slice(0) : null,
+        Jua: fontBuffers.Jua ? fontBuffers.Jua.slice(0) : null,
+      };
+
+      if (fontsForWorker.NotoSansKR) transferables.push(fontsForWorker.NotoSansKR);
+      if (fontsForWorker.NanumMyeongjo) transferables.push(fontsForWorker.NanumMyeongjo);
+      if (fontsForWorker.Jua) transferables.push(fontsForWorker.Jua);
+      
       overlayDataForWorker.forEach(o => {
         if (o.buffer) transferables.push(o.buffer);
       });
@@ -117,7 +107,7 @@ export async function exportEditedPdf(
         originalPdfBuffer: bufferCopy,
         editedBoxes,
         imageOverlays: overlayDataForWorker,
-        fontBuffers
+        fontBuffers: fontsForWorker
       }, transferables);
 
     } catch (err) {

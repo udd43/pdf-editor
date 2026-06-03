@@ -64,7 +64,7 @@ const TextBoxOverlay: React.FC<TextBoxOverlayProps> = ({
 
   return (
     <div
-      className={`absolute group ${isSelected ? 'ring-2 ring-blue-500 ring-offset-1' : ''}`}
+      className={`absolute group transition-[box-shadow,transform,opacity] duration-150 ${isSelected ? 'ring-2 ring-blue-500 ring-offset-1' : ''} ${isDragging ? 'shadow-2xl scale-[1.02] opacity-90' : ''}`}
       onDoubleClick={handleDoubleClick}
       onMouseDown={handleBoxMouseDown}
       onClick={(e) => {
@@ -82,12 +82,6 @@ const TextBoxOverlay: React.FC<TextBoxOverlayProps> = ({
     >
       {/* 상단 컨트롤 바 */}
       <div className="absolute -top-8 left-0 flex items-center gap-0.5 bg-white rounded-lg shadow-md border px-1 py-0.5 opacity-0 group-hover:opacity-100 transition-opacity z-30">
-        <div
-          onMouseDown={(e) => onDragStart(e, box.id, box.x, box.y)}
-          className="p-1 text-gray-500 hover:bg-gray-100 rounded cursor-grab active:cursor-grabbing"
-        >
-          <Move className="w-3.5 h-3.5" />
-        </div>
         <select
           value={box.fontFamily || "NotoSansKR"}
           onChange={(e) => onFontFamilyChange(box.id, e.target.value)}

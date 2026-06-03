@@ -4,15 +4,17 @@ import React, { useState, useEffect, useRef } from "react";
 import { FileText, Scissors, ZoomIn, Palette, Moon, Sun, Menu, X } from "lucide-react";
 import PdfUploader from "@/components/PdfUploader";
 import PdfEditor from "@/components/PdfEditor";
-import BgRemover from "@/components/BgRemover";
-import ImageUpscaler from "@/components/ImageUpscaler";
-import ImageColorizer from "@/components/ImageColorizer";
-import RomanizerTab from "@/components/RomanizerTab";
-import SignatureTab from "@/components/SignatureTab";
-import CalculatorTab from "@/components/CalculatorTab";
 import ChangelogModal from "@/components/ChangelogModal";
 import { Languages, PenTool, Calculator, FileText as FileTextIcon, Building2 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
+
+const BgRemover = React.lazy(() => import("@/components/BgRemover"));
+const ImageUpscaler = React.lazy(() => import("@/components/ImageUpscaler"));
+const ImageColorizer = React.lazy(() => import("@/components/ImageColorizer"));
+const RomanizerTab = React.lazy(() => import("@/components/RomanizerTab"));
+const SignatureTab = React.lazy(() => import("@/components/SignatureTab"));
+const CalculatorTab = React.lazy(() => import("@/components/CalculatorTab"));
+import { Loader2 } from "lucide-react";
 
 type Tab = "pdf" | "bgremove" | "upscale" | "colorize" | "romanize" | "signature" | "calculator" | "corporate";
 
@@ -243,12 +245,14 @@ export default function ClientApp() {
             </div>
           )
         )}
-        {activeTab === "bgremove" && <BgRemover />}
-        {activeTab === "upscale" && <ImageUpscaler />}
-        {activeTab === "colorize" && <ImageColorizer />}
-        {activeTab === "romanize" && <RomanizerTab />}
-        {activeTab === "signature" && <SignatureTab />}
-        {activeTab === "calculator" && <CalculatorTab />}
+        <React.Suspense fallback={<div className="flex items-center justify-center p-12 text-gray-500"><Loader2 className="w-8 h-8 animate-spin" /></div>}>
+          {activeTab === "bgremove" && <BgRemover />}
+          {activeTab === "upscale" && <ImageUpscaler />}
+          {activeTab === "colorize" && <ImageColorizer />}
+          {activeTab === "romanize" && <RomanizerTab />}
+          {activeTab === "signature" && <SignatureTab />}
+          {activeTab === "calculator" && <CalculatorTab />}
+        </React.Suspense>
         {activeTab === "corporate" && (
           <div className="w-full max-w-4xl mx-auto py-8">
             <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-gray-200 dark:border-gray-700 p-8">

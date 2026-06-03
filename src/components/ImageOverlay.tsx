@@ -65,12 +65,17 @@ export default function ImageOverlay({
     const startBoxX = overlay.x;
     const startBoxY = overlay.y;
 
+    let rafId: number | null = null;
     const handleMove = (ev: MouseEvent) => {
-      const dx = (ev.clientX - startX) / scale;
-      const dy = (ev.clientY - startY) / scale;
-      onUpdate(overlay.id, { x: startBoxX + dx, y: startBoxY + dy });
+      if (rafId) cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => {
+        const dx = (ev.clientX - startX) / scale;
+        const dy = (ev.clientY - startY) / scale;
+        onUpdate(overlay.id, { x: startBoxX + dx, y: startBoxY + dy });
+      });
     };
     const handleUp = () => {
+      if (rafId) cancelAnimationFrame(rafId);
       setIsDragging(false);
       window.removeEventListener("mousemove", handleMove);
       window.removeEventListener("mouseup", handleUp);
@@ -213,7 +218,7 @@ export default function ImageOverlay({
   return (
     <div
       ref={containerRef}
-      className={`absolute group ${isDragging ? "cursor-grabbing" : "cursor-grab"}`}
+      className={`absolute group transition-[box-shadow,transform,opacity] duration-150 ${isDragging ? "cursor-grabbing shadow-2xl scale-[1.02] opacity-90" : "cursor-grab"}`}
       style={{
         left: `${overlay.x * scale}px`,
         top: `${overlay.y * scale}px`,
