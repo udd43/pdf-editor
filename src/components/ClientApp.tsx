@@ -52,7 +52,7 @@ export default function ClientApp() {
 
   // 새 버전일 때 자동으로 업데이트 내역 팝업 (사용자 요청으로 비활성화)
   useEffect(() => {
-    const currentVersion = process.env.NEXT_PUBLIC_APP_VERSION || "";
+    const currentVersion = import.meta.env.VITE_APP_VERSION || "";
     const lastSeenVersion = localStorage.getItem("lastSeenVersion");
     if (currentVersion && currentVersion !== lastSeenVersion) {
       // setShowChangelog(true); // 자동 팝업 비활성화
@@ -293,7 +293,7 @@ export default function ClientApp() {
             className="font-mono bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 px-2.5 py-1 rounded-lg text-gray-500 dark:text-gray-400 flex items-center gap-1.5"
           >
             <span className="inline-block w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-            v{process.env.NEXT_PUBLIC_APP_VERSION}
+            v{import.meta.env.VITE_APP_VERSION}
           </div>
           <span className="font-medium">&copy; 2026 PDF Editor &middot; Private by default.</span>
         </div>
