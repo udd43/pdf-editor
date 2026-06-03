@@ -62,6 +62,7 @@ export default function BgRemover() {
       setProgress("초고속 배경 분석 중...");
       
       const smallResultBlob = await removeBackground(smallBlob, {
+        model: "isnet_quint8",
         output: { format: "image/png" as const },
         debug: false,
       });

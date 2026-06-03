@@ -152,6 +152,7 @@ export default function ImageOverlay({
       const response = await fetch(overlay.originalSrc);
       const blob = await response.blob();
       const resultBlob = await removeBackground(blob, {
+        model: "isnet_quint8",
         output: { format: "image/png" as const },
       });
       const resultUrl = URL.createObjectURL(resultBlob);

@@ -129,7 +129,6 @@ export default function ClientApp() {
   const tabs: { id: Tab; label: string; icon: React.ReactNode; color: string; activeBg: string }[] = [
     { id: "pdf", label: "PDF 편집", icon: <FileText className="w-3.5 h-3.5" />, color: "text-gray-600 dark:text-gray-300", activeBg: "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm" },
     { id: "bgremove", label: "누끼따기", icon: <Scissors className="w-3.5 h-3.5" />, color: "text-gray-600 dark:text-gray-300", activeBg: "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm" },
-    { id: "upscale", label: "업스케일링", icon: <ZoomIn className="w-3.5 h-3.5" />, color: "text-gray-600 dark:text-gray-300", activeBg: "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm" },
     { id: "colorize", label: "색상 변경", icon: <Palette className="w-3.5 h-3.5" />, color: "text-gray-600 dark:text-gray-300", activeBg: "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm" },
     { id: "romanize", label: "영문명 변환", icon: <Languages className="w-3.5 h-3.5" />, color: "text-gray-600 dark:text-gray-300", activeBg: "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm" },
     { id: "signature", label: "서명 그리기", icon: <PenTool className="w-3.5 h-3.5" />, color: "text-gray-600 dark:text-gray-300", activeBg: "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm" },
@@ -293,12 +292,7 @@ export default function ClientApp() {
       {/* 푸터 */}
       <footer className="bg-[#F9F6ED] dark:bg-gray-900 py-8 border-t border-gray-200 dark:border-gray-800 z-10 mt-12 transition-colors">
         <div className="max-w-6xl mx-auto px-6 flex items-center justify-between text-gray-400 dark:text-gray-500 text-xs">
-          <div 
-            className="font-mono bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 px-2.5 py-1 rounded-lg text-gray-500 dark:text-gray-400 flex items-center gap-1.5"
-          >
-            <span className="inline-block w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-            v{import.meta.env.VITE_APP_VERSION}
-          </div>
+          <div></div>
           <span className="font-medium">&copy; 2026 PDF Editor &middot; Private by default.</span>
         </div>
       </footer>

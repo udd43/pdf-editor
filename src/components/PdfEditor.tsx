@@ -507,7 +507,7 @@ export default function PdfEditor({ file, isCorporateMode = false }: PdfEditorPr
     setStatusMsg("배경을 제거하는 중...");
     try {
       const { removeBackground } = await import("@imgly/background-removal");
-      const resultBlob = await removeBackground(imgFile, { output: { format: "image/png" as const } });
+      const resultBlob = await removeBackground(imgFile, { model: "isnet_quint8", output: { format: "image/png" as const } });
       const resultUrl = URL.createObjectURL(resultBlob);
       const originalUrl = URL.createObjectURL(imgFile);
       const img = new Image();

@@ -91,42 +91,17 @@ export default function PdfToolbar({
           </>
         )}
 
-        {/* 이미지 도구 드롭다운 */}
-        <div className="relative flex-shrink-0" onBlur={(e) => {
-          if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-            setIsImageMenuOpen(false);
-          }
-        }}>
-          <button 
-            disabled={status !== "done"}
-            onClick={() => setIsImageMenuOpen(!isImageMenuOpen)}
-            className="flex items-center gap-1 px-2.5 py-1.5 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-[11px] font-semibold rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-30 transition-all shadow-sm whitespace-nowrap"
-          >
-            <ImageIcon className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400" /> 이미지 도구 ▾
-          </button>
-          
-          {isImageMenuOpen && (
-            <div className="absolute left-0 top-full mt-1 w-36 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg transition-all z-50 flex flex-col p-1">
-              <button onClick={() => { imageInputRef.current?.click(); setIsImageMenuOpen(false); }} disabled={status !== "done"}
-                className="flex items-center gap-2 px-2 py-1.5 text-left text-[11px] font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-sm w-full">
-                <ImageIcon className="w-3 h-3 text-blue-500" /> 이미지 추가
-              </button>
-              <button onClick={() => { bgRemoveInputRef.current?.click(); setIsImageMenuOpen(false); }} disabled={status !== "done" || isRemovingBg}
-                className="flex items-center gap-2 px-2 py-1.5 text-left text-[11px] font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-sm w-full">
-                {isRemovingBg ? <Loader2 className="w-3 h-3 animate-spin text-pink-500" /> : <Scissors className="w-3 h-3 text-pink-500" />}
-                누끼따기 추가
-              </button>
-              <button onClick={() => { upscaleInputRef.current?.click(); setIsImageMenuOpen(false); }} disabled={status !== "done" || isUpscaling}
-                className="flex items-center gap-2 px-2 py-1.5 text-left text-[11px] font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-sm w-full">
-                {isUpscaling ? <Loader2 className="w-3 h-3 animate-spin text-purple-500" /> : <ZoomIn className="w-3 h-3 text-purple-500" />}
-                업스케일링 추가
-              </button>
-            </div>
-          )}
-        </div>
+        <button onClick={() => imageInputRef.current?.click()} disabled={status !== "done"}
+          className="flex items-center gap-1 px-2.5 py-1.5 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-[11px] font-semibold rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-30 transition-all shadow-sm whitespace-nowrap flex-shrink-0">
+          <ImageIcon className="w-3.5 h-3.5 text-blue-500" /> 이미지
+        </button>
+        <button onClick={() => bgRemoveInputRef.current?.click()} disabled={status !== "done" || isRemovingBg}
+          className="flex items-center gap-1 px-2.5 py-1.5 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-[11px] font-semibold rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-30 transition-all shadow-sm whitespace-nowrap flex-shrink-0">
+          {isRemovingBg ? <Loader2 className="w-3.5 h-3.5 animate-spin text-pink-500" /> : <Scissors className="w-3.5 h-3.5 text-pink-500" />}
+          누끼 이미지
+        </button>
         <input ref={imageInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
         <input ref={bgRemoveInputRef} type="file" accept="image/*" className="hidden" onChange={handleBgRemoveUpload} />
-        <input ref={upscaleInputRef} type="file" accept="image/*" className="hidden" onChange={handleUpscaleUpload} />
         
         <button onClick={() => setIsSignatureOpen(true)} disabled={status !== "done"}
           className="flex items-center gap-1 px-2.5 py-1.5 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-[11px] font-semibold rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-30 transition-all shadow-sm whitespace-nowrap flex-shrink-0">
