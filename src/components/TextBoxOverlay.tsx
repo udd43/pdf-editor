@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Move, Minus, Plus, Trash2 } from 'lucide-react';
 import { TextBox } from './PdfEditor';
 
@@ -33,10 +33,40 @@ const TextBoxOverlay: React.FC<TextBoxOverlayProps> = ({
   onToggleTransparent,
   onFontFamilyChange,
 }) => {
+  const [isEditMode, setIsEditMode] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // 외부 클릭 시 편집 모드 해제
+  useEffect(() => {
+    if (!isSelected) {
+      setIsEditMode(false);
+    }
+  }, [isSelected]);
+
+  // 텍스트 박스 클릭 → 드래그 이동 시작 (편집 모드가 아닐 때)
+  const handleBoxMouseDown = useCallback((e: React.MouseEvent) => {
+    if (isEditMode) return; // 편집 모드에서는 텍스트 선택을 위해 드래그 무시
+    e.preventDefault();
+    e.stopPropagation();
+    onDragStart(e, box.id, box.x, box.y);
+  }, [isEditMode, onDragStart, box.id, box.x, box.y]);
+
+  // 더블클릭 → 편집 모드 진입
+  const handleDoubleClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsEditMode(true);
+    onSelect();
+    // 포커스를 다음 틱에 줘야 React가 상태를 반영한 후 적용됨
+    setTimeout(() => {
+      textareaRef.current?.focus();
+    }, 0);
+  }, [onSelect]);
+
   return (
     <div
       className={`absolute group ${isSelected ? 'ring-2 ring-blue-500 ring-offset-1' : ''}`}
-      onDoubleClick={(e) => e.stopPropagation()}
+      onDoubleClick={handleDoubleClick}
+      onMouseDown={handleBoxMouseDown}
       onClick={(e) => {
         e.stopPropagation();
         onSelect();
@@ -47,6 +77,7 @@ const TextBoxOverlay: React.FC<TextBoxOverlayProps> = ({
         width: `${box.width * scale}px`,
         height: `${box.height * scale}px`,
         zIndex: isDragging || isResizing || isSelected ? 30 : 10,
+        cursor: isEditMode ? 'text' : (isDragging ? 'grabbing' : 'grab'),
       }}
     >
       {/* 상단 컨트롤 바 */}
@@ -96,9 +127,13 @@ const TextBoxOverlay: React.FC<TextBoxOverlayProps> = ({
       </div>
 
       <textarea
+        ref={textareaRef}
         value={box.text}
         onChange={(e) => onChange(box.id, e.target.value)}
-        className="w-full h-full resize-none overflow-hidden m-0 leading-snug cursor-pointer focus:cursor-text"
+        readOnly={!isEditMode}
+        className={`w-full h-full resize-none overflow-hidden m-0 leading-snug ${
+          isEditMode ? 'cursor-text' : 'cursor-grab pointer-events-none'
+        }`}
         style={{
           fontSize: `${box.fontSize * scale}px`,
           fontFamily: box.fontFamily || "NotoSansKR",
@@ -115,6 +150,7 @@ const TextBoxOverlay: React.FC<TextBoxOverlayProps> = ({
           padding: 0,
           boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
         }}
+        onBlur={() => setIsEditMode(false)}
       />
 
       <div

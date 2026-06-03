@@ -20,7 +20,8 @@ app.post('/api/upscale', upload.single('image'), async (req, res) => {
 });
 
 // For any other route, serve index.html (SPA routing support)
-app.get('*', (req, res) => {
+// Express v5: 와일드카드 '*' 대신 '{*path}' 문법 사용
+app.get('/{*path}', (req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
