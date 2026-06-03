@@ -261,26 +261,11 @@ export default function ImageOverlay({
             </div>
           </div>
 
-          {/* 회전 중일 때 각도 표시 */}
-          {isRotating && (
-            <div
-              className="absolute bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-lg pointer-events-none whitespace-nowrap"
-              style={{ top: "-35px", right: "-20px", zIndex: 63 }}
-            >
-              {rotation}°
-            </div>
-          )}
+          {/* 회전 각도 표시 툴팁 제거 (사용자 요청) */}
 
           {/* 상단 도구 모음 */}
           <div className="absolute -top-10 left-0 flex gap-1 bg-white rounded-lg shadow-md border p-1" style={{ zIndex: 60 }}>
-            {/* 이동 핸들 */}
-            <button
-              onMouseDown={handleDragStart}
-              className="p-1.5 text-gray-600 hover:bg-gray-100 rounded cursor-grab active:cursor-grabbing"
-              title="이동"
-            >
-              <Move className="w-4 h-4" />
-            </button>
+            {/* 이동 핸들은 마우스 드래그로 대체되므로 삭제함 */}
 
             {/* 배경 제거 */}
             <button
@@ -319,7 +304,7 @@ export default function ImageOverlay({
               <Trash2 className="w-4 h-4" />
             </button>
 
-            {/* 현재 각도 표시 + 리셋 */}
+            {/* 현재 각도 리셋 */}
             {rotation !== 0 && (
               <>
                 <div className="w-px bg-gray-200 mx-0.5" />
@@ -328,7 +313,7 @@ export default function ImageOverlay({
                   className="px-1.5 py-1 text-[10px] font-bold text-blue-600 hover:bg-blue-50 rounded transition-colors"
                   title="회전 초기화"
                 >
-                  {rotation}° ✕
+                  회전 초기화 ✕
                 </button>
               </>
             )}

@@ -102,7 +102,8 @@ export default function PdfEditor({ file, isCorporateMode = false }: PdfEditorPr
   const isCorporateDoc = isCorporateMode && (file.name.startsWith("doc_") || file.name.includes("법인") || file.name.includes("확인서"));
   const isShareholderFile = isCorporateMode && (file.name === "doc_shareholder.pdf" || file.name.includes("주주명부"));
   const isCorpOwnerFile = isCorporateMode && (file.name === "doc_corp_owner.pdf" || file.name.includes("지배자"));
-  const [isMacroFormOpen, setIsMacroFormOpen] = useState(isShareholderFile || isCorpOwnerFile);
+  const isPersonalRepFile = isCorporateMode && (file.name === "doc_personal_rep.pdf" || file.name.includes("공동대표"));
+  const [isMacroFormOpen, setIsMacroFormOpen] = useState(isShareholderFile || isCorpOwnerFile || isPersonalRepFile);
   
   // Custom hook for element state management
   const {
@@ -656,11 +657,12 @@ export default function PdfEditor({ file, isCorporateMode = false }: PdfEditorPr
         hasContent={hasContent}
       />
 
-      {isMacroFormOpen && isCorporateDoc && status === "done" && (
+      {isMacroFormOpen && (
         <MacroForm 
           isCorporateDoc={!!isCorporateDoc}
           isShareholderFile={!!isShareholderFile}
           isCorpOwnerFile={!!isCorpOwnerFile}
+          isPersonalRepFile={!!isPersonalRepFile}
           currentPage={currentPage}
           onAddBoxes={handleAddMacroBoxes}
         />
@@ -674,7 +676,7 @@ export default function PdfEditor({ file, isCorporateMode = false }: PdfEditorPr
         )}
         
         {pdfDoc && numPages > 0 && (
-          <div className="w-24 shrink-0 flex flex-col bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 shadow-sm rounded-2xl h-[80vh] sticky top-24 overflow-hidden transition-colors"
+          <div className="w-24 shrink-0 flex flex-col bg-[#F9F6ED] dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 shadow-sm rounded-2xl h-[80vh] sticky top-24 overflow-hidden transition-colors"
                onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}>
             <div className="bg-gray-100 dark:bg-gray-900 px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center text-xs font-bold text-gray-700 dark:text-gray-300">
               페이지
@@ -764,7 +766,7 @@ export default function PdfEditor({ file, isCorporateMode = false }: PdfEditorPr
               showTextPanel ? 'translate-x-0' : 'translate-x-full'
             }`}>
               <div className="w-72 h-full flex flex-col bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 shadow-2xl">
-                <div className="bg-gray-50 dark:bg-gray-900 px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center shrink-0">
+                <div className="bg-[#F9F6ED] dark:bg-gray-900 px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center shrink-0">
                   <span className="text-xs font-bold text-gray-700 dark:text-gray-300">📑 추출된 텍스트 ({extractedTexts.length})</span>
                   <div className="flex items-center gap-1.5">
                     <button 
@@ -784,7 +786,7 @@ export default function PdfEditor({ file, isCorporateMode = false }: PdfEditorPr
                 <div className="flex-1 overflow-y-auto p-3 space-y-2 bg-white dark:bg-gray-800">
                   {extractedTexts.map((text, idx) => (
                     <div key={idx} onDoubleClick={() => handleAddText(true, text)} title="더블클릭하여 PDF에 텍스트 상자로 추가"
-                      className="p-2.5 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-100 dark:border-gray-600 text-xs text-gray-700 dark:text-gray-200 whitespace-pre-wrap cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/40 hover:border-blue-200 dark:hover:border-blue-700 transition-all group"
+                      className="p-2.5 bg-[#F9F6ED] dark:bg-gray-700 rounded-lg border border-gray-100 dark:border-gray-600 text-xs text-gray-700 dark:text-gray-200 whitespace-pre-wrap cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/40 hover:border-blue-200 dark:hover:border-blue-700 transition-all group"
                     >
                       {text}
                       <div className="text-[9px] text-blue-600 dark:text-blue-400 opacity-0 group-hover:opacity-100 mt-1 font-bold transition-opacity">

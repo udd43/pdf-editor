@@ -141,7 +141,7 @@ export default function ClientApp() {
   }
 
   return (
-    <div className={`min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 flex flex-col relative font-sans antialiased transition-[colors,filter] duration-300 ${isSecretMode ? 'secret-mode invert hue-rotate-180' : ''}`}>
+    <div className={`min-h-screen bg-[#F9F6ED] dark:bg-gray-900 text-gray-900 dark:text-gray-100 flex flex-col relative font-sans antialiased transition-[colors,filter] duration-300 ${isSecretMode ? 'secret-mode invert hue-rotate-180' : ''}`}>
       {isSecretMode && (
         <style dangerouslySetInnerHTML={{ __html: `
           .secret-mode .pdf-workspace, .secret-mode .reference-pdf {
@@ -150,7 +150,7 @@ export default function ClientApp() {
         `}} />
       )}
       {/* 헤더 */}
-      <header className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-40 transition-colors duration-300">
+      <header className="bg-[#F9F6ED] dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-40 transition-colors duration-300">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           
           {/* 로고 (깔끔한 Sans-serif) */}
@@ -229,7 +229,7 @@ export default function ClientApp() {
             <div className={`w-full flex gap-6 ${referenceFile ? "flex-row" : "justify-center"}`}>
               {referenceFile && (
                 <div className="reference-pdf w-1/2 flex flex-col border border-gray-200 dark:border-gray-700 shadow-sm rounded-2xl overflow-hidden bg-white dark:bg-gray-800 h-[80vh] sticky top-24 transition-colors">
-                  <div className="bg-gray-50 dark:bg-gray-800 px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center shrink-0">
+                  <div className="bg-[#F9F6ED] dark:bg-gray-800 px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center shrink-0">
                     <span className="text-sm font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-1.5">
                       <span className="inline-block w-2 h-2 rounded-full bg-blue-500" />
                       대조 원본 PDF
@@ -275,13 +275,13 @@ export default function ClientApp() {
                   <button
                     key={idx}
                     onClick={() => loadCorporateDoc(doc.file, doc.name)}
-                    className="flex flex-col items-center justify-center p-6 bg-gray-50 dark:bg-gray-900 hover:bg-blue-50 dark:hover:bg-blue-900/20 border-2 border-dashed border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700 rounded-2xl transition-all group text-center"
+                    className="flex flex-col items-center justify-center p-6 bg-[#F9F6ED] dark:bg-gray-900 hover:bg-blue-50 dark:hover:bg-blue-900/20 border-2 border-dashed border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700 rounded-2xl transition-all group text-center"
                   >
                     <div className="p-3 bg-white dark:bg-gray-800 text-blue-500 rounded-xl shadow-sm mb-4 group-hover:scale-110 transition-transform">
                       {doc.icon}
                     </div>
                     <span className="font-bold text-gray-800 dark:text-gray-200">{doc.name}</span>
-                    <span className="text-xs text-gray-400 dark:text-gray-500 mt-2 line-clamp-1">{doc.file}</span>
+
                   </button>
                 ))}
               </div>
@@ -291,7 +291,7 @@ export default function ClientApp() {
       </main>
 
       {/* 푸터 */}
-      <footer className="bg-gray-50 dark:bg-gray-900 py-8 border-t border-gray-200 dark:border-gray-800 z-10 mt-12 transition-colors">
+      <footer className="bg-[#F9F6ED] dark:bg-gray-900 py-8 border-t border-gray-200 dark:border-gray-800 z-10 mt-12 transition-colors">
         <div className="max-w-6xl mx-auto px-6 flex items-center justify-between text-gray-400 dark:text-gray-500 text-xs">
           <div 
             className="font-mono bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 px-2.5 py-1 rounded-lg text-gray-500 dark:text-gray-400 flex items-center gap-1.5"

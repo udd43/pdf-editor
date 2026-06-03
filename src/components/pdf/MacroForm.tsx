@@ -5,11 +5,12 @@ interface MacroFormProps {
   isCorporateDoc: boolean;
   isShareholderFile: boolean;
   isCorpOwnerFile: boolean;
+  isPersonalRepFile?: boolean;
   currentPage: number;
   onAddBoxes: (boxes: Omit<TextBox, "id">[]) => void;
 }
 
-export default function MacroForm({ isCorporateDoc, isShareholderFile, isCorpOwnerFile, currentPage, onAddBoxes }: MacroFormProps) {
+export default function MacroForm({ isCorporateDoc, isShareholderFile, isCorpOwnerFile, isPersonalRepFile, currentPage, onAddBoxes }: MacroFormProps) {
   // 주주명부 전용 상태 (배열로 7줄 관리)
   const [shareholders, setShareholders] = useState(
     Array(7).fill(null).map(() => ({ name: "", engName: "", gender: "", birth: "", nationality: "", shares: "", ownership: "" }))
@@ -22,7 +23,15 @@ export default function MacroForm({ isCorporateDoc, isShareholderFile, isCorpOwn
   // 지배자 확인서 전용 상태
   const [corpOwnerData, setCorpOwnerData] = useState({
     korName: "", engName: "", birth: "", nationality: "", gender: "", ownership: "", checkV: "V",
-    year: "", monthDay: "", signName: ""
+    year: "", month: "", day: "", signName: ""
+  });
+
+  // 공동 대표자 서류 전용 상태
+  const [personalRepData, setPersonalRepData] = useState({
+    bizNum: "", companyName: "", franchiseName: "", address: "", 
+    name: "", birth: "", year: "", month: "", day: "",
+    jointRepBirth: "", jointRepName: "", jointRepContact: "",
+    accountOwnerType: "", bankName: "", accountNum: "", accountHolder: "", relationToRep: ""
   });
 
   // 일반 법인 서류 폼 상태
@@ -91,7 +100,8 @@ export default function MacroForm({ isCorporateDoc, isShareholderFile, isCorpOwn
       { key: 'ownership', x: 376, y: 195, w: 60, h: 20 },
       { key: 'checkV', x: 431, y: 190, w: 60, h: 20 },
       { key: 'year', x: 73, y: 620, w: 60, h: 20 },
-      { key: 'monthDay', x: 135, y: 621, w: 60, h: 20 },
+      { key: 'month', x: 122, y: 620, w: 25, h: 20 },
+      { key: 'day', x: 153, y: 623, w: 25, h: 20 },
       { key: 'signName', x: 340, y: 618, w: 109, h: 20 },
     ];
     
@@ -102,6 +112,73 @@ export default function MacroForm({ isCorporateDoc, isShareholderFile, isCorpOwn
           text: val, x: f.x, y: f.y, width: f.w, height: f.h, fontSize: 13,
           isEdited: true, isNew: true, isTransparent: true, fontFamily: "NotoSansKR",
           pageIndex: currentPage,
+        });
+      }
+    });
+
+    onAddBoxes(newBoxes);
+  };
+
+  const handlePersonalRepAutoFill = () => {
+    const newBoxes: Omit<TextBox, "id">[] = [];
+    
+    // Page 1 fields
+    const page1Fields = [
+      { key: 'bizNum', x: 168, y: 107, w: 100, h: 15 },
+      { key: 'companyName', x: 342, y: 107, w: 114, h: 15 },
+      { key: 'franchiseName', x: 180, y: 127, w: 299, h: 10 },
+      { key: 'address', x: 180, y: 146, w: 295, h: 10 },
+      { key: 'name', x: 168, y: 162, w: 53, h: 13 },
+      { key: 'birth', x: 343, y: 162, w: 131, h: 15 },
+      { key: 'year', x: 307, y: 382, w: 33, h: 11 },
+      { key: 'month', x: 362, y: 383, w: 43, h: 12 },
+      { key: 'day', x: 425, y: 382, w: 42, h: 12 },
+      { key: 'jointRepBirth', x: 343, y: 408, w: 123, h: 17 },
+      { key: 'jointRepName', x: 144, y: 407, w: 63, h: 17 },
+      { key: 'jointRepContact', x: 107, y: 428, w: 130, h: 13 },
+    ];
+    
+    // Page 2 fields
+    const page2Fields = [
+      { key: 'bizNum', x: 146, y: 107, w: 105, h: 19 },
+      { key: 'companyName', x: 342, y: 105, w: 139, h: 19 },
+      { key: 'franchiseName', x: 164, y: 131, w: 216, h: 17 },
+      { key: 'address', x: 166, y: 157, w: 213, h: 15 },
+      { key: 'name', x: 146, y: 181, w: 74, h: 18 },
+      { key: 'birth', x: 345, y: 182, w: 127, h: 19 },
+      { key: 'accountOwnerType', x: 162, y: 208, w: 85, h: 10 },
+      { key: 'bankName', x: 132, y: 283, w: 89, h: 17 },
+      { key: 'accountNum', x: 315, y: 282, w: 166, h: 17 },
+      { key: 'accountHolder', x: 149, y: 308, w: 111, h: 17 },
+      { key: 'relationToRep', x: 362, y: 309, w: 95, h: 13 },
+      { key: 'year', x: 308, y: 425, w: 31, h: 13 },
+      { key: 'month', x: 368, y: 426, w: 31, h: 13 },
+      { key: 'day', x: 430, y: 425, w: 31, h: 13 },
+      { key: 'jointRepName', x: 137, y: 454, w: 62, h: 11 },
+      { key: 'jointRepContact', x: 90, y: 476, w: 145, h: 17 },
+      { key: 'jointRepBirth', x: 341, y: 452, w: 149, h: 13 },
+    ];
+    
+    // Add page 1 fields
+    page1Fields.forEach(f => {
+      const val = personalRepData[f.key as keyof typeof personalRepData];
+      if (val) {
+        newBoxes.push({
+          text: val, x: f.x, y: f.y, width: f.w, height: f.h, fontSize: 11,
+          isEdited: true, isNew: true, isTransparent: true, fontFamily: "NotoSansKR",
+          pageIndex: 1, // Page 1
+        });
+      }
+    });
+
+    // Add page 2 fields
+    page2Fields.forEach(f => {
+      const val = personalRepData[f.key as keyof typeof personalRepData];
+      if (val) {
+        newBoxes.push({
+          text: val, x: f.x, y: f.y, width: f.w, height: f.h, fontSize: 11,
+          isEdited: true, isNew: true, isTransparent: true, fontFamily: "NotoSansKR",
+          pageIndex: 2, // Page 2
         });
       }
     });
@@ -214,7 +291,7 @@ export default function MacroForm({ isCorporateDoc, isShareholderFile, isCorpOwn
                 { label: '생년월일', key: 'birth' }, { label: '국적', key: 'nationality' },
                 { label: '성별', key: 'gender' }, { label: '지분율', key: 'ownership' },
                 { label: 'V체크', key: 'checkV' }, { label: '작성 년도', key: 'year' },
-                { label: '월 일', key: 'monthDay' }, { label: '서명 성명', key: 'signName' },
+                { label: '월', key: 'month' }, { label: '일', key: 'day' }, { label: '서명 성명', key: 'signName' },
               ].map(f => (
                 <div key={f.key} className="flex flex-col">
                   <label className="text-[10px] font-semibold text-gray-500 mb-1">{f.label}</label>
@@ -228,7 +305,41 @@ export default function MacroForm({ isCorporateDoc, isShareholderFile, isCorpOwn
         </div>
       )}
 
-      {!isShareholderFile && !isCorpOwnerFile && isCorporateDoc && (
+      {isPersonalRepFile && (
+        <div className="flex flex-col gap-4 p-4 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800/50 rounded-xl w-full">
+          <div className="flex justify-between items-center">
+            <div className="text-sm font-bold text-orange-700 dark:text-orange-300">개인 공동대표 서류 생성기</div>
+            <button onClick={handlePersonalRepAutoFill} className="px-5 py-2 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-lg text-xs transition-colors shadow-sm">
+              공동대표 정보 일괄 생성
+            </button>
+          </div>
+          
+          <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-orange-100 dark:border-orange-800/30">
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
+              {[
+                { label: '사업자번호', key: 'bizNum' }, { label: '상호명', key: 'companyName' },
+                { label: '가맹점명', key: 'franchiseName' }, { label: '사업장주소', key: 'address' },
+                { label: '대표자성명', key: 'name' }, { label: '대표자생년월일', key: 'birth' },
+                { label: '년도(끝2자리)', key: 'year' }, { label: '월', key: 'month' },
+                { label: '일', key: 'day' }, { label: '공동대표 생년월일', key: 'jointRepBirth' },
+                { label: '공동대표 성명', key: 'jointRepName' }, { label: '공동대표 연락처', key: 'jointRepContact' },
+                { label: '계좌소유자', key: 'accountOwnerType' }, { label: '은행명(앞자리만)', key: 'bankName' },
+                { label: '계좌번호', key: 'accountNum' }, { label: '예금주', key: 'accountHolder' },
+                { label: '대표자와의 관계', key: 'relationToRep' }
+              ].map(f => (
+                <div key={f.key} className="flex flex-col">
+                  <label className="text-[10px] font-semibold text-gray-500 mb-1">{f.label}</label>
+                  <input type="text" className="w-full text-xs px-2 py-1.5 rounded border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 focus:ring-1 focus:ring-orange-500"
+                    value={(personalRepData as any)[f.key]} 
+                    onChange={(e) => setPersonalRepData({ ...personalRepData, [f.key]: e.target.value })} />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {!isShareholderFile && !isCorpOwnerFile && !isPersonalRepFile && isCorporateDoc && (
         <div className="flex flex-wrap items-end gap-3 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/50 rounded-xl w-full">
           <div className="flex-1 min-w-[150px]">
             <label className="block text-xs font-bold text-blue-700 dark:text-blue-300 mb-1">회사명</label>
