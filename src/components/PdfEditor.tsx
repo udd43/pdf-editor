@@ -2,9 +2,9 @@
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import * as pdfjsLib from "pdfjs-dist";
-import { Loader2, Image as ImageIcon } from "lucide-react";
+import { Loader2, Image as ImageIcon, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
-import { exportEditedPdf, mergePdfs } from "@/lib/pdfUtils";
+import { exportEditedPdf, mergePdfs, deletePdfPage } from "@/lib/pdfUtils";
 import { koreanToRoman } from "@/lib/romanize";
 import ImageOverlayComponent, { ImageOverlayData } from "./ImageOverlay";
 import SignaturePad from "./SignaturePad";
@@ -39,7 +39,7 @@ interface PdfEditorProps {
   isCorporateMode?: boolean;
 }
 
-const Thumbnail = ({ pdfDoc, pageNumber, isActive, onClick }: { pdfDoc: pdfjsLib.PDFDocumentProxy, pageNumber: number, isActive: boolean, onClick: () => void }) => {
+const Thumbnail = ({ pdfDoc, pageNumber, isActive, onClick, onDelete, totalPages }: { pdfDoc: pdfjsLib.PDFDocumentProxy, pageNumber: number, isActive: boolean, onClick: () => void, onDelete: () => void, totalPages: number }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -76,6 +76,15 @@ const Thumbnail = ({ pdfDoc, pageNumber, isActive, onClick }: { pdfDoc: pdfjsLib
       }`}>
         {pageNumber}
       </div>
+      {totalPages > 1 && (
+        <button
+          onClick={(e) => { e.stopPropagation(); onDelete(); }}
+          className="absolute top-1 right-1 p-1 bg-white/90 text-red-500 hover:bg-red-50 hover:text-red-600 rounded opacity-0 group-hover:opacity-100 transition-opacity shadow-sm z-10"
+          title="페이지 삭제"
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+        </button>
+      )}
     </div>
   );
 };
@@ -294,6 +303,39 @@ export default function PdfEditor({ file, isCorporateMode = false }: PdfEditorPr
         reader.readAsDataURL(file);
       }
     }
+  };
+
+  const handleDeletePage = async (pageToDelete: number) => {
+    if (!pdfBuffer || numPages <= 1) return;
+    
+    // 네이티브 confirm 대신 즉시 삭제하되, 토스트로 알림
+    const deleteProcess = async () => {
+      const newBuffer = await deletePdfPage(pdfBuffer, pageToDelete - 1);
+      setPdfBuffer(newBuffer);
+      
+      const loadingTask = pdfjsLib.getDocument({ data: newBuffer });
+      const pdf = await loadingTask.promise;
+      setPdfDoc(pdf);
+      setNumPages(pdf.numPages);
+      
+      // Update overlays/texts
+      setTextBoxes(prev => prev.filter(b => b.pageIndex !== pageToDelete).map(b => 
+        b.pageIndex > pageToDelete ? { ...b, pageIndex: b.pageIndex - 1 } : b
+      ));
+      setImageOverlays(prev => prev.filter(o => o.pageIndex !== pageToDelete).map(o => 
+        o.pageIndex > pageToDelete ? { ...o, pageIndex: o.pageIndex - 1 } : o
+      ));
+      
+      if (currentPage >= pageToDelete) {
+        setCurrentPage(Math.max(1, currentPage - 1));
+      }
+    };
+
+    toast.promise(deleteProcess(), {
+      loading: `${pageToDelete}페이지 삭제 중...`,
+      success: `${pageToDelete}페이지가 삭제되었습니다.`,
+      error: "페이지 삭제 실패",
+    });
   };
 
   const handleTextChange = useCallback((id: string, newText: string) => {
@@ -684,8 +726,9 @@ export default function PdfEditor({ file, isCorporateMode = false }: PdfEditorPr
             <div className="flex-1 overflow-y-auto p-3 space-y-3">
               {Array.from(new Array(numPages), (el, index) => (
                 <Thumbnail 
-                  key={index} pdfDoc={pdfDoc} pageNumber={index + 1} 
+                  key={index} pdfDoc={pdfDoc} pageNumber={index + 1} totalPages={numPages}
                   isActive={currentPage === index + 1} onClick={() => setCurrentPage(index + 1)} 
+                  onDelete={() => handleDeletePage(index + 1)}
                 />
               ))}
               <div className="pt-2 pb-4 text-center text-[10px] text-gray-400 dark:text-gray-500 font-medium">

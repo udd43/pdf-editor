@@ -219,7 +219,7 @@ export default function ImageOverlay({
   return (
     <div
       ref={containerRef}
-      className={`absolute group transition-[box-shadow,transform,opacity] duration-150 ${isDragging ? "cursor-grabbing shadow-2xl scale-[1.02] opacity-90" : "cursor-grab"}`}
+      className={`absolute group transition-[box-shadow,opacity] duration-150 ${isDragging ? "cursor-grabbing shadow-2xl opacity-90" : "cursor-grab"}`}
       style={{
         left: `${overlay.x * scale}px`,
         top: `${overlay.y * scale}px`,
@@ -227,6 +227,7 @@ export default function ImageOverlay({
         height: `${overlay.height * scale}px`,
         zIndex: isSelected ? 25 : 15,
       }}
+      onMouseDown={handleDragStart}
       onClick={(e) => { e.stopPropagation(); onSelect(overlay.id); }}
     >
       {/* 이미지 (회전 적용) */}
@@ -265,7 +266,7 @@ export default function ImageOverlay({
           {/* 회전 각도 표시 툴팁 제거 (사용자 요청) */}
 
           {/* 상단 도구 모음 */}
-          <div className="absolute -top-10 left-0 flex gap-1 bg-white rounded-lg shadow-md border p-1" style={{ zIndex: 60 }}>
+          <div className="absolute -top-10 left-0 flex flex-nowrap w-max gap-1 bg-white rounded-lg shadow-md border p-1" style={{ zIndex: 60 }}>
             {/* 이동 핸들은 마우스 드래그로 대체되므로 삭제함 */}
 
             {/* 배경 제거 */}

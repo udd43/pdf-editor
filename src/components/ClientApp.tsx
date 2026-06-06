@@ -1,10 +1,11 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { FileText, Scissors, ZoomIn, Palette, Moon, Sun, Menu, X } from "lucide-react";
+import { FileText, Scissors, Palette, Moon, Sun, Menu, X } from "lucide-react";
 import PdfUploader from "@/components/PdfUploader";
 import PdfEditor from "@/components/PdfEditor";
 import ChangelogModal from "@/components/ChangelogModal";
+import HomeGrid from "@/components/HomeGrid";
 import { Languages, PenTool, Calculator, FileText as FileTextIcon, Building2 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 
@@ -30,7 +31,6 @@ export default function ClientApp() {
   const [showEasterEgg, setShowEasterEgg] = useState(false);
   const [showChangelog, setShowChangelog] = useState(false);
 
-  // localStorage에서 다크모드 초기값 로드
   useEffect(() => {
     const stored = localStorage.getItem("darkMode");
     if (stored === "true") {
@@ -42,7 +42,6 @@ export default function ClientApp() {
     }
   }, []);
 
-  // 다크모드 토글 시 localStorage 저장 및 클래스 반영
   useEffect(() => {
     if (isDarkMode) {
       document.documentElement.classList.add("dark");
@@ -52,53 +51,41 @@ export default function ClientApp() {
     localStorage.setItem("darkMode", String(isDarkMode));
   }, [isDarkMode]);
 
-  // 새 버전일 때 자동으로 업데이트 내역 팝업 (사용자 요청으로 비활성화)
   useEffect(() => {
     const currentVersion = import.meta.env.VITE_APP_VERSION || "";
     const lastSeenVersion = localStorage.getItem("lastSeenVersion");
     if (currentVersion && currentVersion !== lastSeenVersion) {
-      // setShowChangelog(true); // 자동 팝업 비활성화
       localStorage.setItem("lastSeenVersion", currentVersion);
     }
   }, []);
 
   const handleSecretClick = () => {
     if (showEasterEgg) return;
-    setSecretClickCount(prev => {
+    setSecretClickCount((prev) => {
       const next = prev + 1;
       if (next >= 5) {
         setShowEasterEgg(true);
-        setTimeout(() => {
-          setShowEasterEgg(false);
-          setSecretClickCount(0);
-        }, 5000);
+        setTimeout(() => { setShowEasterEgg(false); setSecretClickCount(0); }, 5000);
       }
       return next;
     });
   };
 
   const pressedKeys = useRef<Set<string>>(new Set());
-
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
       pressedKeys.current.add(e.code);
-
       if (pressedKeys.current.has("Space") && pressedKeys.current.has("KeyW")) {
         e.preventDefault();
         pressedKeys.current.clear();
-        setIsSecretMode(prev => !prev);
+        setIsSecretMode((prev) => !prev);
       }
     };
-    const handleKeyUp = (e: KeyboardEvent) => {
-      pressedKeys.current.delete(e.code);
-    };
+    const handleKeyUp = (e: KeyboardEvent) => { pressedKeys.current.delete(e.code); };
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("keyup", handleKeyUp);
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("keyup", handleKeyUp);
-    };
+    return () => { window.removeEventListener("keydown", handleKeyDown); window.removeEventListener("keyup", handleKeyUp); };
   }, []);
 
   const loadCorporateDoc = async (filename: string, displayName: string) => {
@@ -120,10 +107,8 @@ export default function ClientApp() {
   };
 
   const handleReferenceSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file && file.type === "application/pdf") {
-      setReferenceFile(file);
-    }
+    const f = e.target.files?.[0];
+    if (f && f.type === "application/pdf") setReferenceFile(f);
   };
 
   const tabs: { id: Tab; label: string; icon: React.ReactNode; color: string; activeBg: string }[] = [
@@ -134,33 +119,22 @@ export default function ClientApp() {
     { id: "signature", label: "서명 그리기", icon: <PenTool className="w-3.5 h-3.5" />, color: "text-gray-600 dark:text-gray-300", activeBg: "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm" },
     { id: "calculator", label: "계산기", icon: <Calculator className="w-3.5 h-3.5" />, color: "text-gray-600 dark:text-gray-300", activeBg: "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm" },
   ];
-
   if (isSecretMode) {
     tabs.push({ id: "corporate", label: "법인 서류", icon: <Building2 className="w-3.5 h-3.5" />, color: "text-red-600 dark:text-red-300", activeBg: "bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 font-bold" });
   }
 
   return (
-    <div className={`min-h-screen bg-[#F9F6ED] dark:bg-gray-900 text-gray-900 dark:text-gray-100 flex flex-col relative font-sans antialiased transition-[colors,filter] duration-300 ${isSecretMode ? 'secret-mode invert hue-rotate-180' : ''}`}>
+    <div className={`min-h-screen bg-[#F9F6ED] dark:bg-gray-900 text-gray-900 dark:text-gray-100 flex flex-col relative font-sans antialiased transition-[colors,filter] duration-300 ${isSecretMode ? "secret-mode invert hue-rotate-180" : ""}`}>
       {isSecretMode && (
-        <style dangerouslySetInnerHTML={{ __html: `
-          .secret-mode .pdf-workspace, .secret-mode .reference-pdf {
-            filter: invert(100%) hue-rotate(180deg);
-          }
-        `}} />
+        <style dangerouslySetInnerHTML={{ __html: `.secret-mode .pdf-workspace, .secret-mode .reference-pdf { filter: invert(100%) hue-rotate(180deg); }` }} />
       )}
-      {/* 헤더 */}
+
+      {/* ── Header ── */}
       <header className="bg-[#F9F6ED] dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-40 transition-colors duration-300">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          
-          {/* 로고 (깔끔한 Sans-serif) */}
           <div className="flex-1 flex justify-start">
-            <button 
-              onClick={() => {
-                setFile(null);
-                setReferenceFile(null);
-                setIsCorporateMode(false);
-                setActiveTab("pdf");
-              }}
+            <button
+              onClick={() => { setFile(null); setReferenceFile(null); setIsCorporateMode(false); setActiveTab("pdf"); setContentVisible(true); }}
               className="shrink-0 outline-none flex items-center gap-2"
             >
               <span className="text-xl font-bold tracking-tight text-gray-900 dark:text-white" style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
@@ -169,17 +143,12 @@ export default function ClientApp() {
             </button>
           </div>
 
-          {/* 중앙 네비게이션 탭 (데스크톱 전용) */}
           <nav className="hidden lg:flex shrink-0 items-center bg-gray-200/50 dark:bg-gray-800/50 rounded-full p-1 border border-gray-200 dark:border-gray-700 gap-1 transition-colors duration-300">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-1.5 text-xs font-semibold rounded-full transition-all duration-200 ${
-                  activeTab === tab.id
-                    ? `${tab.activeBg}`
-                    : "text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200/50 dark:hover:bg-gray-700/50"
-                }`}
+                onClick={() => { setActiveTab(tab.id); setContentVisible(true); }}
+                className={`flex items-center gap-2 px-4 py-1.5 text-xs font-semibold rounded-full transition-all duration-200 ${activeTab === tab.id ? tab.activeBg : "text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200/50 dark:hover:bg-gray-700/50"}`}
               >
                 {tab.icon}
                 <span>{tab.label}</span>
@@ -187,7 +156,6 @@ export default function ClientApp() {
             ))}
           </nav>
 
-          {/* 우측 컨트롤 */}
           <div className="flex-1 flex justify-end gap-2 items-center">
             {activeTab === "pdf" && file && (
               <>
@@ -202,48 +170,56 @@ export default function ClientApp() {
                 </button>
               </>
             )}
-            <button
-              onClick={() => setIsDarkMode(!isDarkMode)}
+            {activeTab !== "pdf" && (
+              <button onClick={() => { setActiveTab("pdf"); }}
+                className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white px-3 py-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-all font-medium">
+                홈으로
+              </button>
+            )}
+            <button onClick={() => setIsDarkMode(!isDarkMode)}
               className="p-2 ml-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 transition-colors"
-              title={isDarkMode ? "라이트 모드로 전환" : "다크 모드로 전환"}
-            >
+              title={isDarkMode ? "라이트 모드로 전환" : "다크 모드로 전환"}>
               {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </button>
-            
-            {/* 모바일 햄버거 메뉴 버튼 */}
-            <button 
-              onClick={() => setIsMobileMenuOpen(true)}
-              className="lg:hidden p-2 ml-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 transition-colors"
-            >
+            <button onClick={() => setIsMobileMenuOpen(true)}
+              className="lg:hidden p-2 ml-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 transition-colors">
               <Menu className="w-5 h-5" />
             </button>
           </div>
         </div>
       </header>
 
-      {/* 메인 내용 */}
+      {/* ── Main ── */}
       <main className="flex-1 flex flex-col items-center justify-start p-4 sm:p-8 z-10 w-full max-w-6xl mx-auto">
-        {activeTab === "pdf" && (
-          !file ? <PdfUploader onFileSelect={(f) => { setFile(f); setIsCorporateMode(false); }} /> : (
-            <div className={`w-full flex gap-6 ${referenceFile ? "flex-row" : "justify-center"}`}>
-              {referenceFile && (
-                <div className="reference-pdf w-1/2 flex flex-col border border-gray-200 dark:border-gray-700 shadow-sm rounded-2xl overflow-hidden bg-white dark:bg-gray-800 h-[80vh] sticky top-24 transition-colors">
-                  <div className="bg-[#F9F6ED] dark:bg-gray-800 px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center shrink-0">
-                    <span className="text-sm font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-1.5">
-                      <span className="inline-block w-2 h-2 rounded-full bg-blue-500" />
-                      대조 원본 PDF
-                    </span>
-                    <button onClick={() => setReferenceFile(null)} className="text-xs px-3 py-1 bg-white dark:bg-gray-700 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg text-red-500 border border-red-100 dark:border-red-900/50 transition-all">닫기</button>
-                  </div>
-                  <iframe src={URL.createObjectURL(referenceFile)} className="w-full h-full border-0" />
-                </div>
-              )}
-              <div className={`pdf-workspace ${referenceFile ? "w-1/2" : "w-full"}`}>
-                <PdfEditor file={file} isCorporateMode={isCorporateMode} />
-              </div>
-            </div>
-          )
+        {/* Home bento grid */}
+        {activeTab === "pdf" && !file && (
+          <HomeGrid
+            onTabSelect={(tab) => setActiveTab(tab as Tab)}
+            onFileSelect={(f) => { setFile(f); setIsCorporateMode(false); }}
+            isSecretMode={isSecretMode}
+          />
         )}
+
+        {/* PDF editor */}
+        {activeTab === "pdf" && file && (
+          <div className={`w-full flex gap-6 ${referenceFile ? "flex-row" : "justify-center"}`}>
+            {referenceFile && (
+              <div className="reference-pdf w-1/2 flex flex-col border border-gray-200 dark:border-gray-700 shadow-sm rounded-2xl overflow-hidden bg-white dark:bg-gray-800 h-[80vh] sticky top-24 transition-colors">
+                <div className="bg-[#F9F6ED] dark:bg-gray-800 px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center shrink-0">
+                  <span className="text-sm font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-1.5">
+                    <span className="inline-block w-2 h-2 rounded-full bg-blue-500" />대조 원본 PDF
+                  </span>
+                  <button onClick={() => setReferenceFile(null)} className="text-xs px-3 py-1 bg-white dark:bg-gray-700 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg text-red-500 border border-red-100 dark:border-red-900/50 transition-all">닫기</button>
+                </div>
+                <iframe src={URL.createObjectURL(referenceFile)} className="w-full h-full border-0" />
+              </div>
+            )}
+            <div className={`pdf-workspace ${referenceFile ? "w-1/2" : "w-full"}`}>
+              <PdfEditor file={file} isCorporateMode={isCorporateMode} />
+            </div>
+          </div>
+        )}
+
         <React.Suspense fallback={<div className="flex items-center justify-center p-12 text-gray-500"><Loader2 className="w-8 h-8 animate-spin" /></div>}>
           {activeTab === "bgremove" && <BgRemover />}
           {activeTab === "upscale" && <ImageUpscaler />}
@@ -252,6 +228,7 @@ export default function ClientApp() {
           {activeTab === "signature" && <SignatureTab />}
           {activeTab === "calculator" && <CalculatorTab />}
         </React.Suspense>
+
         {activeTab === "corporate" && (
           <div className="w-full max-w-4xl mx-auto py-8">
             <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-gray-200 dark:border-gray-700 p-8">
@@ -264,23 +241,16 @@ export default function ClientApp() {
                   <p className="text-gray-500 dark:text-gray-400 mt-1">프로젝트에 등록된 기본 서류 양식을 선택하여 바로 편집할 수 있습니다.</p>
                 </div>
               </div>
-
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                 {[
                   { name: "개인 공동대표 서류", file: "doc_personal_rep.pdf", icon: <FileTextIcon className="w-6 h-6" /> },
                   { name: "법인 소유 지배자 확인서", file: "doc_corp_owner.pdf", icon: <FileTextIcon className="w-6 h-6" /> },
-                  { name: "주주명부", file: "doc_shareholder.pdf", icon: <FileTextIcon className="w-6 h-6" /> }
+                  { name: "주주명부", file: "doc_shareholder.pdf", icon: <FileTextIcon className="w-6 h-6" /> },
                 ].map((doc, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => loadCorporateDoc(doc.file, doc.name)}
-                    className="flex flex-col items-center justify-center p-6 bg-[#F9F6ED] dark:bg-gray-900 hover:bg-blue-50 dark:hover:bg-blue-900/20 border-2 border-dashed border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700 rounded-2xl transition-all group text-center"
-                  >
-                    <div className="p-3 bg-white dark:bg-gray-800 text-blue-500 rounded-xl shadow-sm mb-4 group-hover:scale-110 transition-transform">
-                      {doc.icon}
-                    </div>
+                  <button key={idx} onClick={() => loadCorporateDoc(doc.file, doc.name)}
+                    className="flex flex-col items-center justify-center p-6 bg-[#F9F6ED] dark:bg-gray-900 hover:bg-blue-50 dark:hover:bg-blue-900/20 border-2 border-dashed border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700 rounded-2xl transition-all group text-center">
+                    <div className="p-3 bg-white dark:bg-gray-800 text-blue-500 rounded-xl shadow-sm mb-4 group-hover:scale-110 transition-transform">{doc.icon}</div>
                     <span className="font-bold text-gray-800 dark:text-gray-200">{doc.name}</span>
-
                   </button>
                 ))}
               </div>
@@ -289,43 +259,36 @@ export default function ClientApp() {
         )}
       </main>
 
-      {/* 푸터 */}
+      {/* ── Footer ── */}
       <footer className="bg-[#F9F6ED] dark:bg-gray-900 py-8 border-t border-gray-200 dark:border-gray-800 z-10 mt-12 transition-colors">
         <div className="max-w-6xl mx-auto px-6 flex items-center justify-between text-gray-400 dark:text-gray-500 text-xs">
-          <div></div>
+          <div />
           <span className="font-medium">&copy; 2026 PDF Editor &middot; Private by default.</span>
         </div>
       </footer>
 
-      {/* 이스터에그 클릭 영역 (오른쪽 구석) */}
-      <div 
-        onClick={handleSecretClick}
-        className="fixed bottom-0 right-0 w-24 h-24 z-50 cursor-default"
-      />
 
-      {/* 이스터에그 메시지 */}
+      {/* Easter-egg click area */}
+      <div onClick={handleSecretClick} className="fixed bottom-0 right-0 w-24 h-24 z-50 cursor-default" />
+
       {showEasterEgg && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-none" style={{ animation: "fadeInOut 5s ease-in-out forwards" }}>
           <style>{`
             @keyframes fadeInOut {
-              0% { opacity: 0; transform: scale(0.9) translateY(20px); filter: blur(10px); }
-              15% { opacity: 1; transform: scale(1) translateY(0); filter: blur(0px); }
-              85% { opacity: 1; transform: scale(1) translateY(0); filter: blur(0px); }
-              100% { opacity: 0; transform: scale(1.1) translateY(-20px); filter: blur(10px); }
+              0%   { opacity:0; transform:scale(0.9) translateY(20px); filter:blur(10px); }
+              15%  { opacity:1; transform:scale(1) translateY(0); filter:blur(0px); }
+              85%  { opacity:1; transform:scale(1) translateY(0); filter:blur(0px); }
+              100% { opacity:0; transform:scale(1.1) translateY(-20px); filter:blur(10px); }
             }
           `}</style>
           <div className="bg-white/90 backdrop-blur-md px-10 py-8 rounded-3xl shadow-[0_0_50px_rgba(79,70,229,0.2)] border border-indigo-100 text-center">
-            <h2 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 mb-4 tracking-tight">
-              Thanks to
-            </h2>
-            <p className="text-xl font-bold text-gray-700 leading-relaxed max-w-2xl break-keep">
-              현지, 요한, 지연, 시우, 비헌, 상아, 강희, 정민, 백천, 보원, 경주, 나경, 희진, 준수, 성범
-            </p>
+            <h2 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 mb-4 tracking-tight">Thanks to</h2>
+            <p className="text-xl font-bold text-gray-700 leading-relaxed max-w-2xl break-keep">현지, 요한, 지연, 시우, 비헌, 상아, 강희, 정민, 백천, 보원, 경주, 나경, 희진, 준수, 성범</p>
           </div>
         </div>
       )}
 
-      {/* 모바일 사이드바 (우측) */}
+      {/* Mobile sidebar */}
       {isMobileMenuOpen && (
         <div className="lg:hidden fixed inset-0 z-50 flex justify-end">
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsMobileMenuOpen(false)} />
@@ -338,18 +301,8 @@ export default function ClientApp() {
             </div>
             <nav className="flex flex-col gap-2 flex-1 overflow-y-auto">
               {tabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => {
-                    setActiveTab(tab.id);
-                    setIsMobileMenuOpen(false);
-                  }}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
-                    activeTab === tab.id
-                      ? "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-bold"
-                      : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 font-medium"
-                  }`}
-                >
+                <button key={tab.id} onClick={() => { setActiveTab(tab.id); setIsMobileMenuOpen(false); }}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === tab.id ? "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-bold" : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 font-medium"}`}>
                   {tab.icon}
                   <span>{tab.label}</span>
                 </button>
@@ -359,11 +312,8 @@ export default function ClientApp() {
         </div>
       )}
 
-      {/* 업데이트 내역 모달 */}
       <ChangelogModal isOpen={showChangelog} onClose={() => setShowChangelog(false)} />
-      
-      {/* Toast 알림 */}
-      <Toaster position="bottom-center" toastOptions={{ duration: 3000, style: { borderRadius: '10px', background: '#333', color: '#fff', fontSize: '14px' } }} />
+      <Toaster position="bottom-center" toastOptions={{ duration: 3000, style: { borderRadius: "10px", background: "#333", color: "#fff", fontSize: "14px" } }} />
     </div>
   );
 }

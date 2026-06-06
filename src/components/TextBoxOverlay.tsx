@@ -81,7 +81,7 @@ const TextBoxOverlay: React.FC<TextBoxOverlayProps> = ({
       }}
     >
       {/* 상단 컨트롤 바 */}
-      <div className="absolute -top-8 left-0 flex items-center gap-0.5 bg-white rounded-lg shadow-md border px-1 py-0.5 opacity-0 group-hover:opacity-100 transition-opacity z-30">
+      <div className="absolute -top-8 left-0 flex flex-nowrap w-max items-center gap-0.5 bg-white rounded-lg shadow-md border px-1 py-0.5 opacity-0 group-hover:opacity-100 transition-opacity z-30">
         <select
           value={box.fontFamily || "NotoSansKR"}
           onChange={(e) => onFontFamilyChange(box.id, e.target.value)}

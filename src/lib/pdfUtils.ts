@@ -134,3 +134,17 @@ export async function mergePdfs(buffer1: ArrayBuffer, buffer2: ArrayBuffer): Pro
   const mergedBytes = await pdf1.save();
   return mergedBytes.buffer.slice(mergedBytes.byteOffset, mergedBytes.byteOffset + mergedBytes.byteLength) as ArrayBuffer;
 }
+
+/**
+ * Delete a specific page from a PDF ArrayBuffer.
+ * @param buffer The original PDF ArrayBuffer
+ * @param pageIndex The 0-based index of the page to delete
+ * @returns A new ArrayBuffer containing the PDF with the page removed
+ */
+export async function deletePdfPage(buffer: ArrayBuffer, pageIndex: number): Promise<ArrayBuffer> {
+  const pdf = await PDFDocument.load(buffer);
+  pdf.removePage(pageIndex);
+  
+  const modifiedBytes = await pdf.save();
+  return modifiedBytes.buffer.slice(modifiedBytes.byteOffset, modifiedBytes.byteOffset + modifiedBytes.byteLength) as ArrayBuffer;
+}
