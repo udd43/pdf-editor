@@ -134,7 +134,7 @@ export default function ClientApp() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex-1 flex justify-start">
             <button
-              onClick={() => { setFile(null); setReferenceFile(null); setIsCorporateMode(false); setActiveTab("pdf"); setContentVisible(true); }}
+              onClick={() => { setFile(null); setReferenceFile(null); setIsCorporateMode(false); setActiveTab("pdf"); }}
               className="shrink-0 outline-none flex items-center gap-2"
             >
               <span className="text-xl font-bold tracking-tight text-gray-900 dark:text-white" style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
@@ -147,7 +147,7 @@ export default function ClientApp() {
             {tabs.map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => { setActiveTab(tab.id); setContentVisible(true); }}
+                onClick={() => { setActiveTab(tab.id); }}
                 className={`flex items-center gap-2 px-4 py-1.5 text-xs font-semibold rounded-full transition-all duration-200 ${activeTab === tab.id ? tab.activeBg : "text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200/50 dark:hover:bg-gray-700/50"}`}
               >
                 {tab.icon}
