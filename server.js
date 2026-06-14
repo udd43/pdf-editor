@@ -37,9 +37,16 @@ app.post('/api/upscale', upload.single('image'), async (req, res) => {
     const inputPath = file.path;
     const outputPath = path.join(tmpDir, `output_${timestamp}.png`);
 
+    // Use local binary if it exists, otherwise fallback to /opt
+    const localBin = path.join(__dirname, 'bin', 'realesrgan', 'realesrgan-ncnn-vulkan');
+    const localModels = path.join(__dirname, 'bin', 'realesrgan', 'models');
+    
+    const binPath = fs.existsSync(localBin) ? localBin : '/opt/realesrgan/realesrgan-ncnn-vulkan';
+    const modelsPath = fs.existsSync(localModels) ? localModels : '/opt/realesrgan/models';
+
     await new Promise((resolve, reject) => {
       execFile(
-        '/opt/realesrgan/realesrgan-ncnn-vulkan',
+        binPath,
         [
           '-i', inputPath,
           '-o', outputPath,
@@ -47,7 +54,7 @@ app.post('/api/upscale', upload.single('image'), async (req, res) => {
           '-s', String(scale),
           '-g', '0',
           '-j', '2:2:2',
-          '-m', '/opt/realesrgan/models'
+          '-m', modelsPath
         ],
         { timeout: 120000 },
         (error, stdout, stderr) => {
