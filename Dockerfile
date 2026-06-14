@@ -1,22 +1,22 @@
 # 1. Base Image: OS 환경 및 시스템 의존성 설정
 FROM --platform=linux/amd64 node:20-bookworm-slim AS base
 
-# 시스템 패키지 업데이트 및 설치 (Vulkan 라이브러리 등) - 임시 비활성화
-# RUN apt-get update && apt-get install -y \
-#     curl \
-#     unzip \
-#     libvulkan1 \
-#     libgomp1 \
-#     ca-certificates \
-#     && rm -rf /var/lib/apt/lists/*
+# 시스템 패키지 업데이트 및 설치 (Vulkan 라이브러리 등)
+RUN apt-get update && apt-get install -y \
+    curl \
+    unzip \
+    libvulkan1 \
+    libgomp1 \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 
-# Real-ESRGAN-ncnn-vulkan Linux(Ubuntu) 버전 다운로드 및 설치 (모델 파일 포함 버전) - 임시 비활성화
-# RUN mkdir -p /opt/realesrgan && \
-#     curl -L https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.5.0/realesrgan-ncnn-vulkan-20220424-ubuntu.zip -o /tmp/realesrgan.zip && \
-#     unzip /tmp/realesrgan.zip -d /opt/realesrgan && \
-#     chmod +x /opt/realesrgan/realesrgan-ncnn-vulkan && \
-#     ln -s /opt/realesrgan/realesrgan-ncnn-vulkan /usr/local/bin/realesrgan-ncnn-vulkan && \
-#     rm -f /tmp/realesrgan.zip
+# Real-ESRGAN-ncnn-vulkan Linux(Ubuntu) 버전 다운로드 및 설치 (모델 파일 포함 버전)
+RUN mkdir -p /opt/realesrgan && \
+    curl -L https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.5.0/realesrgan-ncnn-vulkan-20220424-ubuntu.zip -o /tmp/realesrgan.zip && \
+    unzip /tmp/realesrgan.zip -d /opt/realesrgan && \
+    chmod +x /opt/realesrgan/realesrgan-ncnn-vulkan && \
+    ln -s /opt/realesrgan/realesrgan-ncnn-vulkan /usr/local/bin/realesrgan-ncnn-vulkan && \
+    rm -f /tmp/realesrgan.zip
 
 # 2. Dependencies Image: 패키지 설치만 담당
 FROM base AS deps
