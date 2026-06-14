@@ -138,6 +138,8 @@ export default function PdfEditor({ file, isCorporateMode = false }: PdfEditorPr
   const [isRemovingBg, setIsRemovingBg] = useState(false);
   const [isUpscaling, setIsUpscaling] = useState(false);
   const [isSignatureOpen, setIsSignatureOpen] = useState(false);
+  const [isRedactMode, setIsRedactMode] = useState(false);
+  const [drawingRedaction, setDrawingRedaction] = useState<{ startX: number; startY: number; currentX: number; currentY: number } | null>(null);
 
   // Custom modal states (replacing window.prompt)
   const [romanizeModal, setRomanizeModal] = useState(false);
@@ -158,9 +160,9 @@ export default function PdfEditor({ file, isCorporateMode = false }: PdfEditorPr
   
   // Custom hook for element state management
   const {
-    textBoxes, setTextBoxes, imageOverlays, setImageOverlays, selectedImageId, setSelectedImageId,
-    selectedTextId, setSelectedTextId, nextId, setNextId, addTextBox, updateTextBox, removeTextBox,
-    addImageOverlay, updateImageOverlay, removeImageOverlay, undo, redo, saveHistory, resetElements,
+    textBoxes, setTextBoxes, imageOverlays, setImageOverlays, redactions, setRedactions, selectedImageId, setSelectedImageId,
+    selectedTextId, setSelectedTextId, selectedRedactionId, setSelectedRedactionId, nextId, setNextId, addTextBox, updateTextBox, removeTextBox,
+    addImageOverlay, updateImageOverlay, removeImageOverlay, addRedaction, updateRedaction, removeRedaction, undo, redo, saveHistory, resetElements,
   } = usePdfElements();
 
   const {
@@ -170,8 +172,8 @@ export default function PdfEditor({ file, isCorporateMode = false }: PdfEditorPr
   });
 
   useKeyboardShortcuts({
-    status, selectedImageId, selectedTextId, imageOverlays, textBoxes,
-    undo, redo, saveHistory, nextId, currentPage, setTextBoxes, setImageOverlays, setNextId, setSelectedImageId, setSelectedTextId
+    status, selectedImageId, selectedTextId, selectedRedactionId, imageOverlays, textBoxes, redactions,
+    undo, redo, saveHistory, nextId, currentPage, setTextBoxes, setImageOverlays, setRedactions, setNextId, setSelectedImageId, setSelectedTextId, setSelectedRedactionId
   });
 
   useEffect(() => {
@@ -473,25 +475,25 @@ export default function PdfEditor({ file, isCorporateMode = false }: PdfEditorPr
   };
 
   const handleTextChange = useCallback((id: string, newText: string) => {
-    saveHistory(textBoxes, imageOverlays);
+    saveHistory(textBoxes, imageOverlays, redactions);
     setTextBoxes((prev) => prev.map((b) => b.id === id ? { ...b, text: newText, isEdited: true } : b));
   }, [setTextBoxes, saveHistory, textBoxes, imageOverlays]);
 
   const handleDeleteBox = useCallback((id: string) => {
-    saveHistory(textBoxes, imageOverlays);
+    saveHistory(textBoxes, imageOverlays, redactions);
     setTextBoxes((prev) => prev.filter((b) => b.id !== id));
     setSelectedTextId((prev) => prev === id ? null : prev);
   }, [setTextBoxes, saveHistory, textBoxes, imageOverlays, setSelectedTextId]);
 
   const handleFontSizeChange = useCallback((id: string, delta: number) => {
-    saveHistory(textBoxes, imageOverlays);
+    saveHistory(textBoxes, imageOverlays, redactions);
     setTextBoxes((prev) => prev.map((b) =>
       b.id === id ? { ...b, fontSize: Math.max(8, Math.min(72, b.fontSize + delta)), isEdited: true } : b
     ));
   }, [setTextBoxes, saveHistory, textBoxes, imageOverlays]);
 
   const handleFontFamilyChange = useCallback((id: string, fontFamily: string) => {
-    saveHistory(textBoxes, imageOverlays);
+    saveHistory(textBoxes, imageOverlays, redactions);
     setTextBoxes((prev) => prev.map((b) => b.id === id ? { ...b, fontFamily, isEdited: true } : b));
   }, [setTextBoxes, saveHistory, textBoxes, imageOverlays]);
 
@@ -543,7 +545,7 @@ export default function PdfEditor({ file, isCorporateMode = false }: PdfEditorPr
 
   const handleAddText = (isTransparent: boolean = false, initialText: string = "텍스트 입력") => {
     if (status !== "done") return;
-    saveHistory(textBoxes, imageOverlays);
+    saveHistory(textBoxes, imageOverlays, redactions);
     const newBox: TextBox = {
       id: `new-${nextId}`, text: initialText,
       x: 100 + (nextId % 5) * 20, y: 100 + (nextId % 5) * 20, 
@@ -576,13 +578,13 @@ export default function PdfEditor({ file, isCorporateMode = false }: PdfEditorPr
   };
 
   const handleToggleTransparent = useCallback((id: string) => {
-    saveHistory(textBoxes, imageOverlays);
+    saveHistory(textBoxes, imageOverlays, redactions);
     setTextBoxes((prev) => prev.map((b) => b.id === id ? { ...b, isTransparent: !b.isTransparent, isEdited: true } : b));
   }, [setTextBoxes, saveHistory, textBoxes, imageOverlays]);
 
   const handleCanvasDoubleClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (status !== "done") return;
-    saveHistory(textBoxes, imageOverlays);
+    saveHistory(textBoxes, imageOverlays, redactions);
     const wrapper = canvasWrapperRef.current;
     if (!wrapper) return;
     const rect = wrapper.getBoundingClientRect();
@@ -603,7 +605,7 @@ export default function PdfEditor({ file, isCorporateMode = false }: PdfEditorPr
   const handleTextDragStart = useCallback((e: React.MouseEvent, boxId: string, startBoxX: number, startBoxY: number) => {
     e.preventDefault();
     e.stopPropagation();
-    saveHistory(textBoxes, imageOverlays);
+    saveHistory(textBoxes, imageOverlays, redactions);
     setSelectedTextId(boxId);
     setSelectedImageId(null);
     setDraggingTextId(boxId);
@@ -633,7 +635,7 @@ export default function PdfEditor({ file, isCorporateMode = false }: PdfEditorPr
   const handleTextResizeStart = useCallback((e: React.MouseEvent, boxId: string, startW: number, startH: number) => {
     e.preventDefault();
     e.stopPropagation();
-    saveHistory(textBoxes, imageOverlays);
+    saveHistory(textBoxes, imageOverlays, redactions);
     setSelectedTextId(boxId);
     setSelectedImageId(null);
     setResizingTextId(boxId);
@@ -753,7 +755,7 @@ export default function PdfEditor({ file, isCorporateMode = false }: PdfEditorPr
   };
   
   const handleImageDelete = (id: string) => {
-    saveHistory(textBoxes, imageOverlays);
+    saveHistory(textBoxes, imageOverlays, redactions);
     setImageOverlays((prev) => prev.filter((o) => o.id !== id));
     if (selectedImageId === id) setSelectedImageId(null);
   };
@@ -776,7 +778,7 @@ export default function PdfEditor({ file, isCorporateMode = false }: PdfEditorPr
     const toastId = toast.loading("PDF를 병합하고 있습니다. 잠시만 기다려주세요...");
 
     try {
-      await exportEditedPdf(pdfBuffer, textBoxes, imageOverlays, 1, finalFileName);
+      await exportEditedPdf(pdfBuffer, textBoxes, imageOverlays, redactions, 1, finalFileName);
       setStatus("done");
       setStatusMsg("PDF가 다운로드되었습니다!");
       toast.success("성공적으로 다운로드되었습니다!", { id: toastId });
@@ -804,11 +806,41 @@ export default function PdfEditor({ file, isCorporateMode = false }: PdfEditorPr
   };
 
   const handleAddMacroBoxes = (newBoxes: Omit<TextBox, "id">[]) => {
-    saveHistory(textBoxes, imageOverlays);
+    saveHistory(textBoxes, imageOverlays, redactions);
     const boxesWithIds = newBoxes.map((b, i) => ({ ...b, id: `macro-${Date.now()}-${i}` }));
     setTextBoxes(prev => [...prev, ...boxesWithIds]);
     setNextId(prev => prev + boxesWithIds.length);
     toast.success("입력하신 정보가 생성되었습니다! 원하는 빈칸 위치로 드래그하세요.");
+  };
+
+  const handleRedactMouseDown = (e: React.MouseEvent) => {
+    if (!isRedactMode) return;
+    const rect = canvasWrapperRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    setDrawingRedaction({ startX: x, startY: y, currentX: x, currentY: y });
+  };
+
+  const handleRedactMouseMove = (e: React.MouseEvent) => {
+    if (!isRedactMode || !drawingRedaction) return;
+    const rect = canvasWrapperRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    setDrawingRedaction(prev => prev ? { ...prev, currentX: e.clientX - rect.left, currentY: e.clientY - rect.top } : null);
+  };
+
+  const handleRedactMouseUp = () => {
+    if (!isRedactMode || !drawingRedaction) return;
+    const { startX, startY, currentX, currentY } = drawingRedaction;
+    const x = Math.min(startX, currentX) / scale;
+    const y = Math.min(startY, currentY) / scale;
+    const w = Math.abs(currentX - startX) / scale;
+    const h = Math.abs(currentY - startY) / scale;
+    
+    if (w > 5 && h > 5) {
+      addRedaction({ pageIndex: currentPage, x, y, width: w, height: h });
+    }
+    setDrawingRedaction(null);
   };
 
   const isLoading = status === "rendering" || status === "ocr";
@@ -831,6 +863,8 @@ export default function PdfEditor({ file, isCorporateMode = false }: PdfEditorPr
         isUpscaling={isUpscaling}
         handleUpscaleUpload={handleUpscaleUpload}
         setIsSignatureOpen={setIsSignatureOpen}
+        isRedactMode={isRedactMode}
+        setIsRedactMode={setIsRedactMode}
         numPages={numPages}
         currentPage={currentPage}
         setCurrentPage={setCurrentPage}
@@ -892,7 +926,15 @@ export default function PdfEditor({ file, isCorporateMode = false }: PdfEditorPr
           }`}
           style={{ minHeight: "600px" }}
         >
-          <div ref={canvasWrapperRef} onDoubleClick={handleCanvasDoubleClick} className="relative mx-auto w-max bg-white">
+          <div 
+            ref={canvasWrapperRef} 
+            onDoubleClick={handleCanvasDoubleClick} 
+            onMouseDown={handleRedactMouseDown}
+            onMouseMove={handleRedactMouseMove}
+            onMouseUp={handleRedactMouseUp}
+            onMouseLeave={handleRedactMouseUp}
+            className={`relative mx-auto w-max bg-white ${isRedactMode ? "cursor-crosshair" : ""}`}
+          >
             <canvas ref={canvasRef} className="block" />
 
           {isLoading && (
@@ -931,13 +973,40 @@ export default function PdfEditor({ file, isCorporateMode = false }: PdfEditorPr
               onUpdate={handleImageUpdate} onDelete={handleImageDelete}
               isSelected={selectedImageId === overlay.id} 
               onSelect={(id) => { setSelectedImageId(id); setSelectedTextId(null); }} 
-              onDragStart={() => saveHistory(textBoxes, imageOverlays)} />
+              onDragStart={() => saveHistory(textBoxes, imageOverlays, redactions)} />
           ))}
 
-          {status === "done" && textBoxes.length === 0 && imageOverlays.length === 0 && (
+          {status === "done" && textBoxes.length === 0 && imageOverlays.length === 0 && redactions.length === 0 && (
             <div className="absolute bottom-6 left-1/2 -translate-x-1/2 px-4 py-2 bg-gray-900/80 text-white text-xs font-semibold rounded-full shadow-lg backdrop-blur-sm pointer-events-none animate-bounce z-50">
               💡 빈 공간을 더블클릭하여 텍스트를 추가하세요
             </div>
+          )}
+
+          {/* Render Redactions */}
+          {status === "done" && redactions.filter(r => r.pageIndex === currentPage).map(r => (
+            <div key={r.id} className="absolute bg-gray-900 z-10" style={{ left: r.x * scale, top: r.y * scale, width: r.width * scale, height: r.height * scale }}>
+              <button 
+                className={`absolute -top-3 -right-3 bg-white rounded-full p-1 shadow-md text-red-500 hover:text-red-700 opacity-0 hover:opacity-100 transition-opacity ${selectedRedactionId === r.id ? 'opacity-100' : ''}`}
+                onClick={() => removeRedaction(r.id)}
+                onMouseEnter={() => setSelectedRedactionId(r.id)}
+                onMouseLeave={() => setSelectedRedactionId(null)}
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          ))}
+
+          {/* Render Drawing Redaction */}
+          {isRedactMode && drawingRedaction && (
+            <div 
+              className="absolute bg-gray-900/80 border-2 border-gray-900 z-20"
+              style={{
+                left: Math.min(drawingRedaction.startX, drawingRedaction.currentX),
+                top: Math.min(drawingRedaction.startY, drawingRedaction.currentY),
+                width: Math.abs(drawingRedaction.currentX - drawingRedaction.startX),
+                height: Math.abs(drawingRedaction.currentY - drawingRedaction.startY),
+              }}
+            />
           )}
           </div>
         </div>

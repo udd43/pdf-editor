@@ -6,11 +6,13 @@ interface UseKeyboardShortcutsProps {
   status: string;
   selectedImageId: string | null;
   selectedTextId: string | null;
+  selectedRedactionId: string | null;
   imageOverlays: ImageOverlayData[];
   textBoxes: TextBox[];
+  redactions: any[]; // RedactionData
   undo: () => void;
   redo: () => void;
-  saveHistory: (boxes: TextBox[], overlays: ImageOverlayData[]) => void;
+  saveHistory: (boxes: TextBox[], overlays: ImageOverlayData[], redactions: any[]) => void;
   nextId: number;
   currentPage: number;
   setTextBoxes: React.Dispatch<React.SetStateAction<TextBox[]>>;
@@ -18,11 +20,13 @@ interface UseKeyboardShortcutsProps {
   setNextId: React.Dispatch<React.SetStateAction<number>>;
   setSelectedImageId: React.Dispatch<React.SetStateAction<string | null>>;
   setSelectedTextId: React.Dispatch<React.SetStateAction<string | null>>;
+  setSelectedRedactionId: React.Dispatch<React.SetStateAction<string | null>>;
+  setRedactions: React.Dispatch<React.SetStateAction<any[]>>;
 }
 
 export function useKeyboardShortcuts({
-  status, selectedImageId, selectedTextId, imageOverlays, textBoxes,
-  undo, redo, saveHistory, nextId, currentPage, setTextBoxes, setImageOverlays, setNextId, setSelectedImageId, setSelectedTextId
+  status, selectedImageId, selectedTextId, selectedRedactionId, imageOverlays, textBoxes, redactions,
+  undo, redo, saveHistory, nextId, currentPage, setTextBoxes, setImageOverlays, setRedactions, setNextId, setSelectedImageId, setSelectedTextId, setSelectedRedactionId
 }: UseKeyboardShortcutsProps) {
   const pressedKeys = useRef<Set<string>>(new Set());
 
@@ -52,9 +56,9 @@ export function useKeyboardShortcuts({
 
       // 방향키 정밀 이동
       if (e.key === "ArrowUp" || e.key === "ArrowDown" || e.key === "ArrowLeft" || e.key === "ArrowRight") {
-        if (selectedTextId || selectedImageId) {
+        if (selectedTextId || selectedImageId || selectedRedactionId) {
           e.preventDefault();
-          saveHistory(textBoxes, imageOverlays);
+          saveHistory(textBoxes, imageOverlays, redactions);
           const dx = e.key === "ArrowLeft" ? -1 : e.key === "ArrowRight" ? 1 : 0;
           const dy = e.key === "ArrowUp" ? -1 : e.key === "ArrowDown" ? 1 : 0;
           
@@ -62,6 +66,8 @@ export function useKeyboardShortcuts({
             setTextBoxes(prev => prev.map(b => b.id === selectedTextId ? { ...b, x: b.x + dx, y: b.y + dy } : b));
           } else if (selectedImageId) {
             setImageOverlays(prev => prev.map(o => o.id === selectedImageId ? { ...o, x: o.x + dx, y: o.y + dy } : o));
+          } else if (selectedRedactionId) {
+            setRedactions(prev => prev.map(r => r.id === selectedRedactionId ? { ...r, x: r.x + dx, y: r.y + dy } : r));
           }
         }
         return;
@@ -69,13 +75,17 @@ export function useKeyboardShortcuts({
 
       if (e.key === "Delete" || e.key === "Backspace") {
         if (selectedImageId) {
-          saveHistory(textBoxes, imageOverlays);
+          saveHistory(textBoxes, imageOverlays, redactions);
           setImageOverlays((prev) => prev.filter((o) => o.id !== selectedImageId));
           setSelectedImageId(null);
         } else if (selectedTextId) {
-          saveHistory(textBoxes, imageOverlays);
+          saveHistory(textBoxes, imageOverlays, redactions);
           setTextBoxes((prev) => prev.filter((b) => b.id !== selectedTextId));
           setSelectedTextId(null);
+        } else if (selectedRedactionId) {
+          saveHistory(textBoxes, imageOverlays, redactions);
+          setRedactions((prev) => prev.filter((r) => r.id !== selectedRedactionId));
+          setSelectedRedactionId(null);
         }
       }
 
@@ -93,7 +103,7 @@ export function useKeyboardShortcuts({
         const copied = sessionStorage.getItem("pdfitor_clipboard_overlay");
         if (copied) {
           const parsed = JSON.parse(copied);
-          saveHistory(textBoxes, imageOverlays);
+          saveHistory(textBoxes, imageOverlays, redactions);
           if (parsed.type === "image") {
             const target = parsed.data as ImageOverlayData;
             const newOverlay: ImageOverlayData = { ...target, id: `copy-${Date.now()}`, x: target.x + 20, y: target.y + 20, pageIndex: currentPage };
@@ -122,5 +132,5 @@ export function useKeyboardShortcuts({
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
     };
-  }, [status, selectedImageId, selectedTextId, imageOverlays, textBoxes, undo, redo, saveHistory, nextId, currentPage, setTextBoxes, setImageOverlays, setNextId, setSelectedImageId, setSelectedTextId]);
+  }, [status, selectedImageId, selectedTextId, selectedRedactionId, imageOverlays, textBoxes, redactions, undo, redo, saveHistory, nextId, currentPage, setTextBoxes, setImageOverlays, setRedactions, setNextId, setSelectedImageId, setSelectedTextId, setSelectedRedactionId]);
 }

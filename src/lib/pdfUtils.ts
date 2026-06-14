@@ -2,6 +2,9 @@ import { PDFDocument, rgb } from "pdf-lib";
 import fontkit from "@pdf-lib/fontkit";
 import { TextBox } from "@/components/PdfEditor";
 import { ImageOverlayData } from "@/components/ImageOverlay";
+import { RedactionData } from "@/hooks/usePdfElements";
+import * as pdfjsLib from "pdfjs-dist";
+import toast from "react-hot-toast";
 
 import { getFontBuffers } from "./fontCache";
 
@@ -18,6 +21,7 @@ export async function exportEditedPdf(
   originalPdfBuffer: ArrayBuffer,
   editedBoxes: TextBox[],
   imageOverlays: ImageOverlayData[],
+  redactions: RedactionData[],
   _scale: number, 
   filename: string = "edited_document.pdf"
 ): Promise<void> {
@@ -61,11 +65,26 @@ export async function exportEditedPdf(
       // 3. Web Worker 생성 및 메시지 전송
       const worker = new Worker(new URL('../workers/pdfExportWorker.ts', import.meta.url));
 
-      worker.onmessage = (e) => {
+      worker.onmessage = async (e) => {
         worker.terminate();
         const { success, pdfBytes, error } = e.data;
         if (success && pdfBytes) {
-          const blob = new Blob([pdfBytes], { type: "application/pdf" });
+          let finalBytes = pdfBytes;
+          const isCompressing = finalBytes.byteLength > 20 * 1024 * 1024;
+          const hasRedactions = redactions && redactions.length > 0;
+          
+          if (hasRedactions || isCompressing) {
+            const toastId = toast.loading(isCompressing ? "20MB 초과: 자동 압축 및 처리 중..." : "블라인드 병합 처리 중...");
+            try {
+              finalBytes = await processRedactionsAndCompression(finalBytes, redactions || [], isCompressing);
+              toast.success("처리가 완료되었습니다!", { id: toastId });
+            } catch (err) {
+              console.error(err);
+              toast.error("처리 중 오류가 발생했습니다. 원본을 저장합니다.", { id: toastId });
+            }
+          }
+
+          const blob = new Blob([finalBytes], { type: "application/pdf" });
           const url = URL.createObjectURL(blob);
           const link = document.createElement("a");
           link.href = url;
@@ -161,10 +180,91 @@ export async function reorderPdfPages(buffer: ArrayBuffer, newOrder: number[]): 
   const newPdf = await PDFDocument.create();
 
   const copiedPages = await newPdf.copyPages(srcPdf, newOrder);
-  copiedPages.forEach((page) => {
-    newPdf.addPage(page);
-  });
+  copiedPages.forEach((page) => newPdf.addPage(page));
 
   const reorderedBytes = await newPdf.save();
   return reorderedBytes.buffer.slice(reorderedBytes.byteOffset, reorderedBytes.byteOffset + reorderedBytes.byteLength) as ArrayBuffer;
+}
+
+/**
+ * Redaction(블라인드) 및 Compression(압축) 처리 함수
+ */
+async function processRedactionsAndCompression(
+  pdfBuffer: ArrayBuffer,
+  redactions: RedactionData[],
+  isCompressing: boolean
+): Promise<Uint8Array> {
+  const loadingTask = pdfjsLib.getDocument({ data: pdfBuffer });
+  const pdfJsDoc = await loadingTask.promise;
+  const pdfLibDoc = await PDFDocument.load(pdfBuffer);
+  
+  const numPages = pdfJsDoc.numPages;
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d", { alpha: false });
+  
+  if (!ctx) throw new Error("Canvas 2D context not available");
+
+  for (let i = 0; i < numPages; i++) {
+    const pageIndex = i + 1; // 1-based
+    const pageRedactions = redactions.filter(r => r.pageIndex === pageIndex);
+    const needsProcessing = isCompressing || pageRedactions.length > 0;
+
+    if (!needsProcessing) continue;
+
+    // Render with pdf.js
+    const page = await pdfJsDoc.getPage(pageIndex);
+    // Compression: use scale 1.5, Redaction only: use scale 2.0 to maintain quality
+    const scale = isCompressing ? 1.5 : 2.0; 
+    const viewport = page.getViewport({ scale });
+
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    
+    // Draw white background
+    ctx.fillStyle = "white";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    await page.render({
+      canvasContext: ctx,
+      viewport: viewport,
+      intent: "print"
+    }).promise;
+
+    // Draw redactions on canvas
+    if (pageRedactions.length > 0) {
+      ctx.fillStyle = "#111827"; // gray-900 (or black)
+      for (const r of pageRedactions) {
+        // Redaction coords are in PDF points (1 scale), so we scale them to the canvas viewport
+        const rx = r.x * scale;
+        const ry = r.y * scale;
+        const rw = r.width * scale;
+        const rh = r.height * scale;
+        ctx.fillRect(rx, ry, rw, rh);
+      }
+    }
+
+    // Convert to JPEG
+    const quality = isCompressing ? 0.65 : 0.9;
+    const dataUrl = canvas.toDataURL("image/jpeg", quality);
+    const imgBytes = await fetch(dataUrl).then(res => res.arrayBuffer());
+
+    // Replace page in pdf-lib
+    const embeddedImage = await pdfLibDoc.embedJpg(imgBytes);
+    const pdfPage = pdfLibDoc.getPage(i);
+    const { width, height } = pdfPage.getSize();
+    
+    // Clear the original page contents by creating a new blank page
+    // Actually, pdf-lib doesn't have an easy way to clear a page, so we remove and insert
+    pdfLibDoc.removePage(i);
+    const newPage = pdfLibDoc.insertPage(i, [width, height]);
+    newPage.drawImage(embeddedImage, {
+      x: 0,
+      y: 0,
+      width: width,
+      height: height
+    });
+  }
+
+  // Save the modified PDF
+  return await pdfLibDoc.save({ useObjectStreams: true });
 }
