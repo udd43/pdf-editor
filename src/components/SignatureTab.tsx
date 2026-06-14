@@ -3,6 +3,7 @@
 import React, { useRef, useState, useEffect, useCallback } from "react";
 import { Trash2, Undo2, Download, PenTool, Type, Edit3 } from "lucide-react";
 import toast from "react-hot-toast";
+import { ConfirmModal } from "./Modal";
 
 interface Point {
   x: number;
@@ -35,6 +36,7 @@ export default function SignatureTab() {
   const [penColor, setPenColor] = useState("#000000");
   const [strokes, setStrokes] = useState<Stroke[]>([]);
   const [currentStroke, setCurrentStroke] = useState<Point[]>([]);
+  const [confirmClear, setConfirmClear] = useState(false);
   
   const CANVAS_WIDTH = 800;
   const CANVAS_HEIGHT = 400;
@@ -204,14 +206,19 @@ export default function SignatureTab() {
 
   const handleClear = () => {
     if (mode === "draw") {
-      if (strokes.length > 0 && confirm("모든 서명을 지우시겠습니까?")) {
-        setStrokes([]);
-        setCurrentStroke([]);
-        toast.success("서명이 초기화되었습니다.");
+      if (strokes.length > 0) {
+        setConfirmClear(true);
       }
     } else {
       setTypedText("");
     }
+  };
+
+  const handleClearConfirm = () => {
+    setConfirmClear(false);
+    setStrokes([]);
+    setCurrentStroke([]);
+    toast.success("서명이 초기화되었습니다.");
   };
 
   const handleDownload = () => {
@@ -461,6 +468,17 @@ export default function SignatureTab() {
           </button>
         </div>
       </div>
+
+      <ConfirmModal
+        isOpen={confirmClear}
+        title="서명 초기화"
+        message="모든 서명을 지우시겠습니까? 이 작업은 되돌릴 수 없습니다."
+        confirmLabel="지우기"
+        cancelLabel="취소"
+        variant="danger"
+        onConfirm={handleClearConfirm}
+        onCancel={() => setConfirmClear(false)}
+      />
     </div>
   );
 }

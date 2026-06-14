@@ -2,6 +2,7 @@
 
 import React, { useRef, useState, useCallback } from "react";
 import { Loader2, Scissors, Palette, Trash2, Move, Download } from "lucide-react";
+import toast from "react-hot-toast";
 import ColorPicker from "./ColorPicker";
 
 export interface ImageOverlayData {
@@ -159,7 +160,7 @@ export default function ImageOverlay({
       onUpdate(overlay.id, { displaySrc: resultUrl, removedBgSrc: resultUrl });
     } catch (err) {
       console.error("배경 제거 실패:", err);
-      alert("배경 제거에 실패했습니다.");
+      toast.error("배경 제거에 실패했습니다.");
     } finally {
       setIsRemovingBg(false);
     }

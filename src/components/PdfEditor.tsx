@@ -2,9 +2,10 @@
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import * as pdfjsLib from "pdfjs-dist";
-import { Loader2, Image as ImageIcon, Trash2 } from "lucide-react";
+import { Loader2, Image as ImageIcon, Trash2, GripVertical } from "lucide-react";
 import toast from "react-hot-toast";
-import { exportEditedPdf, mergePdfs, deletePdfPage } from "@/lib/pdfUtils";
+import { exportEditedPdf, mergePdfs, deletePdfPage, reorderPdfPages } from "@/lib/pdfUtils";
+import { PromptModal } from "./Modal";
 import { koreanToRoman } from "@/lib/romanize";
 import ImageOverlayComponent, { ImageOverlayData } from "./ImageOverlay";
 import SignaturePad from "./SignaturePad";
@@ -39,7 +40,21 @@ interface PdfEditorProps {
   isCorporateMode?: boolean;
 }
 
-const Thumbnail = ({ pdfDoc, pageNumber, isActive, onClick, onDelete, totalPages }: { pdfDoc: pdfjsLib.PDFDocumentProxy, pageNumber: number, isActive: boolean, onClick: () => void, onDelete: () => void, totalPages: number }) => {
+interface ThumbnailProps {
+  pdfDoc: pdfjsLib.PDFDocumentProxy;
+  pageNumber: number;
+  isActive: boolean;
+  onClick: () => void;
+  onDelete: () => void;
+  totalPages: number;
+  onDragStart: (e: React.DragEvent, pageNumber: number) => void;
+  onDragOver: (e: React.DragEvent, pageNumber: number) => void;
+  onDrop: (e: React.DragEvent, pageNumber: number) => void;
+  isDragTarget: boolean;
+  dragPosition: "above" | "below" | null;
+}
+
+const Thumbnail = ({ pdfDoc, pageNumber, isActive, onClick, onDelete, totalPages, onDragStart, onDragOver, onDrop, isDragTarget, dragPosition }: ThumbnailProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -64,12 +79,29 @@ const Thumbnail = ({ pdfDoc, pageNumber, isActive, onClick, onDelete, totalPages
   }, [pdfDoc, pageNumber]);
 
   return (
-    <div 
+    <div
+      draggable={totalPages > 1}
+      onDragStart={(e) => onDragStart(e, pageNumber)}
+      onDragOver={(e) => onDragOver(e, pageNumber)}
+      onDrop={(e) => onDrop(e, pageNumber)}
       onClick={onClick}
       className={`relative cursor-pointer rounded-lg overflow-hidden border-2 transition-all group ${
         isActive ? "border-blue-500 shadow-md ring-2 ring-blue-500/20" : "border-transparent hover:border-gray-300 dark:hover:border-gray-600"
       }`}
     >
+      {/* Drop indicator line */}
+      {isDragTarget && dragPosition === "above" && (
+        <div className="absolute -top-1.5 left-1 right-1 h-[3px] bg-blue-500 rounded-full z-20 shadow-[0_0_6px_rgba(59,130,246,0.6)]" />
+      )}
+      {isDragTarget && dragPosition === "below" && (
+        <div className="absolute -bottom-1.5 left-1 right-1 h-[3px] bg-blue-500 rounded-full z-20 shadow-[0_0_6px_rgba(59,130,246,0.6)]" />
+      )}
+      {/* Drag handle */}
+      {totalPages > 1 && (
+        <div className="absolute top-1 left-1 p-0.5 bg-white/80 dark:bg-gray-800/80 rounded opacity-0 group-hover:opacity-100 transition-opacity z-10 cursor-grab active:cursor-grabbing">
+          <GripVertical className="w-3 h-3 text-gray-400" />
+        </div>
+      )}
       <canvas ref={canvasRef} className="w-full h-auto bg-white block" />
       <div className={`absolute bottom-0 left-0 right-0 py-1 text-center text-[10px] font-bold ${
         isActive ? "bg-blue-500 text-white" : "bg-gray-100/90 dark:bg-gray-800/90 text-gray-600 dark:text-gray-300 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity"
@@ -106,6 +138,16 @@ export default function PdfEditor({ file, isCorporateMode = false }: PdfEditorPr
   const [isRemovingBg, setIsRemovingBg] = useState(false);
   const [isUpscaling, setIsUpscaling] = useState(false);
   const [isSignatureOpen, setIsSignatureOpen] = useState(false);
+
+  // Custom modal states (replacing window.prompt)
+  const [romanizeModal, setRomanizeModal] = useState(false);
+  const [exportModal, setExportModal] = useState(false);
+  const [exportDefaultName, setExportDefaultName] = useState("");
+
+  // Drag-and-drop page reorder state
+  const [dragPageNumber, setDragPageNumber] = useState<number | null>(null);
+  const [dragTargetPage, setDragTargetPage] = useState<number | null>(null);
+  const [dragPosition, setDragPosition] = useState<"above" | "below" | null>(null);
 
   // 자동 채우기 폼 상태
   const isCorporateDoc = isCorporateMode && (file.name.startsWith("doc_") || file.name.includes("법인") || file.name.includes("확인서"));
@@ -338,6 +380,98 @@ export default function PdfEditor({ file, isCorporateMode = false }: PdfEditorPr
     });
   };
 
+  // ── Page reorder via drag-and-drop ──
+  const handleThumbDragStart = (e: React.DragEvent, pageNumber: number) => {
+    setDragPageNumber(pageNumber);
+    e.dataTransfer.effectAllowed = "move";
+    // Set a minimal transparent drag image
+    const ghost = document.createElement("div");
+    ghost.style.width = "1px";
+    ghost.style.height = "1px";
+    document.body.appendChild(ghost);
+    e.dataTransfer.setDragImage(ghost, 0, 0);
+    setTimeout(() => document.body.removeChild(ghost), 0);
+  };
+
+  const handleThumbDragOver = (e: React.DragEvent, pageNumber: number) => {
+    e.preventDefault();
+    if (dragPageNumber === null || dragPageNumber === pageNumber) {
+      setDragTargetPage(null);
+      setDragPosition(null);
+      return;
+    }
+    const rect = e.currentTarget.getBoundingClientRect();
+    const midY = rect.top + rect.height / 2;
+    const pos = e.clientY < midY ? "above" : "below";
+    setDragTargetPage(pageNumber);
+    setDragPosition(pos);
+  };
+
+  const handleThumbDrop = async (e: React.DragEvent, targetPageNumber: number) => {
+    e.preventDefault();
+    if (dragPageNumber === null || dragPageNumber === targetPageNumber || !pdfBuffer) {
+      setDragPageNumber(null);
+      setDragTargetPage(null);
+      setDragPosition(null);
+      return;
+    }
+
+    const fromIdx = dragPageNumber - 1; // 0-based
+    let toIdx = targetPageNumber - 1;   // 0-based
+    if (dragPosition === "below") toIdx += 1;
+    // Adjust if dragging from before the target
+    if (fromIdx < toIdx) toIdx -= 1;
+
+    if (fromIdx === toIdx) {
+      setDragPageNumber(null);
+      setDragTargetPage(null);
+      setDragPosition(null);
+      return;
+    }
+
+    // Build new order array
+    const order = Array.from({ length: numPages }, (_, i) => i);
+    const [removed] = order.splice(fromIdx, 1);
+    order.splice(toIdx, 0, removed);
+
+    setDragPageNumber(null);
+    setDragTargetPage(null);
+    setDragPosition(null);
+
+    const reorderProcess = async () => {
+      const newBuffer = await reorderPdfPages(pdfBuffer, order);
+      setPdfBuffer(newBuffer);
+      const loadingTask = pdfjsLib.getDocument({ data: newBuffer });
+      const pdf = await loadingTask.promise;
+      setPdfDoc(pdf);
+      setNumPages(pdf.numPages);
+
+      // Update element pageIndex mappings
+      const pageMap = new Map<number, number>();
+      order.forEach((oldIdx, newIdx) => {
+        pageMap.set(oldIdx + 1, newIdx + 1); // 1-based
+      });
+
+      setTextBoxes(prev => prev.map(b => ({
+        ...b,
+        pageIndex: pageMap.get(b.pageIndex) ?? b.pageIndex,
+      })));
+      setImageOverlays(prev => prev.map(o => ({
+        ...o,
+        pageIndex: pageMap.get(o.pageIndex) ?? o.pageIndex,
+      })));
+
+      // Follow the dragged page
+      setCurrentPage(toIdx + 1);
+    };
+
+    toast.promise(reorderProcess(), {
+      loading: "페이지 순서를 변경하는 중...",
+      success: "페이지 순서가 변경되었습니다!",
+      error: "페이지 순서 변경 실패",
+    });
+  };
+
   const handleTextChange = useCallback((id: string, newText: string) => {
     saveHistory(textBoxes, imageOverlays);
     setTextBoxes((prev) => prev.map((b) => b.id === id ? { ...b, text: newText, isEdited: true } : b));
@@ -426,7 +560,11 @@ export default function PdfEditor({ file, isCorporateMode = false }: PdfEditorPr
 
   const handleAddRomanizedName = () => {
     if (status !== "done") return;
-    const koreanName = window.prompt("영문으로 변환할 한글 이름을 입력하세요 (예: 홍길동):", "");
+    setRomanizeModal(true);
+  };
+
+  const handleRomanizeConfirm = (koreanName: string) => {
+    setRomanizeModal(false);
     if (!koreanName || koreanName.trim() === "") return;
     
     const romanized = koreanToRoman(koreanName.trim())
@@ -624,9 +762,13 @@ export default function PdfEditor({ file, isCorporateMode = false }: PdfEditorPr
     if (!pdfBuffer) return;
     let defaultName = file.name;
     if (defaultName.toLowerCase().endsWith(".pdf")) defaultName = defaultName.slice(0, -4);
-    
-    const exportName = window.prompt("저장할 파일 이름을 입력하세요 (확장자 제외):", defaultName);
-    if (exportName === null) return; 
+    setExportDefaultName(defaultName);
+    setExportModal(true);
+  };
+
+  const handleExportConfirm = async (exportName: string) => {
+    setExportModal(false);
+    if (!pdfBuffer) return;
     const finalFileName = exportName.trim() === "" ? file.name : `${exportName.trim()}.pdf`;
 
     setStatus("rendering");
@@ -729,6 +871,11 @@ export default function PdfEditor({ file, isCorporateMode = false }: PdfEditorPr
                   key={index} pdfDoc={pdfDoc} pageNumber={index + 1} totalPages={numPages}
                   isActive={currentPage === index + 1} onClick={() => setCurrentPage(index + 1)} 
                   onDelete={() => handleDeletePage(index + 1)}
+                  onDragStart={handleThumbDragStart}
+                  onDragOver={handleThumbDragOver}
+                  onDrop={handleThumbDrop}
+                  isDragTarget={dragTargetPage === index + 1}
+                  dragPosition={dragTargetPage === index + 1 ? dragPosition : null}
                 />
               ))}
               <div className="pt-2 pb-4 text-center text-[10px] text-gray-400 dark:text-gray-500 font-medium">
@@ -815,7 +962,7 @@ export default function PdfEditor({ file, isCorporateMode = false }: PdfEditorPr
                     <button 
                       onClick={() => {
                         navigator.clipboard.writeText(extractedTexts.join('\n'));
-                        alert('클립보드에 전체 텍스트가 복사되었습니다!');
+                        toast.success('클립보드에 전체 텍스트가 복사되었습니다!');
                       }}
                       className="text-[10px] px-2 py-1 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-md border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 font-semibold transition-all"
                     >
@@ -852,6 +999,27 @@ export default function PdfEditor({ file, isCorporateMode = false }: PdfEditorPr
         isOpen={isSignatureOpen}
         onClose={() => setIsSignatureOpen(false)}
         onSave={handleSignatureSave}
+      />
+
+      {/* Custom Modals */}
+      <PromptModal
+        isOpen={romanizeModal}
+        title="영문명 변환"
+        message="영문으로 변환할 한글 이름을 입력하세요"
+        placeholder="예: 홍길동"
+        confirmLabel="변환"
+        onConfirm={handleRomanizeConfirm}
+        onCancel={() => setRomanizeModal(false)}
+      />
+      <PromptModal
+        isOpen={exportModal}
+        title="PDF 내보내기"
+        message="저장할 파일 이름을 입력하세요 (확장자 제외)"
+        placeholder="파일 이름"
+        defaultValue={exportDefaultName}
+        confirmLabel="다운로드"
+        onConfirm={handleExportConfirm}
+        onCancel={() => setExportModal(false)}
       />
     </div>
   );

@@ -19,6 +19,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { PDFDocument } from "pdf-lib";
+import toast from "react-hot-toast";
 
 export interface FeatureCardMeta {
   id: string;
@@ -64,7 +65,7 @@ export default function HomeGrid({
         if (file.type === "image/png") img = await pdfDoc.embedPng(ab);
         else if (file.type === "image/jpeg" || file.type === "image/jpg")
           img = await pdfDoc.embedJpg(ab);
-        else { alert("JPG 또는 PNG만 가능합니다."); return; }
+        else { toast.error("JPG 또는 PNG만 가능합니다."); return; }
         const page = pdfDoc.addPage([img.width, img.height]);
         page.drawImage(img, { x: 0, y: 0, width: img.width, height: img.height });
         const bytes = await pdfDoc.save();
@@ -75,10 +76,10 @@ export default function HomeGrid({
         onFileSelect(newFile);
         onTabSelect("pdf");
       } catch {
-        alert("이미지를 PDF로 변환하는 중 오류가 발생했습니다.");
+        toast.error("이미지를 PDF로 변환하는 중 오류가 발생했습니다.");
       }
     } else {
-      alert("PDF 또는 이미지 파일(JPG, PNG)만 업로드 가능합니다.");
+      toast.error("PDF 또는 이미지 파일(JPG, PNG)만 업로드 가능합니다.");
     }
   };
 
@@ -93,6 +94,16 @@ export default function HomeGrid({
       iconBgDark: "dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800",
       action: "upload",
       badge: "핵심 기능",
+    },
+    {
+      id: "upscale",
+      title: "이미지 업스케일",
+      description: "저화질 이미지를 AI로 선명하게 2배 확대합니다.",
+      icon: <Sparkles className="w-6 h-6" />,
+      accent: "from-amber-400 to-orange-500",
+      iconBg: "bg-amber-50 text-amber-600 border-amber-100",
+      iconBgDark: "dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800",
+      action: "expand",
     },
     {
       id: "bgremove",

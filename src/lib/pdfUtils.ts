@@ -148,3 +148,23 @@ export async function deletePdfPage(buffer: ArrayBuffer, pageIndex: number): Pro
   const modifiedBytes = await pdf.save();
   return modifiedBytes.buffer.slice(modifiedBytes.byteOffset, modifiedBytes.byteOffset + modifiedBytes.byteLength) as ArrayBuffer;
 }
+
+/**
+ * Reorder pages in a PDF according to the given page order.
+ * @param buffer The original PDF ArrayBuffer
+ * @param newOrder An array of 0-based page indices in the desired order.
+ *                 e.g. [2, 0, 1] moves page 3 to first, page 1 to second, page 2 to third.
+ * @returns A new ArrayBuffer containing the reordered PDF
+ */
+export async function reorderPdfPages(buffer: ArrayBuffer, newOrder: number[]): Promise<ArrayBuffer> {
+  const srcPdf = await PDFDocument.load(buffer);
+  const newPdf = await PDFDocument.create();
+
+  const copiedPages = await newPdf.copyPages(srcPdf, newOrder);
+  copiedPages.forEach((page) => {
+    newPdf.addPage(page);
+  });
+
+  const reorderedBytes = await newPdf.save();
+  return reorderedBytes.buffer.slice(reorderedBytes.byteOffset, reorderedBytes.byteOffset + reorderedBytes.byteLength) as ArrayBuffer;
+}

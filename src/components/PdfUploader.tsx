@@ -3,6 +3,7 @@
 import React, { useCallback, useState } from "react";
 import { UploadCloud } from "lucide-react";
 import { PDFDocument } from "pdf-lib";
+import toast from "react-hot-toast";
 
 interface PdfUploaderProps {
   onFileSelect: (file: File) => void;
@@ -35,7 +36,7 @@ export default function PdfUploader({ onFileSelect }: PdfUploaderProps) {
         } else if (file.type === "image/jpeg" || file.type === "image/jpg") {
           image = await pdfDoc.embedJpg(arrayBuffer);
         } else {
-          alert("지원하지 않는 이미지 형식입니다. (JPG, PNG만 가능)");
+          toast.error("지원하지 않는 이미지 형식입니다. (JPG, PNG만 가능)");
           return;
         }
         const page = pdfDoc.addPage([image.width, image.height]);
@@ -46,10 +47,10 @@ export default function PdfUploader({ onFileSelect }: PdfUploaderProps) {
         onFileSelect(newFile);
       } catch (err) {
         console.error(err);
-        alert("이미지를 PDF로 변환하는 중 오류가 발생했습니다.");
+        toast.error("이미지를 PDF로 변환하는 중 오류가 발생했습니다.");
       }
     } else {
-      alert("PDF 또는 이미지 파일(JPG, PNG)만 업로드 가능합니다.");
+      toast.error("PDF 또는 이미지 파일(JPG, PNG)만 업로드 가능합니다.");
     }
   };
 
