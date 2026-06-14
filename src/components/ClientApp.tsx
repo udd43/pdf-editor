@@ -6,7 +6,7 @@ import PdfUploader from "@/components/PdfUploader";
 import PdfEditor from "@/components/PdfEditor";
 import ChangelogModal from "@/components/ChangelogModal";
 import HomeGrid from "@/components/HomeGrid";
-import { Languages, PenTool, Calculator, FileText as FileTextIcon, Building2 } from "lucide-react";
+import { Languages, PenTool, Calculator, FileText as FileTextIcon, Building2, Sparkles } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 
 const BgRemover = React.lazy(() => import("@/components/BgRemover"));
@@ -114,6 +114,7 @@ export default function ClientApp() {
   const tabs: { id: Tab; label: string; icon: React.ReactNode; color: string; activeBg: string }[] = [
     { id: "pdf", label: "PDF 편집", icon: <FileText className="w-3.5 h-3.5" />, color: "text-gray-600 dark:text-gray-300", activeBg: "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm" },
     { id: "bgremove", label: "누끼따기", icon: <Scissors className="w-3.5 h-3.5" />, color: "text-gray-600 dark:text-gray-300", activeBg: "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm" },
+    { id: "upscale", label: "이미지 업스케일", icon: <Sparkles className="w-3.5 h-3.5" />, color: "text-gray-600 dark:text-gray-300", activeBg: "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm" },
     { id: "colorize", label: "색상 변경", icon: <Palette className="w-3.5 h-3.5" />, color: "text-gray-600 dark:text-gray-300", activeBg: "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm" },
     { id: "romanize", label: "영문명 변환", icon: <Languages className="w-3.5 h-3.5" />, color: "text-gray-600 dark:text-gray-300", activeBg: "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm" },
     { id: "signature", label: "서명 그리기", icon: <PenTool className="w-3.5 h-3.5" />, color: "text-gray-600 dark:text-gray-300", activeBg: "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm" },
