@@ -96,22 +96,23 @@ export default function MacroForm({ isCorporateDoc, isShareholderFile, isCorpOwn
   const handleCorpOwnerAutoFill = () => {
     const newBoxes: Omit<TextBox, "id">[] = [];
     
-    // 각 열의 칸 크기에 딱 맞도록 x, w 최적화 (h: 22)
+    // 사용자가 제공한 5번 칸(y: 268) 기준 줄 간격 역산: 1번 칸 y는 192, 줄 간격은 19
     const baseFields = [
-      { key: 'korName', x: 92, w: 86, h: 22 },
-      { key: 'engName', x: 182, w: 68, h: 22 },
-      { key: 'birth', x: 254, w: 56, h: 22 },
-      { key: 'nationality', x: 314, w: 42, h: 22 },
-      { key: 'gender', x: 360, w: 26, h: 22 },
-      { key: 'ownership', x: 390, w: 42, h: 22 },
-      { key: 'checkV', x: 434, w: 15, h: 22 },
+      { key: 'korName', x: 131, dy: 0, w: 44, h: 12 },
+      { key: 'engName', x: 182, dy: 0, w: 59, h: 15 },
+      { key: 'birth', x: 249, dy: 0, w: 37, h: 10 },
+      { key: 'nationality', x: 293, dy: 0, w: 45, h: 12 }, // 생년월일과 성별 사이
+      { key: 'gender', x: 346, dy: 0, w: 25, h: 13 },
+      { key: 'ownership', x: 380, dy: 0, w: 41, h: 10 },
+      { key: 'checkV', x: 429, dy: -5, w: 15, h: 22 }, // checkV는 5만큼 위로
     ];
     
     corpOwners.forEach((owner, i) => {
       baseFields.forEach(f => {
         const val = owner[f.key as keyof typeof owner];
         if (val) {
-          const actualY = 191 + i * 24; // 줄 간격 24
+          const rowBaseY = 192 + i * 19; // 줄 간격 19
+          const actualY = rowBaseY + f.dy;
           newBoxes.push({
             text: val, x: f.x, y: actualY, width: f.w, height: f.h, fontSize: 11,
             isEdited: true, isNew: true, isTransparent: true, fontFamily: "NotoSansKR",
