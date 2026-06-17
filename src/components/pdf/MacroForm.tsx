@@ -96,22 +96,22 @@ export default function MacroForm({ isCorporateDoc, isShareholderFile, isCorpOwn
   const handleCorpOwnerAutoFill = () => {
     const newBoxes: Omit<TextBox, "id">[] = [];
     
-    // 사용자가 제공한 5번 칸(y: 268) 기준 줄 간격 역산: 1번 칸 y는 192, 줄 간격은 19
+    // 지배자 5(idx 4)의 기준 Y가 268이고 간격이 24이므로, 1번(idx 0)의 기준 Y는 172가 됩니다. (172 + 4 * 24 = 268)
     const baseFields = [
-      { key: 'korName', x: 131, dy: 0, w: 44, h: 12 },
-      { key: 'engName', x: 182, dy: 0, w: 59, h: 15 },
-      { key: 'birth', x: 249, dy: 0, w: 37, h: 10 },
-      { key: 'nationality', x: 293, dy: 0, w: 45, h: 12 }, // 생년월일과 성별 사이
-      { key: 'gender', x: 346, dy: 0, w: 25, h: 13 },
-      { key: 'ownership', x: 380, dy: 0, w: 41, h: 10 },
-      { key: 'checkV', x: 429, dy: -5, w: 15, h: 22 }, // checkV는 5만큼 위로
+      { key: 'korName', x: 131, dy: 0, w: 42, h: 12 },
+      { key: 'engName', x: 179, dy: 0, w: 63, h: 12 },
+      { key: 'birth', x: 249, dy: 0, w: 37, h: 13 },
+      { key: 'nationality', x: 295, dy: 0, w: 41, h: 11 },
+      { key: 'gender', x: 347, dy: 2, w: 22, h: 10 },       // 기준보다 2만큼 아래 (270)
+      { key: 'ownership', x: 378, dy: 0, w: 39, h: 10 },
+      { key: 'checkV', x: 430, dy: -9, w: 20, h: 22 },      // 기준보다 9만큼 위 (259)
     ];
     
     corpOwners.forEach((owner, i) => {
       baseFields.forEach(f => {
         const val = owner[f.key as keyof typeof owner];
         if (val) {
-          const rowBaseY = 192 + i * 19; // 줄 간격 19
+          const rowBaseY = 172 + i * 24; // 줄 간격 24
           const actualY = rowBaseY + f.dy;
           newBoxes.push({
             text: val, x: f.x, y: actualY, width: f.w, height: f.h, fontSize: 11,
@@ -310,7 +310,7 @@ export default function MacroForm({ isCorporateDoc, isShareholderFile, isCorpOwn
           
           <div className="flex flex-col gap-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
             {corpOwners.map((owner, idx) => {
-              const yBase = 191 + idx * 24;
+              const yBase = 172 + idx * 24;
               return (
                 <div key={idx} className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-teal-100 dark:border-teal-800/30">
                   <div className="text-xs font-bold text-gray-600 dark:text-gray-300 mb-2">지배자 {idx + 1} (y: {yBase})</div>
