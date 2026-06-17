@@ -20,9 +20,13 @@ export default function MacroForm({ isCorporateDoc, isShareholderFile, isCorpOwn
     today: "", company: "", address: "", repName: ""
   });
 
-  // 지배자 확인서 전용 상태
-  const [corpOwnerData, setCorpOwnerData] = useState({
-    korName: "", engName: "", birth: "", nationality: "", gender: "", ownership: "", checkV: "V",
+  // 지배자 확인서 전용 상태 (배열로 5줄 관리)
+  const [corpOwners, setCorpOwners] = useState(
+    Array(5).fill(null).map((_, i) => ({ 
+      korName: "", engName: "", birth: "", nationality: "", gender: "", ownership: "", checkV: i === 0 ? "V" : "" 
+    }))
+  );
+  const [corpOwnerCommon, setCorpOwnerCommon] = useState({
     year: "", month: "", day: "", signName: ""
   });
 
@@ -91,22 +95,41 @@ export default function MacroForm({ isCorporateDoc, isShareholderFile, isCorpOwn
 
   const handleCorpOwnerAutoFill = () => {
     const newBoxes: Omit<TextBox, "id">[] = [];
-    const fields = [
-      { key: 'korName', x: 131, y: 192, w: 60, h: 20 },
-      { key: 'engName', x: 179, y: 192, w: 65, h: 20 },
-      { key: 'birth', x: 247, y: 193, w: 60, h: 20 },
-      { key: 'nationality', x: 293, y: 193, w: 60, h: 20 },
-      { key: 'gender', x: 344, y: 194, w: 60, h: 20 },
-      { key: 'ownership', x: 376, y: 195, w: 60, h: 20 },
-      { key: 'checkV', x: 431, y: 190, w: 60, h: 20 },
+    
+    // 각 열의 칸 크기에 딱 맞도록 x, w 최적화 (h: 22)
+    const baseFields = [
+      { key: 'korName', x: 92, w: 86, h: 22 },
+      { key: 'engName', x: 182, w: 68, h: 22 },
+      { key: 'birth', x: 254, w: 56, h: 22 },
+      { key: 'nationality', x: 314, w: 42, h: 22 },
+      { key: 'gender', x: 360, w: 26, h: 22 },
+      { key: 'ownership', x: 390, w: 42, h: 22 },
+      { key: 'checkV', x: 434, w: 15, h: 22 },
+    ];
+    
+    corpOwners.forEach((owner, i) => {
+      baseFields.forEach(f => {
+        const val = owner[f.key as keyof typeof owner];
+        if (val) {
+          const actualY = 191 + i * 24; // 줄 간격 24
+          newBoxes.push({
+            text: val, x: f.x, y: actualY, width: f.w, height: f.h, fontSize: 11,
+            isEdited: true, isNew: true, isTransparent: true, fontFamily: "NotoSansKR",
+            pageIndex: currentPage,
+          });
+        }
+      });
+    });
+
+    const commonFields = [
       { key: 'year', x: 73, y: 620, w: 60, h: 20 },
       { key: 'month', x: 122, y: 620, w: 25, h: 20 },
       { key: 'day', x: 153, y: 623, w: 25, h: 20 },
       { key: 'signName', x: 340, y: 618, w: 109, h: 20 },
     ];
-    
-    fields.forEach(f => {
-      const val = corpOwnerData[f.key as keyof typeof corpOwnerData];
+
+    commonFields.forEach(f => {
+      const val = corpOwnerCommon[f.key as keyof typeof corpOwnerCommon];
       if (val) {
         newBoxes.push({
           text: val, x: f.x, y: f.y, width: f.w, height: f.h, fontSize: 13,
@@ -284,22 +307,50 @@ export default function MacroForm({ isCorporateDoc, isShareholderFile, isCorpOwn
             </button>
           </div>
           
-          <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-teal-100 dark:border-teal-800/30">
-            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3">
-              {[
-                { label: '한글성명', key: 'korName' }, { label: '영문성명', key: 'engName' },
-                { label: '생년월일', key: 'birth' }, { label: '국적', key: 'nationality' },
-                { label: '성별', key: 'gender' }, { label: '지분율', key: 'ownership' },
-                { label: 'V체크', key: 'checkV' }, { label: '작성 년도', key: 'year' },
-                { label: '월', key: 'month' }, { label: '일', key: 'day' }, { label: '서명 성명', key: 'signName' },
-              ].map(f => (
-                <div key={f.key} className="flex flex-col">
-                  <label className="text-[10px] font-semibold text-gray-500 mb-1">{f.label}</label>
-                  <input type="text" className="w-full text-xs px-2 py-1.5 rounded border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 focus:ring-1 focus:ring-teal-500"
-                    value={(corpOwnerData as any)[f.key]} 
-                    onChange={(e) => setCorpOwnerData({ ...corpOwnerData, [f.key]: e.target.value })} />
+          <div className="flex flex-col gap-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+            {corpOwners.map((owner, idx) => {
+              const yBase = 191 + idx * 24;
+              return (
+                <div key={idx} className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-teal-100 dark:border-teal-800/30">
+                  <div className="text-xs font-bold text-gray-600 dark:text-gray-300 mb-2">지배자 {idx + 1} (y: {yBase})</div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+                    {[
+                      { label: '한글성명', key: 'korName' }, { label: '영문성명', key: 'engName' },
+                      { label: '생년월일', key: 'birth' }, { label: '국적', key: 'nationality' },
+                      { label: '성별', key: 'gender' }, { label: '지분율', key: 'ownership' },
+                      { label: 'V체크', key: 'checkV' },
+                    ].map(f => (
+                      <div key={f.key} className="flex flex-col">
+                        <label className="text-[10px] font-semibold text-gray-500 mb-1">{f.label}</label>
+                        <input type="text" className="w-full text-xs px-2 py-1.5 rounded border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 focus:ring-1 focus:ring-teal-500"
+                          value={owner[f.key as keyof typeof owner]} 
+                          onChange={(e) => {
+                            const newOwners = [...corpOwners];
+                            newOwners[idx] = { ...newOwners[idx], [f.key]: e.target.value };
+                            setCorpOwners(newOwners);
+                          }} />
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              ))}
+              );
+            })}
+
+            <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-teal-100 dark:border-teal-800/30">
+              <div className="text-xs font-bold text-gray-600 dark:text-gray-300 mb-2">공통/기타 정보</div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 gap-3">
+                {[
+                  { label: '작성 년도', key: 'year' }, { label: '월', key: 'month' },
+                  { label: '일', key: 'day' }, { label: '서명 성명', key: 'signName' },
+                ].map(f => (
+                  <div key={f.key} className="flex flex-col">
+                    <label className="text-[10px] font-semibold text-gray-500 mb-1">{f.label}</label>
+                    <input type="text" className="w-full text-xs px-2 py-1.5 rounded border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 focus:ring-1 focus:ring-teal-500"
+                      value={(corpOwnerCommon as any)[f.key]} 
+                      onChange={(e) => setCorpOwnerCommon({ ...corpOwnerCommon, [f.key]: e.target.value })} />
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
