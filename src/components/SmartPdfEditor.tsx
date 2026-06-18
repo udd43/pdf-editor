@@ -55,12 +55,12 @@ export default function SmartPdfEditor() {
 
           textContent.items.forEach((item: any) => {
             if (!item.str || item.str.trim() === '') return;
-            const tx = pdfjsLib.Util.transform(viewport.transform, item.transform);
-            const fontSize = Math.sqrt(tx[2] * tx[2] + tx[3] * tx[3]);
+            // 순수 PDF 좌표계 (Transform의 4번째, 5번째 값)
+            const fontSize = Math.sqrt(item.transform[2] * item.transform[2] + item.transform[3] * item.transform[3]);
             pageTexts.push({
               text: item.str,
-              x: tx[4],
-              y: viewport.height - tx[5], // pdf-lib은 좌측 하단이 (0,0) 기준이므로 Y좌표 반전 필요
+              x: item.transform[4],
+              y: item.transform[5], // Baseline Y
               width: item.width,
               height: item.height || fontSize
             });
@@ -99,7 +99,7 @@ export default function SmartPdfEditor() {
           const opList = await page.getOperatorList();
           const pageRects: Rect[] = [];
           
-          let currentTransform = viewport.transform;
+          let currentTransform = [1, 0, 0, 1, 0, 0]; // Identity Matrix (순수 PDF 좌표계)
           let transformStack: number[][] = [];
           
           let lastX: number | null = null;
@@ -148,9 +148,9 @@ export default function SmartPdfEditor() {
               const p1 = applyTransform([args[0], args[1]], currentTransform);
               const p3 = applyTransform([args[0] + args[2], args[1] + args[3]], currentTransform);
               const x = Math.min(p1[0], p3[0]);
+              const y = Math.min(p1[1], p3[1]); // PDF 좌표계이므로 작은 값이 하단(Bottom)
               const w = Math.abs(p3[0] - p1[0]);
               const h = Math.abs(p3[1] - p1[1]);
-              const y = Math.max(p1[1], p3[1]); // 가장 상단 Y (pdfjs는 화면 하단이 Y=0이지만 transform 거치면 화면좌표계가 됨)
               
               if (w > 20 && h > 10 && h < 300) {
                 pageRects.push({ x, y, width: w, height: h });
@@ -204,7 +204,7 @@ export default function SmartPdfEditor() {
                     const hasInternalVLine = vLines.some(v => v.x > x1 + 3 && v.x < x2 - 3 && v.y1 < Math.max(y1, y2) - 3 && v.y2 > Math.min(y1, y2) + 3);
                     
                     if (!hasInternalHLine && !hasInternalVLine) {
-                      pageRects.push({ x: x1, y: Math.max(y1, y2), width: w, height: h }); // 상단 좌표가 더 높은 y값(pdfjs)
+                      pageRects.push({ x: x1, y: Math.min(y1, y2), width: w, height: h }); // PDF 좌표계는 하단 Y 기준
                     }
                   }
                 }
@@ -224,13 +224,7 @@ export default function SmartPdfEditor() {
             if (!isDuplicate) filteredRects.push(rect);
           });
 
-          // pdf-lib 좌표계(좌측하단이 0,0)에 맞게 Y좌표 변환
-          const convertedRects = filteredRects.map(r => ({
-            ...r,
-            y: viewport.height - r.y
-          }));
-
-          pageData.push({ texts: mergedTexts, rects: convertedRects });
+          pageData.push({ texts: mergedTexts, rects: filteredRects });
         }
 
         // 2. pdf-lib로 새로운 PDF(AcroForm) 생성
@@ -251,12 +245,10 @@ export default function SmartPdfEditor() {
 
           // 텍스트를 먼저 폼으로 변환 (원본 텍스트 화이트아웃 처리 후 위에 폼 배치)
           data.texts.forEach(t => {
-            const pdfY = pageHeight - t.y; // pdf-lib의 Y 좌표
-
             // 원본 글씨 하얗게 지우기 (White-out)
             page.drawRectangle({
               x: t.x - 2,
-              y: pdfY - 2,
+              y: t.y - 2,
               width: t.width + 4,
               height: t.height + 4,
               color: rgb(1, 1, 1),
@@ -268,7 +260,7 @@ export default function SmartPdfEditor() {
             textField.setText(t.text!);
             textField.addToPage(page, {
               x: t.x,
-              y: pdfY - 2,
+              y: t.y - 2,
               width: t.width + 10,
               height: t.height + 4,
               font: customFont,
@@ -278,14 +270,11 @@ export default function SmartPdfEditor() {
 
           // 빈칸 폼 변환 (기존 텍스트와 겹치지 않는 박스들만)
           data.rects.forEach(rect => {
-            const pdfY = pageHeight - rect.y - rect.height; // 하단 Y 기준
-            
             const isOverlapping = data.texts.some(t => {
-              const ty = pageHeight - t.y;
               return !(t.x > rect.x + rect.width || 
                        t.x + t.width < rect.x || 
-                       ty > pdfY + rect.height || 
-                       ty + t.height < pdfY);
+                       t.y > rect.y + rect.height || 
+                       t.y + t.height < rect.y);
             });
 
             if (!isOverlapping) {
@@ -293,7 +282,7 @@ export default function SmartPdfEditor() {
               const textField = form.createTextField(fieldName);
               textField.addToPage(page, {
                 x: rect.x + 2,
-                y: pdfY + 2,
+                y: rect.y + 2,
                 width: rect.width - 4,
                 height: rect.height - 4,
                 font: customFont,
