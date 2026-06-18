@@ -98,8 +98,16 @@ export default function SmartPdfEditor() {
           // 연산자에서 빈칸(사각형) 추출
           const opList = await page.getOperatorList();
           const pageRects: Rect[] = [];
+          
           let currentTransform = viewport.transform;
           let transformStack: number[][] = [];
+          
+          let lastX: number | null = null;
+          let lastY: number | null = null;
+          let subpathStartX: number | null = null;
+          let subpathStartY: number | null = null;
+          
+          const segments: {x1: number, y1: number, x2: number, y2: number}[] = [];
 
           const applyTransform = (p: number[], m: number[]) => [
             p[0] * m[0] + p[1] * m[2] + m[4],
@@ -115,26 +123,109 @@ export default function SmartPdfEditor() {
           for (let i = 0; i < opList.fnArray.length; i++) {
             const fn = opList.fnArray[i];
             const args = opList.argsArray[i];
-            if (fn === 10) transformStack.push([...currentTransform]); // save
-            else if (fn === 11 && transformStack.length) currentTransform = transformStack.pop()!; // restore
-            else if (fn === 12) currentTransform = transformMatrix(currentTransform, args); // transform
+            if (fn === 10) { transformStack.push([...currentTransform]); } // save
+            else if (fn === 11 && transformStack.length) { currentTransform = transformStack.pop()!; } // restore
+            else if (fn === 12) { currentTransform = transformMatrix(currentTransform, args); } // transform
+            else if (fn === 13) { // moveTo
+              const p = applyTransform([args[0], args[1]], currentTransform);
+              lastX = p[0]; lastY = p[1];
+              subpathStartX = p[0]; subpathStartY = p[1];
+            }
+            else if (fn === 14) { // lineTo
+              const p = applyTransform([args[0], args[1]], currentTransform);
+              if (lastX !== null && lastY !== null) {
+                segments.push({ x1: lastX, y1: lastY, x2: p[0], y2: p[1] });
+              }
+              lastX = p[0]; lastY = p[1];
+            }
+            else if (fn === 18) { // closePath
+              if (lastX !== null && lastY !== null && subpathStartX !== null && subpathStartY !== null) {
+                segments.push({ x1: lastX, y1: lastY, x2: subpathStartX, y2: subpathStartY });
+                lastX = subpathStartX; lastY = subpathStartY;
+              }
+            }
             else if (fn === 19) { // rectangle
               const p1 = applyTransform([args[0], args[1]], currentTransform);
               const p3 = applyTransform([args[0] + args[2], args[1] + args[3]], currentTransform);
               const x = Math.min(p1[0], p3[0]);
               const w = Math.abs(p3[0] - p1[0]);
               const h = Math.abs(p3[1] - p1[1]);
-              const y = Math.max(p1[1], p3[1]); // 가장 상단 Y (pdfjs 좌표계 기준)
+              const y = Math.max(p1[1], p3[1]); // 가장 상단 Y (pdfjs는 화면 하단이 Y=0이지만 transform 거치면 화면좌표계가 됨)
               
-              // 폭이 너무 넓거나 좁은 것은 배경/테두리로 간주 (일반적인 표의 칸 사이즈 필터)
               if (w > 20 && h > 10 && h < 300) {
                 pageRects.push({ x, y, width: w, height: h });
               }
             }
           }
 
+          // 선 교차점 알고리즘 (Grid Detection)
+          const hLines: {x1: number, x2: number, y: number}[] = [];
+          const vLines: {y1: number, y2: number, x: number}[] = [];
+          
+          segments.forEach(seg => {
+            const x1 = Math.min(seg.x1, seg.x2);
+            const x2 = Math.max(seg.x1, seg.x2);
+            const y1 = Math.min(seg.y1, seg.y2);
+            const y2 = Math.max(seg.y1, seg.y2);
+            
+            if (y2 - y1 < 2) hLines.push({ x1, x2, y: (y1 + y2) / 2 });
+            else if (x2 - x1 < 2) vLines.push({ y1, y2, x: (x1 + x2) / 2 });
+          });
+
+          const uniqueXs = Array.from(new Set(vLines.map(v => Math.round(v.x)))).sort((a, b) => a - b);
+          const uniqueYs = Array.from(new Set(hLines.map(h => Math.round(h.y)))).sort((a, b) => a - b);
+
+          for (let i = 0; i < uniqueXs.length - 1; i++) {
+            for (let j = i + 1; j < uniqueXs.length; j++) {
+              const x1 = uniqueXs[i];
+              const x2 = uniqueXs[j];
+              const w = x2 - x1;
+              if (w < 20) continue;
+
+              const validHLines = hLines.filter(h => h.x1 - 3 <= x1 && h.x2 + 3 >= x2);
+              if (validHLines.length < 2) continue;
+
+              for (let k = 0; k < uniqueYs.length - 1; k++) {
+                for (let m = k + 1; m < uniqueYs.length; m++) {
+                  const y1 = uniqueYs[k];
+                  const y2 = uniqueYs[m];
+                  const h = Math.abs(y2 - y1);
+                  if (h < 10 || h > 300) continue;
+
+                  const hasTop = validHLines.some(hL => Math.abs(hL.y - y1) < 3);
+                  const hasBottom = validHLines.some(hL => Math.abs(hL.y - y2) < 3);
+                  if (!hasTop || !hasBottom) continue;
+
+                  const hasLeft = vLines.some(v => Math.abs(v.x - x1) < 3 && v.y1 - 3 <= Math.min(y1, y2) && v.y2 + 3 >= Math.max(y1, y2));
+                  const hasRight = vLines.some(v => Math.abs(v.x - x2) < 3 && v.y1 - 3 <= Math.min(y1, y2) && v.y2 + 3 >= Math.max(y1, y2));
+                  
+                  if (hasLeft && hasRight) {
+                    const hasInternalHLine = hLines.some(hL => hL.y > Math.min(y1, y2) + 3 && hL.y < Math.max(y1, y2) - 3 && hL.x1 < x2 - 3 && hL.x2 > x1 + 3);
+                    const hasInternalVLine = vLines.some(v => v.x > x1 + 3 && v.x < x2 - 3 && v.y1 < Math.max(y1, y2) - 3 && v.y2 > Math.min(y1, y2) + 3);
+                    
+                    if (!hasInternalHLine && !hasInternalVLine) {
+                      pageRects.push({ x: x1, y: Math.max(y1, y2), width: w, height: h }); // 상단 좌표가 더 높은 y값(pdfjs)
+                    }
+                  }
+                }
+              }
+            }
+          }
+
+          // 중복 사각형(Rectangle + Grid 교차점) 제거
+          const filteredRects: Rect[] = [];
+          pageRects.forEach(rect => {
+            const isDuplicate = filteredRects.some(f => 
+              Math.abs(f.x - rect.x) < 3 && 
+              Math.abs(f.y - rect.y) < 3 && 
+              Math.abs(f.width - rect.width) < 3 && 
+              Math.abs(f.height - rect.height) < 3
+            );
+            if (!isDuplicate) filteredRects.push(rect);
+          });
+
           // pdf-lib 좌표계(좌측하단이 0,0)에 맞게 Y좌표 변환
-          const convertedRects = pageRects.map(r => ({
+          const convertedRects = filteredRects.map(r => ({
             ...r,
             y: viewport.height - r.y
           }));
