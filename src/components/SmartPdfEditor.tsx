@@ -348,8 +348,9 @@ export default function SmartPdfEditor() {
                     fill="none"
                     className="pointer-events-auto cursor-pointer hover:stroke-red-500 hover:stroke-[2px] transition-all"
                     onClick={() => handleDeletePath(i)}
-                    title="클릭하여 선 삭제"
-                  />
+                  >
+                    <title>클릭하여 선 삭제</title>
+                  </path>
                 ))}
               </svg>
               
