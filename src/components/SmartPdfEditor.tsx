@@ -1,36 +1,26 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { UploadCloud, Sparkles, FileText, AlertCircle, Loader2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { UploadCloud, Sparkles, AlertCircle, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import * as pdfjsLib from 'pdfjs-dist';
+import { PDFDocument, rgb } from 'pdf-lib';
+import fontkit from '@pdf-lib/fontkit';
+import { getFontBuffers } from '@/lib/fontCache';
 
-// 워커 설정
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.mjs`;
 
-// 텍스트 블록 인터페이스
-interface TextBlock {
-  id: string;
-  text: string;
+interface Rect {
   x: number;
   y: number;
   width: number;
   height: number;
-  fontSize: number;
-  fontFamily: string;
+  text?: string;
 }
 
 export default function SmartPdfEditor() {
   const [file, setFile] = useState<File | null>(null);
-  const [pdfDoc, setPdfDoc] = useState<pdfjsLib.PDFDocumentProxy | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [numPages, setNumPages] = useState(0);
-  const [scale, setScale] = useState(1.5);
-  
-  const [isParsing, setIsParsing] = useState(false);
-  const [textBlocks, setTextBlocks] = useState<TextBlock[]>([]);
-  const [vectorPaths, setVectorPaths] = useState<string[]>([]);
-  const [pageViewport, setPageViewport] = useState({ width: 800, height: 1131 });
-  
-  // 파일 업로드 처리
+  const [isConverting, setIsConverting] = useState(false);
+  const [statusMsg, setStatusMsg] = useState("");
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = e.target.files?.[0];
     if (selected && selected.type === "application/pdf") {
@@ -40,351 +30,279 @@ export default function SmartPdfEditor() {
     }
   };
 
-  // PDF 문서 로드
   useEffect(() => {
-    if (!file) {
-      setPdfDoc(null);
-      setTextBlocks([]);
-      setVectorPaths([]);
-      return;
-    }
-    const loadPdf = async () => {
+    if (!file) return;
+
+    const convertToAcroForm = async () => {
+      setIsConverting(true);
+      setStatusMsg("PDF 구조 분석 중...");
       try {
-        setIsParsing(true);
-        const buffer = await file.arrayBuffer();
-        const loadingTask = pdfjsLib.getDocument({ data: buffer });
-        const pdf = await loadingTask.promise;
-        setPdfDoc(pdf);
-        setNumPages(pdf.numPages);
-        setCurrentPage(1);
-      } catch (err) {
-        console.error("PDF 로드 에러:", err);
-        toast.error("PDF 문서를 읽을 수 없습니다.");
-        setFile(null);
-        setIsParsing(false);
-      }
-    };
-    loadPdf();
-  }, [file]);
-
-  // (renderPageAndParseText useEffect는 생략됨, 이전 도구 호출에서 수정 완료됨)
-  // 하단 렌더링 컴포넌트 수정
-  const handleDeleteText = (id: string) => {
-    setTextBlocks(prev => prev.filter(b => b.id !== id));
-  };
-
-  const handleDeletePath = (index: number) => {
-    setVectorPaths(prev => prev.filter((_, i) => i !== index));
-  };
-
-  // 페이지 렌더링 및 텍스트 추출 (Phase 2 & 3)
-  useEffect(() => {
-    if (!pdfDoc) return;
-    let isMounted = true;
-    
-    const renderPageAndParseText = async () => {
-      try {
-        setIsParsing(true);
-        const page = await pdfDoc.getPage(currentPage);
-        const viewport = page.getViewport({ scale });
+        const fileBuffer = await file.arrayBuffer();
         
-        // 1. 기존 배경 Canvas 렌더링 코드 완전 제거 (White-out, 캔버스 생성 안 함)
+        // 1. pdfjs-dist로 페이지별 텍스트 및 사각형 데이터 추출
+        const loadingTask = pdfjsLib.getDocument({ data: fileBuffer });
+        const pdfDoc = await loadingTask.promise;
+        const numPages = pdfDoc.numPages;
 
-        // 2. 벡터 그래픽(표, 선, 테두리) 추출 (OperatorList 파싱)
-        const opList = await page.getOperatorList();
-        const paths: string[] = [];
-        let currentPath = "";
-        
-        let transformStack: number[][] = [];
-        let currentTransform = viewport.transform; // [scaleX, skewY, skewX, scaleY, translateX, translateY]
+        const pageData: { texts: Rect[], rects: Rect[] }[] = [];
 
-        const applyTransform = (p: number[], m: number[]) => {
-          return [
+        for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+          const page = await pdfDoc.getPage(pageNum);
+          const viewport = page.getViewport({ scale: 1 }); // 1:1 스케일 (PDF 포인트 기준)
+          
+          const textContent = await page.getTextContent();
+          const pageTexts: Rect[] = [];
+
+          textContent.items.forEach((item: any) => {
+            if (!item.str || item.str.trim() === '') return;
+            const tx = pdfjsLib.Util.transform(viewport.transform, item.transform);
+            const fontSize = Math.sqrt(tx[2] * tx[2] + tx[3] * tx[3]);
+            pageTexts.push({
+              text: item.str,
+              x: tx[4],
+              y: viewport.height - tx[5], // pdf-lib은 좌측 하단이 (0,0) 기준이므로 Y좌표 반전 필요
+              width: item.width,
+              height: item.height || fontSize
+            });
+          });
+
+          // 휴리스틱 라인 묶기
+          const lines: any[] = [];
+          pageTexts.forEach(item => {
+            const match = lines.find(l => Math.abs(l.y - item.y) < 3);
+            if (match) match.items.push(item);
+            else lines.push({ y: item.y, items: [item] });
+          });
+
+          const mergedTexts: Rect[] = [];
+          lines.forEach(line => {
+            line.items.sort((a: any, b: any) => a.x - b.x);
+            let mergedText = "";
+            let startX = line.items[0].x;
+            let totalWidth = 0;
+            let maxHeight = 0;
+
+            line.items.forEach((item: any, idx: number) => {
+              if (idx > 0) {
+                const prev = line.items[idx - 1];
+                const gap = item.x - (prev.x + prev.width);
+                if (gap > prev.height * 0.3) mergedText += " ";
+              }
+              mergedText += item.text;
+              totalWidth = (item.x + item.width) - startX;
+              if (item.height > maxHeight) maxHeight = item.height;
+            });
+            mergedTexts.push({ text: mergedText, x: startX, y: line.y, width: totalWidth, height: maxHeight });
+          });
+
+          // 연산자에서 빈칸(사각형) 추출
+          const opList = await page.getOperatorList();
+          const pageRects: Rect[] = [];
+          let currentTransform = viewport.transform;
+          let transformStack: number[][] = [];
+
+          const applyTransform = (p: number[], m: number[]) => [
             p[0] * m[0] + p[1] * m[2] + m[4],
             p[0] * m[1] + p[1] * m[3] + m[5]
           ];
-        };
-
-        const transformMatrix = (m1: number[], m2: number[]) => {
-          return [
-            m1[0] * m2[0] + m1[2] * m2[1],
-            m1[1] * m2[0] + m1[3] * m2[1],
-            m1[0] * m2[2] + m1[2] * m2[3],
-            m1[1] * m2[2] + m1[3] * m2[3],
-            m1[0] * m2[4] + m1[2] * m2[5] + m1[4],
-            m1[1] * m2[4] + m1[3] * m2[5] + m1[5]
-          ];
-        };
-
-        const OPS = {
-          save: 10, restore: 11, transform: 12, moveTo: 13, lineTo: 14, closePath: 18,
-          rectangle: 19, stroke: 20, fill: 22, eoFill: 23, fillStroke: 24, closeStroke: 21
-        };
-
-        for (let i = 0; i < opList.fnArray.length; i++) {
-          const fn = opList.fnArray[i];
-          const args = opList.argsArray[i];
           
-          switch(fn) {
-            case OPS.save:
-              transformStack.push([...currentTransform]);
-              break;
-            case OPS.restore:
-              if (transformStack.length > 0) {
-                currentTransform = transformStack.pop()!;
-              }
-              break;
-            case OPS.transform:
-              currentTransform = transformMatrix(currentTransform, args);
-              break;
-            case OPS.moveTo: {
-              const [x, y] = applyTransform([args[0], args[1]], currentTransform);
-              currentPath += `M ${x} ${y} `;
-              break;
-            }
-            case OPS.lineTo: {
-              const [x, y] = applyTransform([args[0], args[1]], currentTransform);
-              currentPath += `L ${x} ${y} `;
-              break;
-            }
-            case OPS.rectangle: {
+          const transformMatrix = (m1: number[], m2: number[]) => [
+            m1[0] * m2[0] + m1[2] * m2[1], m1[1] * m2[0] + m1[3] * m2[1],
+            m1[0] * m2[2] + m1[2] * m2[3], m1[1] * m2[2] + m1[3] * m2[3],
+            m1[0] * m2[4] + m1[2] * m2[5] + m1[4], m1[1] * m2[4] + m1[3] * m2[5] + m1[5]
+          ];
+
+          for (let i = 0; i < opList.fnArray.length; i++) {
+            const fn = opList.fnArray[i];
+            const args = opList.argsArray[i];
+            if (fn === 10) transformStack.push([...currentTransform]); // save
+            else if (fn === 11 && transformStack.length) currentTransform = transformStack.pop()!; // restore
+            else if (fn === 12) currentTransform = transformMatrix(currentTransform, args); // transform
+            else if (fn === 19) { // rectangle
               const p1 = applyTransform([args[0], args[1]], currentTransform);
-              const p2 = applyTransform([args[0] + args[2], args[1]], currentTransform);
               const p3 = applyTransform([args[0] + args[2], args[1] + args[3]], currentTransform);
-              const p4 = applyTransform([args[0], args[1] + args[3]], currentTransform);
-              currentPath += `M ${p1[0]} ${p1[1]} L ${p2[0]} ${p2[1]} L ${p3[0]} ${p3[1]} L ${p4[0]} ${p4[1]} Z `;
-              break;
-            }
-            case OPS.closePath:
-              currentPath += "Z ";
-              break;
-            case OPS.stroke:
-            case OPS.fill:
-            case OPS.eoFill:
-            case OPS.fillStroke:
-            case OPS.closeStroke:
-              if (currentPath.trim() !== "") {
-                paths.push(currentPath);
-                currentPath = "";
+              const x = Math.min(p1[0], p3[0]);
+              const w = Math.abs(p3[0] - p1[0]);
+              const h = Math.abs(p3[1] - p1[1]);
+              const y = Math.max(p1[1], p3[1]); // 가장 상단 Y (pdfjs 좌표계 기준)
+              
+              // 폭이 너무 넓거나 좁은 것은 배경/테두리로 간주 (일반적인 표의 칸 사이즈 필터)
+              if (w > 20 && h > 10 && h < 300) {
+                pageRects.push({ x, y, width: w, height: h });
               }
-              break;
-          }
-        }
-
-        // 3. 텍스트 추출 (TextContent) - 기존 로직 유지
-        const textContent = await page.getTextContent();
-        const rawItems: any[] = [];
-        
-        textContent.items.forEach((item: any) => {
-          if (!item.str || item.str.trim() === '') return;
-          const tx = pdfjsLib.Util.transform(viewport.transform, item.transform);
-          const fontSize = Math.sqrt(tx[2] * tx[2] + tx[3] * tx[3]);
-          rawItems.push({
-            text: item.str,
-            x: tx[4],
-            y: tx[5] - fontSize,
-            width: item.width * scale,
-            height: item.height * scale,
-            fontSize: fontSize,
-            fontFamily: item.fontName || 'sans-serif'
-          });
-        });
-
-        const lines: any[] = [];
-        rawItems.forEach(item => {
-          const matchingLine = lines.find(line => Math.abs(line.y - item.y) < 3);
-          if (matchingLine) {
-            matchingLine.items.push(item);
-          } else {
-            lines.push({ y: item.y, items: [item] });
-          }
-        });
-
-        const blocks: TextBlock[] = [];
-        let blockId = 0;
-
-        lines.forEach(line => {
-          line.items.sort((a: any, b: any) => a.x - b.x);
-          let mergedText = "";
-          let startX = line.items[0].x;
-          let totalWidth = 0;
-          let maxHeight = 0;
-          let maxFontSize = 0;
-
-          line.items.forEach((item: any, idx: number) => {
-            if (idx > 0) {
-              const prev = line.items[idx - 1];
-              const gap = item.x - (prev.x + prev.width);
-              if (gap > prev.fontSize * 0.3) mergedText += " ";
             }
-            mergedText += item.text;
-            totalWidth = (item.x + item.width) - startX;
-            if (item.height > maxHeight) maxHeight = item.height;
-            if (item.fontSize > maxFontSize) maxFontSize = item.fontSize;
-          });
+          }
 
-          blocks.push({
-            id: `block-${blockId++}`,
-            text: mergedText,
-            x: startX,
-            y: line.y,
-            width: totalWidth,
-            height: maxHeight,
-            fontSize: maxFontSize,
-            fontFamily: line.items[0].fontFamily
-          });
-        });
+          // pdf-lib 좌표계(좌측하단이 0,0)에 맞게 Y좌표 변환
+          const convertedRects = pageRects.map(r => ({
+            ...r,
+            y: viewport.height - r.y
+          }));
 
-        if (isMounted) {
-          setTextBlocks(blocks);
-          // 새로 추출한 SVG Path 저장 (임시로 canvasRef 대신 쓰기 위해 state 확장 필요)
-          setVectorPaths(paths);
-          setPageViewport({ width: viewport.width, height: viewport.height });
-          setIsParsing(false);
+          pageData.push({ texts: mergedTexts, rects: convertedRects });
         }
+
+        // 2. pdf-lib로 새로운 PDF(AcroForm) 생성
+        setStatusMsg("입력 가능한 스마트 폼(AcroForm) 생성 중...");
+        const libDoc = await PDFDocument.load(fileBuffer);
+        libDoc.registerFontkit(fontkit);
+        
+        const fontBuffers = await getFontBuffers();
+        const customFont = await libDoc.embedFont(fontBuffers.NotoSansKR || fontBuffers.NanumMyeongjo!);
+        
+        const form = libDoc.getForm();
+        let fieldCounter = 0;
+
+        for (let i = 0; i < numPages; i++) {
+          const page = libDoc.getPage(i);
+          const { height: pageHeight } = page.getSize();
+          const data = pageData[i];
+
+          // 텍스트를 먼저 폼으로 변환 (원본 텍스트 화이트아웃 처리 후 위에 폼 배치)
+          data.texts.forEach(t => {
+            const pdfY = pageHeight - t.y; // pdf-lib의 Y 좌표
+
+            // 원본 글씨 하얗게 지우기 (White-out)
+            page.drawRectangle({
+              x: t.x - 2,
+              y: pdfY - 2,
+              width: t.width + 4,
+              height: t.height + 4,
+              color: rgb(1, 1, 1),
+            });
+
+            // 입력 폼 필드 생성
+            const fieldName = `text_field_${fieldCounter++}`;
+            const textField = form.createTextField(fieldName);
+            textField.setText(t.text!);
+            textField.addToPage(page, {
+              x: t.x,
+              y: pdfY - 2,
+              width: t.width + 10,
+              height: t.height + 4,
+              font: customFont,
+            });
+            textField.enableMultiline();
+          });
+
+          // 빈칸 폼 변환 (기존 텍스트와 겹치지 않는 박스들만)
+          data.rects.forEach(rect => {
+            const pdfY = pageHeight - rect.y - rect.height; // 하단 Y 기준
+            
+            const isOverlapping = data.texts.some(t => {
+              const ty = pageHeight - t.y;
+              return !(t.x > rect.x + rect.width || 
+                       t.x + t.width < rect.x || 
+                       ty > pdfY + rect.height || 
+                       ty + t.height < pdfY);
+            });
+
+            if (!isOverlapping) {
+              const fieldName = `empty_cell_${fieldCounter++}`;
+              const textField = form.createTextField(fieldName);
+              textField.addToPage(page, {
+                x: rect.x + 2,
+                y: pdfY + 2,
+                width: rect.width - 4,
+                height: rect.height - 4,
+                font: customFont,
+              });
+              textField.enableMultiline();
+            }
+          });
+        }
+
+        setStatusMsg("파일 다운로드 중...");
+        const pdfBytes = await libDoc.save();
+        const blob = new Blob([pdfBytes], { type: "application/pdf" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        
+        let newName = file.name;
+        if (newName.toLowerCase().endsWith(".pdf")) newName = newName.slice(0, -4);
+        link.download = `${newName}_스마트입력.pdf`;
+        
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        
+        toast.success("스마트 입력 폼(AcroForm)으로 변환되었습니다!");
+        setFile(null); // 초기화
       } catch (err) {
-        console.error("문서 파싱 에러:", err);
-        if (isMounted) setIsParsing(false);
+        console.error("변환 오류:", err);
+        toast.error("변환에 실패했습니다.");
+      } finally {
+        setIsConverting(false);
       }
     };
-    
-    renderPageAndParseText();
-    return () => { isMounted = false; };
-  }, [pdfDoc, currentPage, scale]);
+
+    convertToAcroForm();
+  }, [file]);
 
   return (
     <div className="w-full max-w-6xl mx-auto flex flex-col min-h-[80vh]">
-      {!file ? (
-        <div className="flex flex-col items-center justify-center flex-1">
-          <div className="text-center mb-10">
-            <div className="inline-flex items-center justify-center p-3 bg-amber-100 text-amber-600 rounded-2xl mb-4">
-              <Sparkles className="w-8 h-8" />
-            </div>
-            <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white mb-4 tracking-tight">
-              스마트 편집 <span className="text-amber-500">Beta</span>
-            </h1>
-            <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-              PDF 문서의 구조를 스캔하여 마치 워드(Word)처럼 내용과 표를 클릭하여 바로 수정할 수 있습니다.
-            </p>
-            <div className="flex items-center justify-center gap-2 mt-4 text-sm text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-4 py-2 rounded-full font-medium">
-              <AlertCircle className="w-4 h-4" />
-              <span>디지털(컴퓨터 생성) PDF 전용 기능입니다. (스캔본/이미지는 지원하지 않습니다)</span>
+      <div className="flex flex-col items-center justify-center flex-1">
+        {isConverting ? (
+          <div className="flex flex-col items-center justify-center space-y-6">
+            <Loader2 className="w-16 h-16 animate-spin text-amber-500" />
+            <div className="text-center">
+              <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">자동 변환 중입니다</h2>
+              <p className="text-gray-500 dark:text-gray-400 font-medium">{statusMsg}</p>
             </div>
           </div>
-
-          <label
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={(e) => {
-              e.preventDefault();
-              const dropped = e.dataTransfer.files[0];
-              if (dropped && dropped.type === "application/pdf") {
-                setFile(dropped);
-              } else if (dropped) {
-                toast.error("PDF 파일만 업로드 가능합니다.");
-              }
-            }}
-            className="w-full max-w-2xl aspect-video flex flex-col items-center justify-center border-3 border-dashed border-gray-300 dark:border-gray-700 hover:border-amber-400 dark:hover:border-amber-500 rounded-3xl bg-white dark:bg-gray-800/50 hover:bg-amber-50/50 dark:hover:bg-amber-900/10 transition-all cursor-pointer group shadow-sm"
-          >
-            <div className="p-5 bg-amber-50 dark:bg-amber-900/30 text-amber-500 rounded-full mb-6 group-hover:scale-110 group-hover:bg-amber-100 transition-all duration-300">
-              <UploadCloud className="w-10 h-10" />
-            </div>
-            <p className="text-xl font-bold text-gray-700 dark:text-gray-200 mb-2">
-              PDF 파일을 이곳에 놓거나 클릭하여 업로드
-            </p>
-            <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">
-              최대 20MB 지원
-            </p>
-            <input
-              type="file"
-              className="hidden"
-              accept="application/pdf"
-              onChange={handleFileChange}
-            />
-          </label>
-        </div>
-      ) : (
-        <div className="flex flex-col flex-1 bg-[#F9F6ED] dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-          {/* 에디터 툴바 영역 */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shrink-0">
-            <div className="flex items-center gap-3">
-              <FileText className="w-5 h-5 text-amber-500" />
-              <span className="font-semibold text-gray-800 dark:text-gray-200 truncate max-w-sm">
-                {file.name}
-              </span>
-              <span className="text-xs px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-500 rounded-md">
-                페이지 {currentPage} / {numPages || 1}
-              </span>
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setFile(null)}
-                className="text-sm px-4 py-2 bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600 rounded-lg font-medium transition-colors"
-              >
-                닫기
-              </button>
-            </div>
-          </div>
-          
-          {/* 파싱 및 편집 캔버스 영역 */}
-          <div className="flex-1 relative overflow-auto flex justify-center p-8 bg-gray-200/50 dark:bg-gray-900 custom-scrollbar">
-            {isParsing ? (
-              <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
-                <Loader2 className="w-10 h-10 animate-spin text-amber-500 mb-4" />
-                <p className="text-gray-700 dark:text-gray-300 font-bold text-lg">문서 구조를 분석하고 있습니다...</p>
-                <p className="text-gray-500 text-sm mt-2">텍스트와 레이아웃을 파싱 중입니다.</p>
+        ) : (
+          <>
+            <div className="text-center mb-10">
+              <div className="inline-flex items-center justify-center p-3 bg-amber-100 text-amber-600 rounded-2xl mb-4">
+                <Sparkles className="w-8 h-8" />
               </div>
-            ) : null}
-
-            {/* 실제 렌더링 컨테이너 */}
-            <div className="relative shadow-xl bg-white" style={{ width: pageViewport.width, height: pageViewport.height }}>
-              {/* 순수 SVG 벡터 레이어 (표, 선, 도형 등) */}
-              <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ zIndex: 1 }}>
-                {vectorPaths.map((d, i) => (
-                  <path 
-                    key={`path-${i}`} 
-                    d={d} 
-                    stroke="rgba(0,0,0,0.8)" 
-                    strokeWidth="1" 
-                    fill="none"
-                    className="pointer-events-auto cursor-pointer hover:stroke-red-500 hover:stroke-[2px] transition-all"
-                    onClick={() => handleDeletePath(i)}
-                  >
-                    <title>클릭하여 선 삭제</title>
-                  </path>
-                ))}
-              </svg>
-              
-              {/* 편집 가능한 오버레이 레이어 (순수 텍스트/HTML) */}
-              <div className="absolute inset-0" style={{ zIndex: 2 }}>
-                {textBlocks.map(block => (
-                  <div
-                    key={block.id}
-                    contentEditable
-                    suppressContentEditableWarning
-                    className="absolute outline-none border border-transparent hover:border-amber-400 focus:border-amber-500 focus:bg-amber-50/50 focus:shadow-md transition-colors whitespace-nowrap overflow-visible cursor-text"
-                    style={{
-                      left: block.x,
-                      top: block.y,
-                      fontSize: `${block.fontSize}px`,
-                      fontFamily: block.fontFamily,
-                      minWidth: block.width > 0 ? block.width : 'auto',
-                      lineHeight: 1,
-                      color: 'black'
-                    }}
-                    onKeyDown={(e) => {
-                      if ((e.key === 'Backspace' || e.key === 'Delete') && e.currentTarget.textContent === '') {
-                        handleDeleteText(block.id);
-                      }
-                    }}
-                  >
-                    {block.text}
-                  </div>
-                ))}
+              <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white mb-4 tracking-tight">
+                스마트 편집기 <span className="text-amber-500">Beta</span>
+              </h1>
+              <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+                PDF를 업로드하면 내용과 빈칸 표를 모두 분석하여<br/>
+                <b>클릭해서 바로 입력할 수 있는 새로운 인터랙티브 폼(AcroForm) PDF</b>로 즉시 변환해 드립니다.
+              </p>
+              <div className="flex items-center justify-center gap-2 mt-4 text-sm text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-4 py-2 rounded-full font-medium">
+                <AlertCircle className="w-4 h-4" />
+                <span>업로드 즉시 변환된 파일이 다운로드됩니다. (웹 에디터 화면 없음)</span>
               </div>
             </div>
-          </div>
-        </div>
-      )}
+
+            <label
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => {
+                e.preventDefault();
+                const dropped = e.dataTransfer.files[0];
+                if (dropped && dropped.type === "application/pdf") {
+                  setFile(dropped);
+                } else if (dropped) {
+                  toast.error("PDF 파일만 업로드 가능합니다.");
+                }
+              }}
+              className="w-full max-w-2xl aspect-video flex flex-col items-center justify-center border-3 border-dashed border-gray-300 dark:border-gray-700 hover:border-amber-400 dark:hover:border-amber-500 rounded-3xl bg-white dark:bg-gray-800/50 hover:bg-amber-50/50 dark:hover:bg-amber-900/10 transition-all cursor-pointer group shadow-sm"
+            >
+              <div className="p-5 bg-amber-50 dark:bg-amber-900/30 text-amber-500 rounded-full mb-6 group-hover:scale-110 group-hover:bg-amber-100 transition-all duration-300">
+                <UploadCloud className="w-10 h-10" />
+              </div>
+              <p className="text-xl font-bold text-gray-700 dark:text-gray-200 mb-2">
+                여기에 PDF 파일을 놓으세요
+              </p>
+              <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">
+                즉시 변환 시작 (최대 20MB)
+              </p>
+              <input
+                type="file"
+                className="hidden"
+                accept="application/pdf"
+                onChange={handleFileChange}
+              />
+            </label>
+          </>
+        )}
+      </div>
     </div>
   );
 }
