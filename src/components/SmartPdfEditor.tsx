@@ -40,7 +40,7 @@ export default function SmartPdfEditor() {
     }
   };
 
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+  const handleDrop = (e: React.DragEvent<HTMLLabelElement>) => {
     e.preventDefault();
     const dropped = e.dataTransfer.files[0];
     if (dropped && dropped.type === "application/pdf") {
