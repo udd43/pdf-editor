@@ -234,15 +234,26 @@ export default function SmartPdfEditor() {
         
         const fontBuffers = await getFontBuffers();
         let customFont: any;
-        if (fontBuffers.NotoSansKR) {
-          customFont = await libDoc.embedFont(fontBuffers.NotoSansKR);
-        } else if (fontBuffers.NanumMyeongjo) {
-          customFont = await libDoc.embedFont(fontBuffers.NanumMyeongjo);
-        } else if (fontBuffers.Jua) {
-          customFont = await libDoc.embedFont(fontBuffers.Jua);
-        } else {
-          // 모든 커스텀 폰트 로드 실패 시 기본 내장 폰트 사용 (영문만 지원)
+        let isKoreanFont = false;
+        // 용량이 작은 폰트부터 시도 (Jua 2MB → NanumMyeongjo 3MB → NotoSansKR 16MB)
+        try {
+          if (fontBuffers.Jua) {
+            customFont = await libDoc.embedFont(fontBuffers.Jua);
+            isKoreanFont = true;
+          } else if (fontBuffers.NanumMyeongjo) {
+            customFont = await libDoc.embedFont(fontBuffers.NanumMyeongjo);
+            isKoreanFont = true;
+          } else if (fontBuffers.NotoSansKR) {
+            customFont = await libDoc.embedFont(fontBuffers.NotoSansKR);
+            isKoreanFont = true;
+          } else {
+            customFont = await libDoc.embedFont(StandardFonts.Helvetica);
+            isKoreanFont = false;
+          }
+        } catch (fontErr) {
+          console.warn("폰트 임베드 실패, Helvetica 폴백:", fontErr);
           customFont = await libDoc.embedFont(StandardFonts.Helvetica);
+          isKoreanFont = false;
         }
         
         const form = libDoc.getForm();
@@ -271,7 +282,14 @@ export default function SmartPdfEditor() {
             const fieldName = `text_field_${runId}_${fieldCounter++}`;
             try {
               const textField = form.createTextField(fieldName);
-              textField.setText(t.text || '');
+              // 한글 폰트가 아니면 setText 시 한글 인코딩 에러 발생 → 빈 폼만 생성
+              if (isKoreanFont && t.text) {
+                try {
+                  textField.setText(t.text);
+                } catch {
+                  // 인코딩 불가능한 글자 포함 시 빈 폼으로 처리
+                }
+              }
               textField.addToPage(page, {
                 x: t.x,
                 y: t.y - 2,
@@ -279,7 +297,8 @@ export default function SmartPdfEditor() {
                 height: Math.max(t.height + 4, 10),
                 font: customFont,
               });
-              textField.enableMultiline();
+              try { textField.enableMultiline(); } catch {}
+              try { textField.updateAppearances(customFont); } catch {}
             } catch (e) {
               console.warn(`TextField 생성 실패 (${fieldName}):`, e);
             }
@@ -308,7 +327,7 @@ export default function SmartPdfEditor() {
                   height: Math.max(rect.height - 4, 10),
                   font: customFont,
                 });
-                textField.enableMultiline();
+                try { textField.enableMultiline(); } catch {}
               } catch (e) {
                 console.warn(`Empty Cell 폼 생성 실패 (${fieldName}):`, e);
               }
