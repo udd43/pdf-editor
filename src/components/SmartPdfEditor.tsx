@@ -40,16 +40,6 @@ export default function SmartPdfEditor() {
     }
   };
 
-  const handleDrop = (e: React.DragEvent<HTMLLabelElement>) => {
-    e.preventDefault();
-    const dropped = e.dataTransfer.files[0];
-    if (dropped && dropped.type === "application/pdf") {
-      setFile(dropped);
-    } else if (dropped) {
-      toast.error("PDF 파일만 업로드 가능합니다.");
-    }
-  };
-
   // PDF 문서 로드
   useEffect(() => {
     if (!file) {
@@ -204,7 +194,15 @@ export default function SmartPdfEditor() {
 
           <label
             onDragOver={(e) => e.preventDefault()}
-            onDrop={handleDrop}
+            onDrop={(e) => {
+              e.preventDefault();
+              const dropped = e.dataTransfer.files[0];
+              if (dropped && dropped.type === "application/pdf") {
+                setFile(dropped);
+              } else if (dropped) {
+                toast.error("PDF 파일만 업로드 가능합니다.");
+              }
+            }}
             className="w-full max-w-2xl aspect-video flex flex-col items-center justify-center border-3 border-dashed border-gray-300 dark:border-gray-700 hover:border-amber-400 dark:hover:border-amber-500 rounded-3xl bg-white dark:bg-gray-800/50 hover:bg-amber-50/50 dark:hover:bg-amber-900/10 transition-all cursor-pointer group shadow-sm"
           >
             <div className="p-5 bg-amber-50 dark:bg-amber-900/30 text-amber-500 rounded-full mb-6 group-hover:scale-110 group-hover:bg-amber-100 transition-all duration-300">
