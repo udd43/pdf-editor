@@ -233,7 +233,7 @@ export default function SmartPdfEditor() {
         libDoc.registerFontkit(fontkit);
         
         const fontBuffers = await getFontBuffers();
-        let customFont;
+        let customFont: any;
         if (fontBuffers.NotoSansKR) {
           customFont = await libDoc.embedFont(fontBuffers.NotoSansKR);
         } else if (fontBuffers.NanumMyeongjo) {
