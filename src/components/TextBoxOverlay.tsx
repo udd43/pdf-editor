@@ -34,7 +34,6 @@ const TextBoxOverlay: React.FC<TextBoxOverlayProps> = ({
   onFontFamilyChange,
 }) => {
   const [isEditMode, setIsEditMode] = useState(false);
-  const [copied, setCopied] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // 외부 클릭 시 편집 모드 해제
@@ -63,15 +62,6 @@ const TextBoxOverlay: React.FC<TextBoxOverlayProps> = ({
     }, 0);
   }, [onSelect]);
 
-  const handleCopyCoords = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    const str = `x: ${Math.round(box.x)}, y: ${Math.round(box.y)}, w: ${Math.round(box.width)}, h: ${Math.round(box.height)}`;
-    navigator.clipboard.writeText(str).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    });
-  }, [box.x, box.y, box.width, box.height]);
-
   return (
     <div
       className={`absolute group transition-[box-shadow,transform,opacity] duration-150 ${isSelected ? 'ring-2 ring-blue-500 ring-offset-1' : ''} ${isDragging ? 'shadow-2xl scale-[1.02] opacity-90' : ''}`}
@@ -92,13 +82,6 @@ const TextBoxOverlay: React.FC<TextBoxOverlayProps> = ({
     >
       {/* 상단 컨트롤 바 */}
       <div className="absolute -top-8 left-0 flex flex-nowrap w-max items-center gap-0.5 bg-white rounded-lg shadow-md border px-1 py-0.5 opacity-0 group-hover:opacity-100 transition-opacity z-30">
-        <button
-          onClick={handleCopyCoords}
-          className="text-[10px] font-mono font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 px-1.5 py-0.5 rounded border border-blue-200 mr-1 select-none whitespace-nowrap transition-colors cursor-pointer"
-          title="클릭하여 좌표 복사"
-        >
-          {copied ? "복사완료!" : `x:${Math.round(box.x)} y:${Math.round(box.y)} w:${Math.round(box.width)} h:${Math.round(box.height)}`}
-        </button>
         <select
           value={box.fontFamily || "NotoSansKR"}
           onChange={(e) => onFontFamilyChange(box.id, e.target.value)}
