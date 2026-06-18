@@ -158,6 +158,19 @@ export default function SmartPdfEditor() {
           });
         });
 
+        // 4차: 캔버스에 렌더링된 원본 글씨 지우기 (White-out)
+        const canvas = canvasRef.current;
+        if (canvas) {
+          const context = canvas.getContext("2d");
+          if (context) {
+            context.fillStyle = "white";
+            blocks.forEach(block => {
+              // 위아래로 약간의 여백을 두어 깔끔하게 덮기
+              context.fillRect(block.x - 1, block.y - 1, block.width + 2, block.height + 2);
+            });
+          }
+        }
+
         if (isMounted) {
           setTextBlocks(blocks);
           setIsParsing(false);
@@ -257,8 +270,8 @@ export default function SmartPdfEditor() {
 
             {/* 실제 렌더링 컨테이너 */}
             <div className="relative shadow-xl bg-white" style={{ width: canvasRef.current?.width || 800, height: canvasRef.current?.height || 1131 }}>
-              {/* 원본 PDF 렌더링 캔버스 (추후 텍스트만 가리는 필터 추가 가능) */}
-              <canvas ref={canvasRef} className="absolute inset-0 w-full h-full opacity-30" />
+              {/* 원본 PDF 렌더링 캔버스 (추출된 텍스트 위치는 지워져서 렌더링됨) */}
+              <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />
               
               {/* 편집 가능한 오버레이 레이어 */}
               <div className="absolute inset-0 z-10">
