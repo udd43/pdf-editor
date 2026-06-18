@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { UploadCloud, Sparkles, AlertCircle, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import * as pdfjsLib from 'pdfjs-dist';
-import { PDFDocument, rgb } from 'pdf-lib';
+import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import fontkit from '@pdf-lib/fontkit';
 import { getFontBuffers } from '@/lib/fontCache';
 
@@ -238,11 +238,11 @@ export default function SmartPdfEditor() {
           customFont = await libDoc.embedFont(fontBuffers.NotoSansKR);
         } else if (fontBuffers.NanumMyeongjo) {
           customFont = await libDoc.embedFont(fontBuffers.NanumMyeongjo);
+        } else if (fontBuffers.Jua) {
+          customFont = await libDoc.embedFont(fontBuffers.Jua);
         } else {
-          // 폰트 로드 완전 실패 시 기본 폰트로 폴백 (영문만 지원됨)
-          import('pdf-lib').then(async (pdfLib) => {
-            customFont = await libDoc.embedFont(pdfLib.StandardFonts.Helvetica);
-          });
+          // 모든 커스텀 폰트 로드 실패 시 기본 내장 폰트 사용 (영문만 지원)
+          customFont = await libDoc.embedFont(StandardFonts.Helvetica);
         }
         
         const form = libDoc.getForm();
