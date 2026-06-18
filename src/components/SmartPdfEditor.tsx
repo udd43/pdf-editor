@@ -39,8 +39,8 @@ export default function SmartPdfEditor() {
       try {
         const fileBuffer = await file.arrayBuffer();
         
-        // 1. pdfjs-dist로 페이지별 텍스트 및 사각형 데이터 추출
-        const loadingTask = pdfjsLib.getDocument({ data: fileBuffer });
+        // 1. pdfjs-dist로 페이지별 텍스트 및 사각형 데이터 추출 (ArrayBuffer Detached 방지를 위해 slice본 사용)
+        const loadingTask = pdfjsLib.getDocument({ data: fileBuffer.slice(0) });
         const pdfDoc = await loadingTask.promise;
         const numPages = pdfDoc.numPages;
 
@@ -229,13 +229,24 @@ export default function SmartPdfEditor() {
 
         // 2. pdf-lib로 새로운 PDF(AcroForm) 생성
         setStatusMsg("입력 가능한 스마트 폼(AcroForm) 생성 중...");
-        const libDoc = await PDFDocument.load(fileBuffer);
+        const libDoc = await PDFDocument.load(fileBuffer.slice(0));
         libDoc.registerFontkit(fontkit);
         
         const fontBuffers = await getFontBuffers();
-        const customFont = await libDoc.embedFont(fontBuffers.NotoSansKR || fontBuffers.NanumMyeongjo!);
+        let customFont;
+        if (fontBuffers.NotoSansKR) {
+          customFont = await libDoc.embedFont(fontBuffers.NotoSansKR);
+        } else if (fontBuffers.NanumMyeongjo) {
+          customFont = await libDoc.embedFont(fontBuffers.NanumMyeongjo);
+        } else {
+          // 폰트 로드 완전 실패 시 기본 폰트로 폴백 (영문만 지원됨)
+          import('pdf-lib').then(async (pdfLib) => {
+            customFont = await libDoc.embedFont(pdfLib.StandardFonts.Helvetica);
+          });
+        }
         
         const form = libDoc.getForm();
+        const runId = Date.now(); // 중복 필드 이름 방지
         let fieldCounter = 0;
 
         for (let i = 0; i < numPages; i++) {
@@ -245,32 +256,41 @@ export default function SmartPdfEditor() {
 
           // 텍스트를 먼저 폼으로 변환 (원본 텍스트 화이트아웃 처리 후 위에 폼 배치)
           data.texts.forEach(t => {
+            if (isNaN(t.x) || isNaN(t.y) || isNaN(t.width) || isNaN(t.height)) return;
+
             // 원본 글씨 하얗게 지우기 (White-out)
             page.drawRectangle({
               x: t.x - 2,
               y: t.y - 2,
-              width: t.width + 4,
-              height: t.height + 4,
+              width: Math.max(t.width + 4, 10),
+              height: Math.max(t.height + 4, 10),
               color: rgb(1, 1, 1),
             });
 
             // 입력 폼 필드 생성
-            const fieldName = `text_field_${fieldCounter++}`;
-            const textField = form.createTextField(fieldName);
-            textField.setText(t.text!);
-            textField.addToPage(page, {
-              x: t.x,
-              y: t.y - 2,
-              width: t.width + 10,
-              height: t.height + 4,
-              font: customFont,
-            });
-            textField.enableMultiline();
+            const fieldName = `text_field_${runId}_${fieldCounter++}`;
+            try {
+              const textField = form.createTextField(fieldName);
+              textField.setText(t.text || '');
+              textField.addToPage(page, {
+                x: t.x,
+                y: t.y - 2,
+                width: Math.max(t.width + 10, 20),
+                height: Math.max(t.height + 4, 10),
+                font: customFont,
+              });
+              textField.enableMultiline();
+            } catch (e) {
+              console.warn(`TextField 생성 실패 (${fieldName}):`, e);
+            }
           });
 
           // 빈칸 폼 변환 (기존 텍스트와 겹치지 않는 박스들만)
           data.rects.forEach(rect => {
+            if (isNaN(rect.x) || isNaN(rect.y) || isNaN(rect.width) || isNaN(rect.height)) return;
+
             const isOverlapping = data.texts.some(t => {
+              if (isNaN(t.x) || isNaN(t.y)) return false;
               return !(t.x > rect.x + rect.width || 
                        t.x + t.width < rect.x || 
                        t.y > rect.y + rect.height || 
@@ -278,16 +298,20 @@ export default function SmartPdfEditor() {
             });
 
             if (!isOverlapping) {
-              const fieldName = `empty_cell_${fieldCounter++}`;
-              const textField = form.createTextField(fieldName);
-              textField.addToPage(page, {
-                x: rect.x + 2,
-                y: rect.y + 2,
-                width: rect.width - 4,
-                height: rect.height - 4,
-                font: customFont,
-              });
-              textField.enableMultiline();
+              const fieldName = `empty_cell_${runId}_${fieldCounter++}`;
+              try {
+                const textField = form.createTextField(fieldName);
+                textField.addToPage(page, {
+                  x: rect.x + 2,
+                  y: rect.y + 2,
+                  width: Math.max(rect.width - 4, 10),
+                  height: Math.max(rect.height - 4, 10),
+                  font: customFont,
+                });
+                textField.enableMultiline();
+              } catch (e) {
+                console.warn(`Empty Cell 폼 생성 실패 (${fieldName}):`, e);
+              }
             }
           });
         }
@@ -310,9 +334,9 @@ export default function SmartPdfEditor() {
         
         toast.success("스마트 입력 폼(AcroForm)으로 변환되었습니다!");
         setFile(null); // 초기화
-      } catch (err) {
-        console.error("변환 오류:", err);
-        toast.error("변환에 실패했습니다.");
+      } catch (err: any) {
+        console.error("변환 오류 상세:", err);
+        toast.error(`변환에 실패했습니다: ${err.message || '알 수 없는 오류'}`);
       } finally {
         setIsConverting(false);
       }
