@@ -27,9 +27,9 @@ export default function SmartPdfEditor() {
   
   const [isParsing, setIsParsing] = useState(false);
   const [textBlocks, setTextBlocks] = useState<TextBlock[]>([]);
+  const [vectorPaths, setVectorPaths] = useState<string[]>([]);
+  const [pageViewport, setPageViewport] = useState({ width: 800, height: 1131 });
   
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
   // 파일 업로드 처리
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = e.target.files?.[0];
@@ -45,6 +45,7 @@ export default function SmartPdfEditor() {
     if (!file) {
       setPdfDoc(null);
       setTextBlocks([]);
+      setVectorPaths([]);
       return;
     }
     const loadPdf = async () => {
@@ -66,6 +67,16 @@ export default function SmartPdfEditor() {
     loadPdf();
   }, [file]);
 
+  // (renderPageAndParseText useEffect는 생략됨, 이전 도구 호출에서 수정 완료됨)
+  // 하단 렌더링 컴포넌트 수정
+  const handleDeleteText = (id: string) => {
+    setTextBlocks(prev => prev.filter(b => b.id !== id));
+  };
+
+  const handleDeletePath = (index: number) => {
+    setVectorPaths(prev => prev.filter((_, i) => i !== index));
+  };
+
   // 페이지 렌더링 및 텍스트 추출 (Phase 2 & 3)
   useEffect(() => {
     if (!pdfDoc) return;
@@ -77,22 +88,93 @@ export default function SmartPdfEditor() {
         const page = await pdfDoc.getPage(currentPage);
         const viewport = page.getViewport({ scale });
         
-        // 1. 캔버스에 PDF 배경 렌더링
-        const canvas = canvasRef.current;
-        if (canvas) {
-          const context = canvas.getContext("2d");
-          if (context) {
-            canvas.height = viewport.height;
-            canvas.width = viewport.width;
-            await page.render({ canvasContext: context, viewport } as any).promise;
+        // 1. 기존 배경 Canvas 렌더링 코드 완전 제거 (White-out, 캔버스 생성 안 함)
+
+        // 2. 벡터 그래픽(표, 선, 테두리) 추출 (OperatorList 파싱)
+        const opList = await page.getOperatorList();
+        const paths: string[] = [];
+        let currentPath = "";
+        
+        let transformStack: number[][] = [];
+        let currentTransform = viewport.transform; // [scaleX, skewY, skewX, scaleY, translateX, translateY]
+
+        const applyTransform = (p: number[], m: number[]) => {
+          return [
+            p[0] * m[0] + p[1] * m[2] + m[4],
+            p[0] * m[1] + p[1] * m[3] + m[5]
+          ];
+        };
+
+        const transformMatrix = (m1: number[], m2: number[]) => {
+          return [
+            m1[0] * m2[0] + m1[2] * m2[1],
+            m1[1] * m2[0] + m1[3] * m2[1],
+            m1[0] * m2[2] + m1[2] * m2[3],
+            m1[1] * m2[2] + m1[3] * m2[3],
+            m1[0] * m2[4] + m1[2] * m2[5] + m1[4],
+            m1[1] * m2[4] + m1[3] * m2[5] + m1[5]
+          ];
+        };
+
+        const OPS = {
+          save: 10, restore: 11, transform: 12, moveTo: 13, lineTo: 14, closePath: 18,
+          rectangle: 19, stroke: 20, fill: 22, eoFill: 23, fillStroke: 24, closeStroke: 21
+        };
+
+        for (let i = 0; i < opList.fnArray.length; i++) {
+          const fn = opList.fnArray[i];
+          const args = opList.argsArray[i];
+          
+          switch(fn) {
+            case OPS.save:
+              transformStack.push([...currentTransform]);
+              break;
+            case OPS.restore:
+              if (transformStack.length > 0) {
+                currentTransform = transformStack.pop()!;
+              }
+              break;
+            case OPS.transform:
+              currentTransform = transformMatrix(currentTransform, args);
+              break;
+            case OPS.moveTo: {
+              const [x, y] = applyTransform([args[0], args[1]], currentTransform);
+              currentPath += `M ${x} ${y} `;
+              break;
+            }
+            case OPS.lineTo: {
+              const [x, y] = applyTransform([args[0], args[1]], currentTransform);
+              currentPath += `L ${x} ${y} `;
+              break;
+            }
+            case OPS.rectangle: {
+              const p1 = applyTransform([args[0], args[1]], currentTransform);
+              const p2 = applyTransform([args[0] + args[2], args[1]], currentTransform);
+              const p3 = applyTransform([args[0] + args[2], args[1] + args[3]], currentTransform);
+              const p4 = applyTransform([args[0], args[1] + args[3]], currentTransform);
+              currentPath += `M ${p1[0]} ${p1[1]} L ${p2[0]} ${p2[1]} L ${p3[0]} ${p3[1]} L ${p4[0]} ${p4[1]} Z `;
+              break;
+            }
+            case OPS.closePath:
+              currentPath += "Z ";
+              break;
+            case OPS.stroke:
+            case OPS.fill:
+            case OPS.eoFill:
+            case OPS.fillStroke:
+            case OPS.closeStroke:
+              if (currentPath.trim() !== "") {
+                paths.push(currentPath);
+                currentPath = "";
+              }
+              break;
           }
         }
 
-        // 2. 텍스트 추출 (TextContent)
+        // 3. 텍스트 추출 (TextContent) - 기존 로직 유지
         const textContent = await page.getTextContent();
         const rawItems: any[] = [];
         
-        // 1차: 변환된 좌표계로 기본 데이터 추출
         textContent.items.forEach((item: any) => {
           if (!item.str || item.str.trim() === '') return;
           const tx = pdfjsLib.Util.transform(viewport.transform, item.transform);
@@ -100,7 +182,7 @@ export default function SmartPdfEditor() {
           rawItems.push({
             text: item.str,
             x: tx[4],
-            y: tx[5] - fontSize, // Baseline 보정
+            y: tx[5] - fontSize,
             width: item.width * scale,
             height: item.height * scale,
             fontSize: fontSize,
@@ -108,7 +190,6 @@ export default function SmartPdfEditor() {
           });
         });
 
-        // 2차: Y좌표가 유사한(±3px 오차) 항목들을 같은 '줄(Line)'로 묶기 (Heuristic Grouping)
         const lines: any[] = [];
         rawItems.forEach(item => {
           const matchingLine = lines.find(line => Math.abs(line.y - item.y) < 3);
@@ -122,11 +203,8 @@ export default function SmartPdfEditor() {
         const blocks: TextBlock[] = [];
         let blockId = 0;
 
-        // 3차: 각 줄 내부에서 X 좌표 순으로 정렬 후 텍스트 병합
         lines.forEach(line => {
           line.items.sort((a: any, b: any) => a.x - b.x);
-          
-          // X 좌표 간격을 보고 너무 멀면 띄어쓰기를 넣거나 분리해야 하지만, 우선 한 문장으로 병합
           let mergedText = "";
           let startX = line.items[0].x;
           let totalWidth = 0;
@@ -137,7 +215,6 @@ export default function SmartPdfEditor() {
             if (idx > 0) {
               const prev = line.items[idx - 1];
               const gap = item.x - (prev.x + prev.width);
-              // 간격이 폰트 크기의 절반보다 크면 띄어쓰기 추가
               if (gap > prev.fontSize * 0.3) mergedText += " ";
             }
             mergedText += item.text;
@@ -158,25 +235,15 @@ export default function SmartPdfEditor() {
           });
         });
 
-        // 4차: 캔버스에 렌더링된 원본 글씨 지우기 (White-out)
-        const canvas = canvasRef.current;
-        if (canvas) {
-          const context = canvas.getContext("2d");
-          if (context) {
-            context.fillStyle = "white";
-            blocks.forEach(block => {
-              // 위아래로 약간의 여백을 두어 깔끔하게 덮기
-              context.fillRect(block.x - 1, block.y - 1, block.width + 2, block.height + 2);
-            });
-          }
-        }
-
         if (isMounted) {
           setTextBlocks(blocks);
+          // 새로 추출한 SVG Path 저장 (임시로 canvasRef 대신 쓰기 위해 state 확장 필요)
+          setVectorPaths(paths);
+          setPageViewport({ width: viewport.width, height: viewport.height });
           setIsParsing(false);
         }
       } catch (err) {
-        console.error("페이지 렌더링 및 파싱 에러:", err);
+        console.error("문서 파싱 에러:", err);
         if (isMounted) setIsParsing(false);
       }
     };
@@ -269,12 +336,25 @@ export default function SmartPdfEditor() {
             ) : null}
 
             {/* 실제 렌더링 컨테이너 */}
-            <div className="relative shadow-xl bg-white" style={{ width: canvasRef.current?.width || 800, height: canvasRef.current?.height || 1131 }}>
-              {/* 원본 PDF 렌더링 캔버스 (추출된 텍스트 위치는 지워져서 렌더링됨) */}
-              <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />
+            <div className="relative shadow-xl bg-white" style={{ width: pageViewport.width, height: pageViewport.height }}>
+              {/* 순수 SVG 벡터 레이어 (표, 선, 도형 등) */}
+              <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ zIndex: 1 }}>
+                {vectorPaths.map((d, i) => (
+                  <path 
+                    key={`path-${i}`} 
+                    d={d} 
+                    stroke="rgba(0,0,0,0.8)" 
+                    strokeWidth="1" 
+                    fill="none"
+                    className="pointer-events-auto cursor-pointer hover:stroke-red-500 hover:stroke-[2px] transition-all"
+                    onClick={() => handleDeletePath(i)}
+                    title="클릭하여 선 삭제"
+                  />
+                ))}
+              </svg>
               
-              {/* 편집 가능한 오버레이 레이어 */}
-              <div className="absolute inset-0 z-10">
+              {/* 편집 가능한 오버레이 레이어 (순수 텍스트/HTML) */}
+              <div className="absolute inset-0" style={{ zIndex: 2 }}>
                 {textBlocks.map(block => (
                   <div
                     key={block.id}
@@ -289,6 +369,11 @@ export default function SmartPdfEditor() {
                       minWidth: block.width > 0 ? block.width : 'auto',
                       lineHeight: 1,
                       color: 'black'
+                    }}
+                    onKeyDown={(e) => {
+                      if ((e.key === 'Backspace' || e.key === 'Delete') && e.currentTarget.textContent === '') {
+                        handleDeleteText(block.id);
+                      }
                     }}
                   >
                     {block.text}
