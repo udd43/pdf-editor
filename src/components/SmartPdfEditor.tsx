@@ -641,7 +641,6 @@ export default function SmartPdfEditor() {
               width: `${c.width * scale}px`, height: `${c.height * scale}px`,
             }}>
               <input type="text" value={c.text} onChange={e => updateCellText(c.id, e.target.value)}
-                placeholder="입력..."
                 className="w-full h-full bg-transparent text-black outline-none px-1 text-center border border-transparent hover:border-blue-300 focus:border-blue-500 focus:bg-blue-50/30"
                 style={{ fontSize: `${Math.max(c.height * scale * 0.5, 10)}px`, lineHeight: '1' }}
               />
