@@ -81,7 +81,7 @@ export default function SmartPdfEditor() {
   const [resizingTextId, setResizingTextId] = useState<string | null>(null);
   const [isSignatureOpen, setIsSignatureOpen] = useState(false);
   const [isRedactMode, setIsRedactMode] = useState(false);
-  const [drawingRedaction, setDrawingRedaction] = useState<{ startX: number; startY: number; currentX: number; currentY: number } | null>(null);
+  const [drawingRedaction, setDrawingRedaction] = useState<{ startX: number; startY: number; currentX: number; currentY: number; pageIndex: number } | null>(null);
   const [exportModal, setExportModal] = useState(false);
   const [exportDefaultName, setExportDefaultName] = useState("");
 
@@ -475,16 +475,14 @@ export default function SmartPdfEditor() {
     window.addEventListener("mousemove", handleMove); window.addEventListener("mouseup", handleUp);
   }, [scale, setTextBoxes, saveHistory, textBoxes, imageOverlays, redactions]);
 
-  const handleCanvasDoubleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+  const handleCanvasDoubleClick = (e: React.MouseEvent, pageNum: number) => {
     if (status !== "done") return;
-    const wrapper = canvasWrapperRef.current;
-    if (!wrapper) return;
-    const rect = wrapper.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / scale, y = (e.clientY - rect.top) / scale;
-    saveHistory(textBoxes, imageOverlays, redactions);
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / scale;
+    const y = (e.clientY - rect.top) / scale;
     const newBox: TextBox = {
-      id: `new-${nextId}`, text: "텍스트 입력", x: x-100, y: y-18, width: 200, height: 36,
-      fontSize: 16, isEdited: true, isNew: true, fontFamily: "NotoSansKR", pageIndex: currentPage,
+      id: `tb-${Date.now()}`, text: "", x, y, width: 150, height: 40,
+      fontSize: 16, isEdited: true, isNew: true, fontFamily: "NotoSansKR", pageIndex: pageNum,
     };
     setTextBoxes(prev => [...prev, newBox]);
     setSelectedTextId(newBox.id); setSelectedImageId(null); setNextId(prev => prev + 1);
@@ -498,7 +496,7 @@ export default function SmartPdfEditor() {
       const dataUrl = ev.target?.result as string;
       const img = new window.Image();
       img.onload = () => {
-        const pgInfo = pages[currentPage - 1];
+        const pgInfo = pages[0]; // 이미지는 기본으로 1페이지에 추가
         const canvasW = pgInfo ? pgInfo.width : 500;
         const canvasH = pgInfo ? pgInfo.height : 700;
         const maxW = Math.min(300, canvasW * 0.4), maxH = Math.min(300, canvasH * 0.4);
@@ -507,7 +505,7 @@ export default function SmartPdfEditor() {
         if (h > maxH) { h = maxH; w = h * ratio; }
         const newOverlay: ImageOverlayData = {
           id: `img-${Date.now()}`, originalSrc: dataUrl, displaySrc: dataUrl,
-          removedBgSrc: null, x: (canvasW-w)/2, y: (canvasH-h)/2, width: w, height: h, pageIndex: currentPage,
+          removedBgSrc: null, x: (canvasW-w)/2, y: (canvasH-h)/2, width: w, height: h, pageIndex: 1,
         };
         setImageOverlays(prev => [...prev, newOverlay]);
         setSelectedImageId(newOverlay.id);
@@ -523,13 +521,13 @@ export default function SmartPdfEditor() {
 
   const handleSignatureSave = (dataUrl: string, width: number, height: number) => {
     const maxW = 200; const ratio = width/height; const w = Math.min(width, maxW); const h = w/ratio;
-    const newOverlay: ImageOverlayData = { id: `sig-${Date.now()}`, originalSrc: dataUrl, displaySrc: dataUrl, removedBgSrc: null, x: 100, y: 100, width: w, height: h, pageIndex: currentPage };
+    const newOverlay: ImageOverlayData = { id: `sig-${Date.now()}`, originalSrc: dataUrl, displaySrc: dataUrl, removedBgSrc: null, x: 100, y: 100, width: w, height: h, pageIndex: 1 };
     setImageOverlays(prev => [...prev, newOverlay]); setSelectedImageId(newOverlay.id); toast.success("서명이 추가되었습니다!");
   };
 
-  const handleRedactMouseDown = (e: React.MouseEvent) => { if (!isRedactMode) return; const rect = canvasWrapperRef.current?.getBoundingClientRect(); if (!rect) return; setDrawingRedaction({ startX: e.clientX-rect.left, startY: e.clientY-rect.top, currentX: e.clientX-rect.left, currentY: e.clientY-rect.top }); };
-  const handleRedactMouseMove = (e: React.MouseEvent) => { if (!isRedactMode || !drawingRedaction) return; const rect = canvasWrapperRef.current?.getBoundingClientRect(); if (!rect) return; setDrawingRedaction(prev => prev ? { ...prev, currentX: e.clientX-rect.left, currentY: e.clientY-rect.top } : null); };
-  const handleRedactMouseUp = () => { if (!isRedactMode || !drawingRedaction) return; const { startX, startY, currentX, currentY } = drawingRedaction; const x = Math.min(startX, currentX)/scale, y = Math.min(startY, currentY)/scale, w = Math.abs(currentX-startX)/scale, h = Math.abs(currentY-startY)/scale; if (w > 5 && h > 5) addRedaction({ pageIndex: currentPage, x, y, width: w, height: h }); setDrawingRedaction(null); };
+  const handleRedactMouseDown = (e: React.MouseEvent, pageNum: number) => { if (!isRedactMode) return; const rect = e.currentTarget.getBoundingClientRect(); setDrawingRedaction({ startX: e.clientX-rect.left, startY: e.clientY-rect.top, currentX: e.clientX-rect.left, currentY: e.clientY-rect.top, pageIndex: pageNum }); };
+  const handleRedactMouseMove = (e: React.MouseEvent, pageNum: number) => { if (!isRedactMode || !drawingRedaction || drawingRedaction.pageIndex !== pageNum) return; const rect = e.currentTarget.getBoundingClientRect(); setDrawingRedaction(prev => prev ? { ...prev, currentX: e.clientX-rect.left, currentY: e.clientY-rect.top } : null); };
+  const handleRedactMouseUp = (pageNum: number) => { if (!isRedactMode || !drawingRedaction || drawingRedaction.pageIndex !== pageNum) return; const { startX, startY, currentX, currentY } = drawingRedaction; const x = Math.min(startX, currentX)/scale, y = Math.min(startY, currentY)/scale, w = Math.abs(currentX-startX)/scale, h = Math.abs(currentY-startY)/scale; if (w > 5 && h > 5) addRedaction({ pageIndex: pageNum, x, y, width: w, height: h }); setDrawingRedaction(null); };
 
   const handleExport = () => {
     if (!pdfBuffer) return;
@@ -598,13 +596,7 @@ export default function SmartPdfEditor() {
           <button onClick={() => setIsSignatureOpen(true)} disabled={status !== "done"} className="flex items-center gap-1 px-2.5 py-1.5 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-[11px] font-semibold rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-30 transition-all shadow-sm whitespace-nowrap flex-shrink-0"><Pen className="w-3.5 h-3.5 text-emerald-500" /> 서명</button>
           <button onClick={() => setIsRedactMode(p => !p)} disabled={status !== "done"} className={`flex items-center gap-1 px-2.5 py-1.5 border text-[11px] font-semibold rounded-md disabled:opacity-30 transition-all shadow-sm whitespace-nowrap flex-shrink-0 ${isRedactMode ? "bg-gray-900 text-white border-gray-900" : "bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600"}`}><div className="w-3.5 h-3.5 bg-gray-900 dark:bg-gray-200 border border-white dark:border-gray-900 rounded-sm" /> 블라인드</button>
           <div className="w-px h-5 bg-gray-200 dark:bg-gray-600 flex-shrink-0" />
-          {numPages > 1 && (
-            <div className="flex items-center bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md overflow-hidden shadow-sm flex-shrink-0">
-              <button onClick={() => setCurrentPage(p => Math.max(1, p-1))} disabled={currentPage <= 1} className="px-2 py-1 hover:bg-gray-50 disabled:opacity-30 text-[11px] font-bold text-gray-600 border-r border-gray-200">이전</button>
-              <span className="text-[10px] font-mono px-2 py-1 text-gray-800 bg-gray-50 select-none">{currentPage}/{numPages}</span>
-              <button onClick={() => setCurrentPage(p => Math.min(numPages, p+1))} disabled={currentPage >= numPages} className="px-2 py-1 hover:bg-gray-50 disabled:opacity-30 text-[11px] font-bold text-gray-600 border-l border-gray-200">다음</button>
-            </div>
-          )}
+
           <div className="flex items-center bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md overflow-hidden shadow-sm flex-shrink-0">
             <button onClick={() => handleZoom("out")} disabled={scale <= 0.5} className="p-1 hover:bg-gray-50 disabled:opacity-30 text-gray-600"><Minus className="w-3 h-3" /></button>
             <span onClick={() => handleZoom("reset")} className="text-[10px] font-mono px-1.5 py-1 text-gray-800 bg-white border-x border-gray-200 cursor-pointer hover:bg-gray-50 select-none font-bold">{Math.round(scale*100)}%</span>
@@ -625,77 +617,76 @@ export default function SmartPdfEditor() {
       )}
 
       {/* ===== 워드 모드 캔버스 (하얀 백지 + DOM 요소) ===== */}
-      <div className="border border-gray-300 dark:border-gray-600 shadow-2xl bg-gray-200 dark:bg-gray-900 overflow-auto rounded-lg flex-1 min-w-0" style={{ minHeight: "600px" }}>
-        <div ref={canvasWrapperRef}
-             onDoubleClick={handleCanvasDoubleClick}
-             onMouseDown={handleRedactMouseDown} onMouseMove={handleRedactMouseMove}
-             onMouseUp={handleRedactMouseUp} onMouseLeave={handleRedactMouseUp}
-             className={`relative mx-auto bg-white shadow-xl ${isRedactMode ? "cursor-crosshair" : ""}`}
-             style={{ width: `${pgInfo.width * scale}px`, height: `${pgInfo.height * scale}px` }}>
+      <div className="border border-gray-300 dark:border-gray-600 shadow-2xl bg-gray-200 dark:bg-gray-900 overflow-auto rounded-lg flex-1 min-w-0 py-8 flex flex-col items-center gap-8" style={{ minHeight: "600px" }}>
+        {pages.map((pgInfo, idx) => {
+          const pageNum = idx + 1;
+          return (
+            <div key={pageNum}
+                 onDoubleClick={(e) => handleCanvasDoubleClick(e, pageNum)}
+                 onMouseDown={(e) => handleRedactMouseDown(e, pageNum)} onMouseMove={(e) => handleRedactMouseMove(e, pageNum)}
+                 onMouseUp={() => handleRedactMouseUp(pageNum)} onMouseLeave={() => handleRedactMouseUp(pageNum)}
+                 className={`relative bg-white shadow-xl flex-shrink-0 ${isRedactMode ? "cursor-crosshair" : ""}`}
+                 style={{ width: `${pgInfo.width * scale}px`, height: `${pgInfo.height * scale}px` }}>
 
-          {/* 선 (SVG) */}
-          <svg className="absolute inset-0 pointer-events-none" width={pgInfo.width * scale} height={pgInfo.height * scale}>
-            {smartLines.filter(l => l.pageIndex === currentPage - 1 && !l.isDeleted).map(l => (
-              <line key={l.id} x1={l.x1 * scale} y1={l.y1 * scale} x2={l.x2 * scale} y2={l.y2 * scale}
-                stroke="black" strokeWidth={1} />
-            ))}
-          </svg>
+              {/* 선 (SVG) */}
+              <svg className="absolute inset-0 pointer-events-none" width={pgInfo.width * scale} height={pgInfo.height * scale}>
+                {smartLines.filter(l => l.pageIndex === pageNum - 1 && !l.isDeleted).map(l => (
+                  <line key={l.id} x1={l.x1 * scale} y1={l.y1 * scale} x2={l.x2 * scale} y2={l.y2 * scale} stroke="black" strokeWidth={1} />
+                ))}
+              </svg>
 
-          {/* 칸 (셀) - 클릭하면 안에 글을 쓸 수 있음 */}
-          {smartCells.filter(c => c.pageIndex === currentPage - 1 && !c.isDeleted).map(c => (
-            <div key={c.id} className="absolute group" style={{
-              left: `${c.x * scale}px`, top: `${c.y * scale}px`,
-              width: `${c.width * scale}px`, height: `${c.height * scale}px`,
-            }}>
-              <input type="text" value={c.text} onChange={e => updateCellText(c.id, e.target.value)}
-                className="w-full h-full bg-transparent text-black outline-none px-1 text-center border border-transparent hover:border-blue-300 focus:border-blue-500 focus:bg-blue-50/30"
-                style={{ fontSize: `${Math.max(c.height * scale * 0.5, 10)}px`, lineHeight: '1' }}
-              />
-              <button onClick={() => deleteSmartCell(c.id)} className="absolute -top-3 -right-3 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity z-20">
-                <Trash2 className="w-3 h-3" />
-              </button>
+              {/* 칸 (셀) */}
+              {smartCells.filter(c => c.pageIndex === pageNum - 1 && !c.isDeleted).map(c => (
+                <div key={c.id} className="absolute group" style={{
+                  left: `${c.x * scale}px`, top: `${c.y * scale}px`, width: `${c.width * scale}px`, height: `${c.height * scale}px`,
+                }}>
+                  <input type="text" value={c.text} onChange={e => updateCellText(c.id, e.target.value)}
+                    className="w-full h-full bg-transparent text-black outline-none px-1 text-center border border-transparent hover:border-blue-300 focus:border-blue-500 focus:bg-blue-50/30"
+                    style={{ fontSize: `${Math.max(c.height * scale * 0.5, 10)}px`, lineHeight: '1' }} />
+                  <button onClick={() => deleteSmartCell(c.id)} className="absolute -top-3 -right-3 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity z-20">
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+                </div>
+              ))}
+
+              {/* 기존 PdfEditor 오버레이: 텍스트 박스 */}
+              {status === "done" && textBoxes.filter(b => b.pageIndex === pageNum).map(box => (
+                <TextBoxOverlay key={box.id} box={box} scale={scale}
+                  isSelected={selectedTextId === box.id} onSelect={() => { setSelectedTextId(box.id); setSelectedImageId(null); }}
+                  isDragging={draggingTextId === box.id} isResizing={resizingTextId === box.id}
+                  onDragStart={handleTextDragStart} onResizeStart={handleTextResizeStart}
+                  onChange={handleTextChange} onDelete={handleDeleteBox}
+                  onFontSizeChange={handleFontSizeChange} onToggleTransparent={handleToggleTransparent}
+                  onFontFamilyChange={handleFontFamilyChange} />
+              ))}
+
+              {/* 이미지 오버레이 */}
+              {status === "done" && imageOverlays.filter(o => o.pageIndex === pageNum).map(overlay => (
+                <ImageOverlayComponent key={overlay.id} overlay={overlay} scale={scale}
+                  onUpdate={handleImageUpdate} onDelete={handleImageDelete}
+                  isSelected={selectedImageId === overlay.id}
+                  onSelect={(id) => { setSelectedImageId(id); setSelectedTextId(null); }}
+                  onDragStart={() => saveHistory(textBoxes, imageOverlays, redactions)} />
+              ))}
+
+              {/* 블라인드 */}
+              {status === "done" && redactions.filter(r => r.pageIndex === pageNum).map(r => (
+                <div key={r.id} className="absolute bg-gray-900 z-10" style={{ left: r.x*scale, top: r.y*scale, width: r.width*scale, height: r.height*scale }}>
+                  <button className={`absolute -top-3 -right-3 bg-white rounded-full p-1 shadow-md text-red-500 hover:text-red-700 opacity-0 hover:opacity-100 transition-opacity ${selectedRedactionId === r.id ? 'opacity-100' : ''}`}
+                    onClick={() => removeRedaction(r.id)} onMouseEnter={() => setSelectedRedactionId(r.id)} onMouseLeave={() => setSelectedRedactionId(null)}>
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))}
+              {isRedactMode && drawingRedaction && drawingRedaction.pageIndex === pageNum && (
+                <div className="absolute bg-gray-900/80 border-2 border-gray-900 z-20" style={{
+                  left: Math.min(drawingRedaction.startX, drawingRedaction.currentX), top: Math.min(drawingRedaction.startY, drawingRedaction.currentY),
+                  width: Math.abs(drawingRedaction.currentX - drawingRedaction.startX), height: Math.abs(drawingRedaction.currentY - drawingRedaction.startY),
+                }} />
+              )}
             </div>
-          ))}
-
-          {/* 추출된 텍스트는 이제 TextBoxOverlay로 렌더링됨 (아래 기존 PdfEditor 오버레이 코드에서 함께 처리됨) */}
-
-          {/* 기존 PdfEditor 오버레이: 텍스트 박스 */}
-          {status === "done" && textBoxes.filter(b => b.pageIndex === currentPage).map(box => (
-            <TextBoxOverlay key={box.id} box={box} scale={scale}
-              isSelected={selectedTextId === box.id} onSelect={() => { setSelectedTextId(box.id); setSelectedImageId(null); }}
-              isDragging={draggingTextId === box.id} isResizing={resizingTextId === box.id}
-              onDragStart={handleTextDragStart} onResizeStart={handleTextResizeStart}
-              onChange={handleTextChange} onDelete={handleDeleteBox}
-              onFontSizeChange={handleFontSizeChange} onToggleTransparent={handleToggleTransparent}
-              onFontFamilyChange={handleFontFamilyChange}
-            />
-          ))}
-
-          {/* 이미지 오버레이 */}
-          {status === "done" && imageOverlays.filter(o => o.pageIndex === currentPage).map(overlay => (
-            <ImageOverlayComponent key={overlay.id} overlay={overlay} scale={scale}
-              onUpdate={handleImageUpdate} onDelete={handleImageDelete}
-              isSelected={selectedImageId === overlay.id}
-              onSelect={(id) => { setSelectedImageId(id); setSelectedTextId(null); }}
-              onDragStart={() => saveHistory(textBoxes, imageOverlays, redactions)} />
-          ))}
-
-          {/* 블라인드 */}
-          {status === "done" && redactions.filter(r => r.pageIndex === currentPage).map(r => (
-            <div key={r.id} className="absolute bg-gray-900 z-10" style={{ left: r.x*scale, top: r.y*scale, width: r.width*scale, height: r.height*scale }}>
-              <button className={`absolute -top-3 -right-3 bg-white rounded-full p-1 shadow-md text-red-500 hover:text-red-700 opacity-0 hover:opacity-100 transition-opacity ${selectedRedactionId === r.id ? 'opacity-100' : ''}`}
-                onClick={() => removeRedaction(r.id)} onMouseEnter={() => setSelectedRedactionId(r.id)} onMouseLeave={() => setSelectedRedactionId(null)}>
-                <Trash2 className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          ))}
-          {isRedactMode && drawingRedaction && (
-            <div className="absolute bg-gray-900/80 border-2 border-gray-900 z-20" style={{
-              left: Math.min(drawingRedaction.startX, drawingRedaction.currentX), top: Math.min(drawingRedaction.startY, drawingRedaction.currentY),
-              width: Math.abs(drawingRedaction.currentX - drawingRedaction.startX), height: Math.abs(drawingRedaction.currentY - drawingRedaction.startY),
-            }} />
-          )}
-        </div>
+          );
+        })}
       </div>
 
       <SignaturePad isOpen={isSignatureOpen} onClose={() => setIsSignatureOpen(false)} onSave={handleSignatureSave} />
