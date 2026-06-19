@@ -558,9 +558,8 @@ export default function SmartPdfEditor() {
     return (
       <div className="max-w-4xl mx-auto p-6 text-center mt-20">
         <h1 className="text-3xl font-extrabold tracking-tight text-gray-900 dark:text-white mb-4">✨ 스마트 워드 편집기</h1>
-        <p className="text-gray-500 dark:text-gray-400 mb-10 max-w-md mx-auto leading-relaxed text-sm">
-          기존처럼 그림 위에 글씨를 덮어씌우는 방식이 아닙니다.<br/>
-          PDF <b>원본 글씨를 클릭해서 직접 수정하고 지울 수 있는</b> 진정한 워드 모드입니다.
+        <p className="text-gray-500 dark:text-gray-400 mb-10 mx-auto text-base">
+          원본 PDF를 인식하여 편집 가능한 워드파일처럼 변환합니다.
         </p>
         <label className="flex flex-col items-center justify-center w-full h-80 border-2 border-dashed rounded-2xl cursor-pointer bg-gray-50 dark:bg-white/5 border-gray-300 dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors">
           <UploadCloud className="w-16 h-16 text-emerald-500 mb-4" />
