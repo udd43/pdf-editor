@@ -215,25 +215,88 @@ export default function SmartPdfEditor() {
       const applyT = (p: number[], m: number[]) => [p[0]*m[0]+p[1]*m[2]+m[4], p[0]*m[1]+p[1]*m[3]+m[5]];
       const mulT = (a: number[], b: number[]) => [a[0]*b[0]+a[2]*b[1], a[1]*b[0]+a[3]*b[1], a[0]*b[2]+a[2]*b[3], a[1]*b[2]+a[3]*b[3], a[0]*b[4]+a[2]*b[5]+a[4], a[1]*b[4]+a[3]*b[5]+a[5]];
 
-      for (let i = 0; i < opList.fnArray.length; i++) {
-        const fn = opList.fnArray[i], args = opList.argsArray[i];
-        if (fn === 10) transformStack.push([...currentTransform]);
-        else if (fn === 11 && transformStack.length) currentTransform = transformStack.pop()!;
-        else if (fn === 12) currentTransform = mulT(currentTransform, args);
-        else if (fn === 13) { const p = applyT([args[0], args[1]], currentTransform); lastX = p[0]; lastY = p[1]; subX = p[0]; subY = p[1]; }
-        else if (fn === 14) { const p = applyT([args[0], args[1]], currentTransform); if (lastX !== null && lastY !== null) rawSegments.push({ x1: lastX, y1: lastY, x2: p[0], y2: p[1] }); lastX = p[0]; lastY = p[1]; }
-        else if (fn === 18) { if (lastX !== null && lastY !== null && subX !== null && subY !== null) { rawSegments.push({ x1: lastX, y1: lastY, x2: subX, y2: subY }); lastX = subX; lastY = subY; } }
-        else if (fn === 19) {
-          const p1 = applyT([args[0], args[1]], currentTransform);
-          const p3 = applyT([args[0]+args[2], args[1]+args[3]], currentTransform);
+      // 개별 경로 연산 처리 함수
+      const processPathOp = (op: number, coords: number[]) => {
+        if (op === 13) { // moveTo
+          const p = applyT([coords[0], coords[1]], currentTransform);
+          lastX = p[0]; lastY = p[1]; subX = p[0]; subY = p[1];
+        } else if (op === 14) { // lineTo
+          const p = applyT([coords[0], coords[1]], currentTransform);
+          if (lastX !== null && lastY !== null) rawSegments.push({ x1: lastX, y1: lastY, x2: p[0], y2: p[1] });
+          lastX = p[0]; lastY = p[1];
+        } else if (op === 18) { // closePath
+          if (lastX !== null && lastY !== null && subX !== null && subY !== null) {
+            rawSegments.push({ x1: lastX, y1: lastY, x2: subX, y2: subY });
+            lastX = subX; lastY = subY;
+          }
+        } else if (op === 19) { // rectangle
+          const p1 = applyT([coords[0], coords[1]], currentTransform);
+          const p3 = applyT([coords[0]+coords[2], coords[1]+coords[3]], currentTransform);
           const rx = Math.min(p1[0], p3[0]), ry = Math.min(p1[1], p3[1]);
           const rw = Math.abs(p3[0]-p1[0]), rh = Math.abs(p3[1]-p1[1]);
-          if (rw > 2 && rh > 2) rawRects.push({ x: rx, y: ry, w: rw, h: rh });
+          // 매우 얇은 사각형 = 선으로 취급
+          if (rw < 3 && rh > 3) {
+            // 세로선
+            rawSegments.push({ x1: rx + rw/2, y1: ry, x2: rx + rw/2, y2: ry + rh });
+          } else if (rh < 3 && rw > 3) {
+            // 가로선
+            rawSegments.push({ x1: rx, y1: ry + rh/2, x2: rx + rw, y2: ry + rh/2 });
+          } else if (rw > 1 && rh > 1) {
+            rawRects.push({ x: rx, y: ry, w: rw, h: rh });
+          }
           // 사각형의 4변을 선분으로도 추가
           rawSegments.push({ x1: rx, y1: ry, x2: rx+rw, y2: ry });
           rawSegments.push({ x1: rx+rw, y1: ry, x2: rx+rw, y2: ry+rh });
           rawSegments.push({ x1: rx+rw, y1: ry+rh, x2: rx, y2: ry+rh });
           rawSegments.push({ x1: rx, y1: ry+rh, x2: rx, y2: ry });
+        }
+      };
+
+      for (let i = 0; i < opList.fnArray.length; i++) {
+        const fn = opList.fnArray[i], args = opList.argsArray[i];
+        if (fn === 10) transformStack.push([...currentTransform]);
+        else if (fn === 11 && transformStack.length) currentTransform = transformStack.pop()!;
+        else if (fn === 12) currentTransform = mulT(currentTransform, args);
+        else if (fn === 13 || fn === 14 || fn === 18 || fn === 19) {
+          // 개별 경로 연산자
+          processPathOp(fn, args);
+        }
+        else if (fn === 91) {
+          // constructPath: 묶음 경로 연산자 (최신 pdfjs-dist)
+          // args[0] = [op1, op2, ...] 연산자 배열
+          // args[1] = [x1, y1, x2, y2, ...] 좌표 배열 (연속)
+          const ops = args[0] as number[];
+          const coords = args[1] as number[];
+          let ci = 0; // 좌표 인덱스
+          for (const op of ops) {
+            if (op === 13) { // moveTo: 2 coords
+              processPathOp(13, [coords[ci], coords[ci+1]]);
+              ci += 2;
+            } else if (op === 14) { // lineTo: 2 coords
+              processPathOp(14, [coords[ci], coords[ci+1]]);
+              ci += 2;
+            } else if (op === 15) { // curveTo: 6 coords (bezier - 시작점→끝점 직선 근사)
+              const endP = applyT([coords[ci+4], coords[ci+5]], currentTransform);
+              if (lastX !== null && lastY !== null) rawSegments.push({ x1: lastX, y1: lastY, x2: endP[0], y2: endP[1] });
+              lastX = endP[0]; lastY = endP[1];
+              ci += 6;
+            } else if (op === 16) { // curveTo2: 4 coords
+              const endP = applyT([coords[ci+2], coords[ci+3]], currentTransform);
+              if (lastX !== null && lastY !== null) rawSegments.push({ x1: lastX, y1: lastY, x2: endP[0], y2: endP[1] });
+              lastX = endP[0]; lastY = endP[1];
+              ci += 4;
+            } else if (op === 17) { // curveTo3: 4 coords
+              const endP = applyT([coords[ci+2], coords[ci+3]], currentTransform);
+              if (lastX !== null && lastY !== null) rawSegments.push({ x1: lastX, y1: lastY, x2: endP[0], y2: endP[1] });
+              lastX = endP[0]; lastY = endP[1];
+              ci += 4;
+            } else if (op === 18) { // closePath: 0 coords
+              processPathOp(18, []);
+            } else if (op === 19) { // rectangle: 4 coords
+              processPathOp(19, [coords[ci], coords[ci+1], coords[ci+2], coords[ci+3]]);
+              ci += 4;
+            }
+          }
         }
       }
 
