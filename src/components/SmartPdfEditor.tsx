@@ -15,17 +15,7 @@ import { exportEditedPdf } from '@/lib/pdfUtils';
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.mjs`;
 
 // === 추출된 요소 타입 ===
-interface SmartText {
-  id: string;
-  text: string;
-  x: number; // CSS 좌표 (좌측 상단 기준, pt)
-  y: number;
-  width: number;
-  height: number;
-  fontSize: number;
-  pageIndex: number;
-  isDeleted: boolean;
-}
+// SmartText 제거 (대신 기존 TextBox 사용)
 
 interface SmartLine {
   id: string;
@@ -71,7 +61,7 @@ export default function SmartPdfEditor() {
   const [pages, setPages] = useState<PageInfo[]>([]);
 
   // 스마트 추출 요소
-  const [smartTexts, setSmartTexts] = useState<SmartText[]>([]);
+  // SmartText 상태 제거
   const [smartLines, setSmartLines] = useState<SmartLine[]>([]);
   const [smartCells, setSmartCells] = useState<SmartCell[]>([]);
 
@@ -136,7 +126,7 @@ export default function SmartPdfEditor() {
   // PDF 해체: 텍스트, 선, 칸 모두 추출
   // ========================================
   const deconstructPdf = async (doc: any) => {
-    const texts: SmartText[] = [];
+    const texts: TextBox[] = [];
     const lines: SmartLine[] = [];
     const cells: SmartCell[] = [];
     const pageInfos: PageInfo[] = [];
@@ -198,8 +188,8 @@ export default function SmartPdfEditor() {
             const cssY = pageH - pdfY - (maxHeight * 0.85);
             texts.push({
               id: `st_${elId++}`, text: mergedText,
-              x: cssX, y: cssY, width: totalWidth, height: maxHeight,
-              fontSize: maxFontSize, pageIndex: pageNum - 1, isDeleted: false,
+              x: cssX, y: cssY, width: Math.max(totalWidth, 40), height: Math.max(maxHeight, 20),
+              fontSize: maxFontSize, pageIndex: pageNum, isEdited: false, isNew: false, isTransparent: true, fontFamily: "NotoSansKR"
             });
           }
         };
@@ -396,7 +386,7 @@ export default function SmartPdfEditor() {
     }
 
     setPages(pageInfos);
-    setSmartTexts(texts);
+    setTextBoxes(texts);
     setSmartLines(lines);
     setSmartCells(cells);
   };
@@ -404,12 +394,6 @@ export default function SmartPdfEditor() {
   // ========================================
   // 스마트 요소 편집 핸들러
   // ========================================
-  const updateSmartText = (id: string, newText: string) => {
-    setSmartTexts(prev => prev.map(t => t.id === id ? { ...t, text: newText } : t));
-  };
-  const deleteSmartText = (id: string) => {
-    setSmartTexts(prev => prev.map(t => t.id === id ? { ...t, isDeleted: true } : t));
-  };
   const updateCellText = (id: string, newText: string) => {
     setSmartCells(prev => prev.map(c => c.id === id ? { ...c, text: newText } : c));
   };
@@ -625,7 +609,7 @@ export default function SmartPdfEditor() {
             <button onClick={() => handleZoom("in")} disabled={scale >= 3.0} className="p-1 hover:bg-gray-50 disabled:opacity-30 text-gray-600"><Plus className="w-3 h-3" /></button>
           </div>
           <button onClick={handleExport} disabled={isProcessing} className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white text-[11px] font-semibold rounded-md shadow-sm hover:bg-blue-700 transition-all active:scale-95 disabled:opacity-40 whitespace-nowrap flex-shrink-0"><Download className="w-3.5 h-3.5" /> 내보내기</button>
-          <button onClick={() => { setFile(null); setSmartTexts([]); setSmartLines([]); setSmartCells([]); resetElements(); setStatus("idle"); }} className="flex items-center gap-1 px-2.5 py-1.5 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 text-[11px] font-semibold rounded-md hover:bg-red-50 transition-all shadow-sm whitespace-nowrap flex-shrink-0">다른 파일</button>
+          <button onClick={() => { setFile(null); setTextBoxes([]); setSmartLines([]); setSmartCells([]); resetElements(); setStatus("idle"); }} className="flex items-center gap-1 px-2.5 py-1.5 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 text-[11px] font-semibold rounded-md hover:bg-red-50 transition-all shadow-sm whitespace-nowrap flex-shrink-0">다른 파일</button>
         </div>
       </div>
 
@@ -671,21 +655,7 @@ export default function SmartPdfEditor() {
             </div>
           ))}
 
-          {/* 텍스트 (추출된 원본) */}
-          {smartTexts.filter(t => t.pageIndex === currentPage - 1 && !t.isDeleted).map(t => (
-            <div key={t.id} className="absolute group" style={{
-              left: `${t.x * scale}px`, top: `${t.y * scale}px`,
-              width: `${Math.max(t.width * scale + 20, 40)}px`,
-            }}>
-              <input type="text" value={t.text} onChange={e => updateSmartText(t.id, e.target.value)}
-                className="w-full bg-transparent text-black outline-none px-0.5 border border-transparent hover:border-blue-400 focus:border-blue-500 focus:bg-blue-50/50"
-                style={{ fontSize: `${Math.max(t.fontSize * scale * 0.95, 8)}px`, lineHeight: '1', height: `${t.height * scale}px`, fontFamily: 'sans-serif', margin: 0, padding: 0 }}
-              />
-              <button onClick={() => deleteSmartText(t.id)} className="absolute -top-3 -right-3 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity z-20">
-                <Trash2 className="w-3 h-3" />
-              </button>
-            </div>
-          ))}
+          {/* 추출된 텍스트는 이제 TextBoxOverlay로 렌더링됨 (아래 기존 PdfEditor 오버레이 코드에서 함께 처리됨) */}
 
           {/* 기존 PdfEditor 오버레이: 텍스트 박스 */}
           {status === "done" && textBoxes.filter(b => b.pageIndex === currentPage).map(box => (
