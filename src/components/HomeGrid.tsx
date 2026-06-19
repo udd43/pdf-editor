@@ -252,12 +252,23 @@ export default function HomeGrid({
           onDragOver={() => {}} onDragLeave={() => {}} onDrop={() => {}}
           style={{ gridColumn: "9 / 13", gridRow: "3 / 4" }} size="sm" />
 
+        <BentoCard card={{
+            id: "img2pdf", title: "이미지 → PDF", description: "여러 장의 PNG/JPEG 이미지를 하나의 PDF로 병합합니다.",
+            icon: <FileText className="w-6 h-6" />, accent: "from-blue-400 to-cyan-500",
+            iconBg: "bg-cyan-50 text-cyan-600 border-cyan-100", iconBgDark: "dark:bg-cyan-900/30 dark:text-cyan-400 dark:border-cyan-800",
+            action: "expand"
+          }} isHovered={hoveredCard === "img2pdf"} isDragging={false}
+          onMouseEnter={() => setHoveredCard("img2pdf")} onMouseLeave={() => setHoveredCard(null)}
+          onClick={() => onTabSelect("img2pdf")}
+          onDragOver={() => {}} onDragLeave={() => {}} onDrop={() => {}}
+          style={{ gridColumn: "1 / 13", gridRow: "4 / 5" }} size="sm" />
+
         {isSecretMode && (
           <BentoCard card={card("corporate")} isHovered={hoveredCard === "corporate"} isDragging={false}
             onMouseEnter={() => setHoveredCard("corporate")} onMouseLeave={() => setHoveredCard(null)}
             onClick={() => handleCardClick(card("corporate"))}
             onDragOver={() => {}} onDragLeave={() => {}} onDrop={() => {}}
-            style={{ gridColumn: "1 / 13", gridRow: "4 / 5" }} size="sm" />
+            style={{ gridColumn: "1 / 13", gridRow: "5 / 6" }} size="sm" />
         )}
       </div>
 

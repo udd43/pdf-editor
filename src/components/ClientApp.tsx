@@ -16,9 +16,10 @@ const RomanizerTab = React.lazy(() => import("@/components/RomanizerTab"));
 const SignatureTab = React.lazy(() => import("@/components/SignatureTab"));
 const CalculatorTab = React.lazy(() => import("@/components/CalculatorTab"));
 const SmartPdfEditor = React.lazy(() => import("@/components/SmartPdfEditor"));
+const ImageToPdfConverter = React.lazy(() => import("@/components/ImageToPdfConverter"));
 import { Loader2 } from "lucide-react";
 
-type Tab = "pdf" | "bgremove" | "upscale" | "colorize" | "romanize" | "signature" | "calculator" | "corporate" | "smartpdf";
+type Tab = "pdf" | "bgremove" | "upscale" | "colorize" | "romanize" | "signature" | "calculator" | "corporate" | "smartpdf" | "img2pdf";
 
 export default function ClientApp() {
   const [file, setFile] = useState<File | null>(null);
@@ -121,6 +122,7 @@ export default function ClientApp() {
     { id: "signature", label: "서명 그리기", icon: <PenTool className="w-3.5 h-3.5" />, color: "text-gray-600 dark:text-gray-300", activeBg: "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm" },
     { id: "calculator", label: "계산기", icon: <Calculator className="w-3.5 h-3.5" />, color: "text-gray-600 dark:text-gray-300", activeBg: "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm" },
     { id: "smartpdf", label: "스마트 편집 (Beta)", icon: <Sparkles className="w-3.5 h-3.5 text-amber-500" />, color: "text-amber-600 dark:text-amber-400", activeBg: "bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 shadow-sm font-bold border border-amber-200 dark:border-amber-800" },
+    { id: "img2pdf", label: "이미지 → PDF", icon: <FileTextIcon className="w-3.5 h-3.5" />, color: "text-gray-600 dark:text-gray-300", activeBg: "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm" },
   ];
   if (isSecretMode) {
     tabs.push({ id: "corporate", label: "법인 서류", icon: <Building2 className="w-3.5 h-3.5" />, color: "text-red-600 dark:text-red-300", activeBg: "bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 font-bold" });
@@ -231,6 +233,7 @@ export default function ClientApp() {
           {activeTab === "signature" && <SignatureTab />}
           {activeTab === "calculator" && <CalculatorTab />}
           {activeTab === "smartpdf" && <SmartPdfEditor />}
+          {activeTab === "img2pdf" && <ImageToPdfConverter />}
         </React.Suspense>
 
         {activeTab === "corporate" && (
