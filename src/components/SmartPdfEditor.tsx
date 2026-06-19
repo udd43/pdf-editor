@@ -175,32 +175,53 @@ export default function SmartPdfEditor() {
 
       lineGroups.forEach(line => {
         line.items.sort((a: any, b: any) => a.pdfX - b.pdfX);
-        let mergedText = "";
-        let startX = line.items[0].pdfX;
-        let totalWidth = 0;
-        let maxHeight = 0;
-        let maxFontSize = 0;
+
+        const pushMergedGroup = (groupItems: any[], pdfY: number) => {
+          let mergedText = "";
+          let startX = groupItems[0].pdfX;
+          let totalWidth = 0;
+          let maxHeight = 0;
+          let maxFontSize = 0;
+          groupItems.forEach((item: any, idx: number) => {
+            if (idx > 0) {
+              const prev = groupItems[idx - 1];
+              const gap = item.pdfX - (prev.pdfX + prev.width);
+              if (gap > prev.height * 0.2) mergedText += " ";
+            }
+            mergedText += item.text;
+            totalWidth = (item.pdfX + item.width) - startX;
+            if (item.height > maxHeight) maxHeight = item.height;
+            if (item.fontSize > maxFontSize) maxFontSize = item.fontSize;
+          });
+          if (mergedText.trim()) {
+            const cssX = startX;
+            const cssY = pageH - pdfY - (maxHeight * 0.85);
+            texts.push({
+              id: `st_${elId++}`, text: mergedText,
+              x: cssX, y: cssY, width: totalWidth, height: maxHeight,
+              fontSize: maxFontSize, pageIndex: pageNum - 1, isDeleted: false,
+            });
+          }
+        };
+
+        let currentGroup: any[] = [];
         line.items.forEach((item: any, idx: number) => {
-          if (idx > 0) {
+          if (idx === 0) {
+            currentGroup.push(item);
+          } else {
             const prev = line.items[idx - 1];
             const gap = item.pdfX - (prev.pdfX + prev.width);
-            if (gap > prev.height * 0.3) mergedText += " ";
+            // 간격이 크면 (폰트 높이의 1.2배 이상) 다른 컬럼(칸)으로 간주하고 분리
+            if (gap > prev.height * 1.2) {
+              pushMergedGroup(currentGroup, line.pdfY);
+              currentGroup = [item];
+            } else {
+              currentGroup.push(item);
+            }
           }
-          mergedText += item.text;
-          totalWidth = (item.pdfX + item.width) - startX;
-          if (item.height > maxHeight) maxHeight = item.height;
-          if (item.fontSize > maxFontSize) maxFontSize = item.fontSize;
         });
-        if (mergedText.trim()) {
-          // PDF 좌표(좌하단) → CSS 좌표(좌상단) 변환
-          // pdfY는 텍스트의 baseline이므로, 박스 최상단은 baseline에서 폰트의 ascent(대략 height의 80~85%)만큼 올라간 위치임
-          const cssX = startX;
-          const cssY = pageH - line.pdfY - (maxHeight * 0.85);
-          texts.push({
-            id: `st_${elId++}`, text: mergedText,
-            x: cssX, y: cssY, width: totalWidth, height: maxHeight,
-            fontSize: maxFontSize, pageIndex: pageNum - 1, isDeleted: false,
-          });
+        if (currentGroup.length > 0) {
+          pushMergedGroup(currentGroup, line.pdfY);
         }
       });
 
