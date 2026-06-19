@@ -416,7 +416,7 @@ export default function SmartPdfEditor() {
       <div className="max-w-5xl mx-auto bg-gray-800 p-8 rounded-2xl overflow-x-auto border border-gray-700">
         {Array.from({ length: numPages }).map((_, i) => (
           <div key={i} className="relative mx-auto mb-8 bg-white shadow-2xl" style={{ width: 'fit-content' }}>
-            <canvas ref={el => canvasRefs.current[i] = el} className="block" />
+            <canvas ref={el => { canvasRefs.current[i] = el; }} className="block" />
             
             {/* DOM Overlay Layer */}
             {elements.filter(el => el.pageIndex === i && !el.isDeleted).map(el => {
