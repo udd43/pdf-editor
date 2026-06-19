@@ -193,8 +193,9 @@ export default function SmartPdfEditor() {
         });
         if (mergedText.trim()) {
           // PDF 좌표(좌하단) → CSS 좌표(좌상단) 변환
+          // pdfY는 텍스트의 baseline이므로, 박스 최상단은 baseline에서 폰트의 ascent(대략 height의 80~85%)만큼 올라간 위치임
           const cssX = startX;
-          const cssY = pageH - line.pdfY - maxHeight;
+          const cssY = pageH - line.pdfY - (maxHeight * 0.85);
           texts.push({
             id: `st_${elId++}`, text: mergedText,
             x: cssX, y: cssY, width: totalWidth, height: maxHeight,
@@ -658,7 +659,7 @@ export default function SmartPdfEditor() {
             }}>
               <input type="text" value={t.text} onChange={e => updateSmartText(t.id, e.target.value)}
                 className="w-full bg-transparent text-black outline-none px-0.5 border border-transparent hover:border-blue-400 focus:border-blue-500 focus:bg-blue-50/50"
-                style={{ fontSize: `${Math.max(t.fontSize * scale * 0.85, 8)}px`, lineHeight: '1.2', height: `${t.height * scale}px`, fontFamily: 'sans-serif' }}
+                style={{ fontSize: `${Math.max(t.fontSize * scale * 0.95, 8)}px`, lineHeight: '1', height: `${t.height * scale}px`, fontFamily: 'sans-serif', margin: 0, padding: 0 }}
               />
               <button onClick={() => deleteSmartText(t.id)} className="absolute -top-3 -right-3 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity z-20">
                 <Trash2 className="w-3 h-3" />
