@@ -66,7 +66,7 @@ self.onmessage = async (e: MessageEvent) => {
             page.drawRectangle({ x: rectX, y: rectY, width: rectW, height: rectH, color: rgb(1, 1, 1) });
           }
 
-          const fontSize = Math.max(8, box.fontSize || 16);
+          const fontSize = Math.max(1, box.fontSize || 16);
           const selectedFont = fontCache[box.fontFamily || "NotoSansKR"] || fontCache["NotoSansKR"];
           
           try {

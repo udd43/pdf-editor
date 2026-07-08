@@ -488,7 +488,7 @@ export default function PdfEditor({ file, isCorporateMode = false }: PdfEditorPr
   const handleFontSizeChange = useCallback((id: string, delta: number) => {
     saveHistory(textBoxes, imageOverlays, redactions);
     setTextBoxes((prev) => prev.map((b) =>
-      b.id === id ? { ...b, fontSize: Math.max(8, Math.min(72, b.fontSize + delta)), isEdited: true } : b
+      b.id === id ? { ...b, fontSize: Math.max(1, Math.min(72, b.fontSize + delta)), isEdited: true } : b
     ));
   }, [setTextBoxes, saveHistory, textBoxes, imageOverlays]);
 

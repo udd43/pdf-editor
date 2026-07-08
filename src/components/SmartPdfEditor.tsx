@@ -441,7 +441,7 @@ export default function SmartPdfEditor() {
 
   const handleFontSizeChange = useCallback((id: string, delta: number) => {
     saveHistory(textBoxes, imageOverlays, redactions);
-    setTextBoxes(prev => prev.map(b => b.id === id ? { ...b, fontSize: Math.max(8, Math.min(72, b.fontSize + delta)), isEdited: true } : b));
+    setTextBoxes(prev => prev.map(b => b.id === id ? { ...b, fontSize: Math.max(1, Math.min(72, b.fontSize + delta)), isEdited: true } : b));
   }, [setTextBoxes, saveHistory, textBoxes, imageOverlays, redactions]);
 
   const handleFontFamilyChange = useCallback((id: string, fontFamily: string) => {
