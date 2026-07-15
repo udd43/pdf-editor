@@ -17,6 +17,7 @@ import {
   ArrowRight,
   Sparkles,
   ChevronRight,
+  Wand2,
 } from "lucide-react";
 import { PDFDocument } from "pdf-lib";
 import toast from "react-hot-toast";
@@ -96,6 +97,17 @@ export default function HomeGrid({
       badge: "핵심 기능",
     },
     {
+      id: "smartpdf",
+      title: "스마트 편집",
+      description: "PDF 구조를 자동 분석하여 표, 텍스트, 선을 인식하고 셀 단위로 정밀 편집할 수 있습니다.",
+      icon: <Wand2 className="w-7 h-7" />,
+      accent: "from-amber-400 via-orange-500 to-rose-500",
+      iconBg: "bg-amber-50 text-amber-600 border-amber-100",
+      iconBgDark: "dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800",
+      action: "upload",
+      badge: "AI 추천",
+    },
+    {
       id: "upscale",
       title: "이미지 업스케일",
       description: "저화질 이미지를 AI로 선명하게 2배 확대합니다.",
@@ -173,7 +185,11 @@ export default function HomeGrid({
 
   const handleCardClick = useCallback((card: FeatureCardMeta) => {
     if (card.action === "upload") {
-      fileInputRef.current?.click();
+      if (card.id === "smartpdf") {
+        onTabSelect("smartpdf");
+      } else {
+        fileInputRef.current?.click();
+      }
     } else {
       onTabSelect(card.id);
     }
@@ -214,44 +230,60 @@ export default function HomeGrid({
 
       {/* Bento Grid */}
       <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(12, 1fr)" }}>
+        {/* Row 1-2: PDF 편집 (xl) + 스마트 편집 (featured) */}
         <BentoCard card={card("pdf")} isHovered={hoveredCard === "pdf"} isDragging={isDragging === "pdf"}
           onMouseEnter={() => setHoveredCard("pdf")} onMouseLeave={() => setHoveredCard(null)}
           onClick={() => handleCardClick(card("pdf"))}
           onDragOver={(e) => { e.preventDefault(); setIsDragging("pdf"); }}
           onDragLeave={() => setIsDragging(null)}
           onDrop={(e) => { e.preventDefault(); setIsDragging(null); const f = e.dataTransfer.files[0]; if (f) processFile(f); }}
-          style={{ gridColumn: "1 / 8", gridRow: "1 / 3" }} size="xl" />
+          style={{ gridColumn: "1 / 7", gridRow: "1 / 3" }} size="xl" />
 
+        <BentoCard card={card("smartpdf")} isHovered={hoveredCard === "smartpdf"} isDragging={false}
+          onMouseEnter={() => setHoveredCard("smartpdf")} onMouseLeave={() => setHoveredCard(null)}
+          onClick={() => handleCardClick(card("smartpdf"))}
+          onDragOver={() => {}} onDragLeave={() => {}} onDrop={() => {}}
+          style={{ gridColumn: "7 / 13", gridRow: "1 / 3" }} size="featured" />
+
+        {/* Row 3: 누끼따기 + 색상 변경 + 업스케일 */}
         <BentoCard card={card("bgremove")} isHovered={hoveredCard === "bgremove"} isDragging={false}
           onMouseEnter={() => setHoveredCard("bgremove")} onMouseLeave={() => setHoveredCard(null)}
           onClick={() => handleCardClick(card("bgremove"))}
           onDragOver={() => {}} onDragLeave={() => {}} onDrop={() => {}}
-          style={{ gridColumn: "8 / 13", gridRow: "1 / 2" }} size="md" />
+          style={{ gridColumn: "1 / 5", gridRow: "3 / 4" }} size="md" />
 
         <BentoCard card={card("colorize")} isHovered={hoveredCard === "colorize"} isDragging={false}
           onMouseEnter={() => setHoveredCard("colorize")} onMouseLeave={() => setHoveredCard(null)}
           onClick={() => handleCardClick(card("colorize"))}
           onDragOver={() => {}} onDragLeave={() => {}} onDrop={() => {}}
-          style={{ gridColumn: "8 / 13", gridRow: "2 / 3" }} size="md" />
+          style={{ gridColumn: "5 / 9", gridRow: "3 / 4" }} size="md" />
 
+        <BentoCard card={card("upscale")} isHovered={hoveredCard === "upscale"} isDragging={false}
+          onMouseEnter={() => setHoveredCard("upscale")} onMouseLeave={() => setHoveredCard(null)}
+          onClick={() => handleCardClick(card("upscale"))}
+          onDragOver={() => {}} onDragLeave={() => {}} onDrop={() => {}}
+          style={{ gridColumn: "9 / 13", gridRow: "3 / 4" }} size="md" />
+
+        {/* Row 4: 영문명 변환 + 서명 그리기 + 계산기 */}
         <BentoCard card={card("romanize")} isHovered={hoveredCard === "romanize"} isDragging={false}
           onMouseEnter={() => setHoveredCard("romanize")} onMouseLeave={() => setHoveredCard(null)}
           onClick={() => handleCardClick(card("romanize"))}
           onDragOver={() => {}} onDragLeave={() => {}} onDrop={() => {}}
-          style={{ gridColumn: "1 / 5", gridRow: "3 / 4" }} size="sm" />
+          style={{ gridColumn: "1 / 5", gridRow: "4 / 5" }} size="sm" />
 
         <BentoCard card={card("signature")} isHovered={hoveredCard === "signature"} isDragging={false}
           onMouseEnter={() => setHoveredCard("signature")} onMouseLeave={() => setHoveredCard(null)}
           onClick={() => handleCardClick(card("signature"))}
           onDragOver={() => {}} onDragLeave={() => {}} onDrop={() => {}}
-          style={{ gridColumn: "5 / 9", gridRow: "3 / 4" }} size="sm" />
+          style={{ gridColumn: "5 / 9", gridRow: "4 / 5" }} size="sm" />
 
         <BentoCard card={card("calculator")} isHovered={hoveredCard === "calculator"} isDragging={false}
           onMouseEnter={() => setHoveredCard("calculator")} onMouseLeave={() => setHoveredCard(null)}
           onClick={() => handleCardClick(card("calculator"))}
           onDragOver={() => {}} onDragLeave={() => {}} onDrop={() => {}}
-          style={{ gridColumn: "9 / 13", gridRow: "3 / 4" }} size="sm" />
+          style={{ gridColumn: "9 / 13", gridRow: "4 / 5" }} size="sm" />
 
+        {/* Row 5: 이미지 → PDF */}
         <BentoCard card={{
             id: "img2pdf", title: "이미지 → PDF", description: "여러 장의 PNG/JPEG 이미지를 하나의 PDF로 병합합니다.",
             icon: <FileText className="w-6 h-6" />, accent: "from-blue-400 to-cyan-500",
@@ -261,14 +293,14 @@ export default function HomeGrid({
           onMouseEnter={() => setHoveredCard("img2pdf")} onMouseLeave={() => setHoveredCard(null)}
           onClick={() => onTabSelect("img2pdf")}
           onDragOver={() => {}} onDragLeave={() => {}} onDrop={() => {}}
-          style={{ gridColumn: "1 / 13", gridRow: "4 / 5" }} size="sm" />
+          style={{ gridColumn: "1 / 13", gridRow: "5 / 6" }} size="sm" />
 
         {isSecretMode && (
           <BentoCard card={card("corporate")} isHovered={hoveredCard === "corporate"} isDragging={false}
             onMouseEnter={() => setHoveredCard("corporate")} onMouseLeave={() => setHoveredCard(null)}
             onClick={() => handleCardClick(card("corporate"))}
             onDragOver={() => {}} onDragLeave={() => {}} onDrop={() => {}}
-            style={{ gridColumn: "1 / 13", gridRow: "5 / 6" }} size="sm" />
+            style={{ gridColumn: "1 / 13", gridRow: "6 / 7" }} size="sm" />
         )}
       </div>
 
@@ -293,11 +325,12 @@ interface BentoCardProps {
   onDragLeave: () => void;
   onDrop: (e: React.DragEvent) => void;
   style: React.CSSProperties;
-  size: "xl" | "md" | "sm";
+  size: "xl" | "featured" | "md" | "sm";
 }
 
 function BentoCard({ card, isHovered, isDragging, onMouseEnter, onMouseLeave, onClick, onDragOver, onDragLeave, onDrop, style, size }: BentoCardProps) {
   const isXL = size === "xl";
+  const isFeatured = size === "featured";
   const isMd = size === "md";
   const isSm = size === "sm";
 
@@ -305,12 +338,13 @@ function BentoCard({ card, isHovered, isDragging, onMouseEnter, onMouseLeave, on
     <div
       style={style}
       className={`
-        relative group rounded-3xl border cursor-pointer overflow-hidden select-none
+        relative group rounded-3xl cursor-pointer overflow-hidden select-none
         transition-all duration-300 ease-out
         ${isHovered ? "shadow-2xl -translate-y-1 scale-[1.01]" : "shadow-sm hover:shadow-lg"}
-        ${isDragging ? "ring-4 ring-blue-400 ring-offset-2 scale-[1.02] border-blue-300 dark:border-blue-700" : "border-gray-200 dark:border-gray-700/80"}
-        bg-white dark:bg-gray-800/90
-        ${isXL ? "min-h-[280px]" : isMd ? "min-h-[130px]" : "min-h-[110px]"}
+        ${isDragging ? "ring-4 ring-blue-400 ring-offset-2 scale-[1.02] border-blue-300 dark:border-blue-700" : ""}
+        ${isFeatured ? "border-2 border-amber-300 dark:border-amber-600" : "border border-gray-200 dark:border-gray-700/80"}
+        ${isFeatured ? "bg-gradient-to-br from-amber-50 via-white to-orange-50 dark:from-gray-800 dark:via-gray-800/95 dark:to-amber-950/30" : "bg-white dark:bg-gray-800/90"}
+        ${isXL || isFeatured ? "min-h-[280px]" : isMd ? "min-h-[130px]" : "min-h-[110px]"}
       `}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
@@ -319,28 +353,36 @@ function BentoCard({ card, isHovered, isDragging, onMouseEnter, onMouseLeave, on
       onDragLeave={onDragLeave}
       onDrop={onDrop}
     >
+      {/* featured glow */}
+      {isFeatured && (
+        <div className={`absolute -inset-[1px] bg-gradient-to-br ${card.accent} rounded-3xl opacity-20 blur-sm transition-opacity duration-300 ${isHovered ? "opacity-40" : ""}`} style={{ zIndex: -1 }} />
+      )}
       {/* hover gradient */}
-      <div className={`absolute inset-0 bg-gradient-to-br ${card.accent} opacity-0 transition-opacity duration-300 ${isHovered ? "opacity-[0.06]" : ""} ${isDragging ? "opacity-[0.1]" : ""}`} />
+      <div className={`absolute inset-0 bg-gradient-to-br ${card.accent} opacity-0 transition-opacity duration-300 ${isHovered ? "opacity-[0.06]" : ""} ${isDragging ? "opacity-[0.1]" : ""} ${isFeatured && !isHovered ? "opacity-[0.03]" : ""}`} />
       {/* top color bar */}
-      <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${card.accent} opacity-0 transition-opacity duration-300 ${isHovered || isDragging ? "opacity-100" : ""}`} />
+      <div className={`absolute top-0 left-0 right-0 bg-gradient-to-r ${card.accent} transition-opacity duration-300 ${isFeatured ? "h-1.5 opacity-100" : `h-1 ${isHovered || isDragging ? "opacity-100" : "opacity-0"}`}`} />
 
-      <div className={`relative h-full flex flex-col ${isXL ? "p-8" : isMd ? "p-6" : "p-5"}`}>
+      <div className={`relative h-full flex flex-col ${isXL || isFeatured ? "p-8" : isMd ? "p-6" : "p-5"}`}>
         {/* icon + badge */}
         <div className="flex items-start justify-between mb-auto">
-          <div className={`rounded-2xl border flex items-center justify-center transition-transform duration-300 ${isHovered ? "scale-110" : ""} ${card.iconBg} ${card.iconBgDark} ${isXL ? "w-14 h-14" : "w-11 h-11"}`}>
+          <div className={`rounded-2xl border flex items-center justify-center transition-transform duration-300 ${isHovered ? "scale-110" : ""} ${card.iconBg} ${card.iconBgDark} ${isXL || isFeatured ? "w-14 h-14" : "w-11 h-11"}`}>
             {card.icon}
           </div>
           {card.badge && (
-            <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border ${card.id === "corporate" ? "bg-red-50 dark:bg-red-900/30 text-red-500 dark:text-red-400 border-red-100 dark:border-red-800" : "bg-blue-50 dark:bg-blue-900/30 text-blue-500 dark:text-blue-400 border-blue-100 dark:border-blue-800"}`}>
+            <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border ${
+              card.id === "corporate" ? "bg-red-50 dark:bg-red-900/30 text-red-500 dark:text-red-400 border-red-100 dark:border-red-800"
+              : card.id === "smartpdf" ? "bg-gradient-to-r from-amber-500 to-orange-500 text-white border-amber-400 dark:border-amber-600 shadow-md animate-pulse"
+              : "bg-blue-50 dark:bg-blue-900/30 text-blue-500 dark:text-blue-400 border-blue-100 dark:border-blue-800"
+            }`}>
               {card.badge}
             </span>
           )}
         </div>
 
         {/* text */}
-        <div className={isXL ? "mt-6" : "mt-4"}>
-          <h3 className={`font-bold text-gray-900 dark:text-white tracking-tight ${isXL ? "text-2xl mb-3" : isMd ? "text-base mb-2" : "text-sm mb-1.5"}`}>{card.title}</h3>
-          {(isXL || isMd) && <p className={`text-gray-500 dark:text-gray-400 leading-relaxed ${isXL ? "text-sm max-w-xs" : "text-xs"}`}>{card.description}</p>}
+        <div className={isXL || isFeatured ? "mt-6" : "mt-4"}>
+          <h3 className={`font-bold text-gray-900 dark:text-white tracking-tight ${isXL || isFeatured ? "text-2xl mb-3" : isMd ? "text-base mb-2" : "text-sm mb-1.5"}`}>{card.title}</h3>
+          {(isXL || isFeatured || isMd) && <p className={`text-gray-500 dark:text-gray-400 leading-relaxed ${isXL || isFeatured ? "text-sm max-w-xs" : "text-xs"}`}>{card.description}</p>}
           {isSm && <p className="text-[11px] text-gray-400 dark:text-gray-500 leading-snug line-clamp-2">{card.description}</p>}
         </div>
 
@@ -360,8 +402,24 @@ function BentoCard({ card, isHovered, isDragging, onMouseEnter, onMouseLeave, on
           </div>
         )}
 
+        {/* Featured: CTA button */}
+        {isFeatured && (
+          <div className="mt-6 flex items-end justify-between">
+            <div className="flex items-center gap-2 text-xs text-amber-500 dark:text-amber-400">
+              <Sparkles className="w-4 h-4" />
+              <span>AI가 문서 구조를 자동 분석합니다</span>
+            </div>
+            <button
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold text-white bg-gradient-to-r ${card.accent} shadow-lg transition-all duration-200 hover:shadow-xl hover:scale-105 active:scale-95`}
+              onClick={(e) => { e.stopPropagation(); onClick(); }}
+            >
+              시작하기 <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
+
         {/* MD/SM arrow */}
-        {!isXL && (
+        {!isXL && !isFeatured && (
           <div className={`absolute bottom-4 right-4 transition-all duration-300 ${isHovered ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-2"}`}>
             <ChevronRight className="w-4 h-4 text-gray-400 dark:text-gray-500" />
           </div>
