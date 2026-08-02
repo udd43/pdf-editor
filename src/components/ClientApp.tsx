@@ -41,19 +41,6 @@ export default function ClientApp() {
   const [secretClickCount, setSecretClickCount] = useState(0);
   const [showEasterEgg, setShowEasterEgg] = useState(false);
 
-  // ── Dark mode: system preference detection ──
-  useEffect(() => {
-    if (darkModePreference === "system") {
-      const mq = window.matchMedia("(prefers-color-scheme: dark)");
-      const handler = (e: MediaQueryListEvent) => setIsDarkMode(e.matches);
-      setIsDarkMode(mq.matches);
-      mq.addEventListener("change", handler);
-      return () => mq.removeEventListener("change", handler);
-    } else {
-      setIsDarkMode(darkModePreference === "dark");
-    }
-  }, [darkModePreference]);
-
   useEffect(() => {
     if (isDarkMode) {
       document.documentElement.classList.add("dark");
@@ -127,23 +114,19 @@ export default function ClientApp() {
     if (f && f.type === "application/pdf") setReferenceFile(f);
   };
 
-  // ── Dark mode cycling: light → dark → system ──
+  const [pdfSubTab, setPdfSubTab] = useState<"img2pdf" | "mergesplit" | "compress">("img2pdf");
+
+  // ── Dark mode toggle (Light <-> Dark) ──
   const cycleDarkMode = () => {
-    if (darkModePreference === "light") setDarkModePreference("dark");
-    else if (darkModePreference === "dark") setDarkModePreference("system");
-    else setDarkModePreference("light");
+    setIsDarkMode(!isDarkMode);
   };
 
-  const darkModeIcon = darkModePreference === "dark"
+  const darkModeIcon = isDarkMode
     ? <Sun className="w-4 h-4" />
-    : darkModePreference === "system"
-    ? <Monitor className="w-4 h-4" />
     : <Moon className="w-4 h-4" />;
 
-  const darkModeTitle = darkModePreference === "dark"
+  const darkModeTitle = isDarkMode
     ? "라이트 모드로 전환"
-    : darkModePreference === "system"
-    ? "시스템 설정 (자동)"
     : "다크 모드로 전환";
 
   const tabs: { id: Tab; label: string; icon: React.ReactNode; color: string; activeBg: string }[] = [
@@ -155,9 +138,7 @@ export default function ClientApp() {
     { id: "signature", label: "서명 그리기", icon: <PenTool className="w-3.5 h-3.5" />, color: "text-gray-600 dark:text-gray-300", activeBg: "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm" },
     { id: "calculator", label: "계산기", icon: <Calculator className="w-3.5 h-3.5" />, color: "text-gray-600 dark:text-gray-300", activeBg: "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm" },
     { id: "smartpdf", label: "스마트 편집", icon: <Sparkles className="w-3.5 h-3.5 text-amber-500" />, color: "text-amber-600 dark:text-amber-400", activeBg: "bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 shadow-sm font-bold border border-amber-200 dark:border-amber-800" },
-    { id: "img2pdf", label: "이미지→PDF", icon: <FileTextIcon className="w-3.5 h-3.5" />, color: "text-gray-600 dark:text-gray-300", activeBg: "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm" },
-    { id: "mergesplit", label: "합치기/분할", icon: <Merge className="w-3.5 h-3.5" />, color: "text-gray-600 dark:text-gray-300", activeBg: "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm" },
-    { id: "compress", label: "PDF 압축", icon: <Archive className="w-3.5 h-3.5" />, color: "text-gray-600 dark:text-gray-300", activeBg: "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm" },
+    { id: "pdftools", label: "PDF 도구", icon: <Merge className="w-3.5 h-3.5" />, color: "text-gray-600 dark:text-gray-300", activeBg: "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm" },
   ];
   if (isSecretMode) {
     tabs.push({
@@ -200,20 +181,23 @@ export default function ClientApp() {
           </div>
 
           <nav className="hidden lg:flex shrink-0 items-center bg-gray-200/50 dark:bg-gray-800/50 rounded-full p-1 border border-gray-200 dark:border-gray-700 gap-1 transition-colors duration-300">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold rounded-full transition-all duration-200 ${
-                  activeTab === tab.id
-                    ? tab.activeBg
-                    : "text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200/50 dark:hover:bg-gray-700/50"
-                }`}
-              >
-                {tab.icon}
-                <span>{tab.label}</span>
-              </button>
-            ))}
+            {tabs.map((tab) => {
+              const isActive = activeTab === tab.id || (tab.id === "pdftools" && ["pdftools", "img2pdf", "mergesplit", "compress"].includes(activeTab));
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold rounded-full transition-all duration-200 ${
+                    isActive
+                      ? tab.activeBg
+                      : "text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200/50 dark:hover:bg-gray-700/50"
+                  }`}
+                >
+                  {tab.icon}
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
           </nav>
 
           <div className="flex-1 flex justify-end gap-2 items-center">
@@ -316,9 +300,51 @@ export default function ClientApp() {
           {activeTab === "signature" && <SignatureTab />}
           {activeTab === "calculator" && <CalculatorTab />}
           {activeTab === "smartpdf" && <SmartPdfEditor />}
-          {activeTab === "img2pdf" && <ImageToPdfConverter />}
-          {activeTab === "mergesplit" && <PdfMergeSplit />}
-          {activeTab === "compress" && <PdfCompress />}
+
+          {["pdftools", "img2pdf", "mergesplit", "compress"].includes(activeTab) && (
+            <div className="w-full max-w-4xl mx-auto flex flex-col items-center">
+              {/* 서브 탭 헤더 */}
+              <div className="flex bg-gray-200/70 dark:bg-gray-800 p-1.5 rounded-2xl mb-8 gap-2 border border-gray-200 dark:border-gray-700 shadow-sm">
+                <button
+                  onClick={() => { setActiveTab("pdftools"); setPdfSubTab("img2pdf"); }}
+                  className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                    (activeTab === "img2pdf" || (activeTab === "pdftools" && pdfSubTab === "img2pdf"))
+                      ? "bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm scale-[1.02]"
+                      : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                  }`}
+                >
+                  <FileTextIcon className="w-4 h-4" /> 이미지 → PDF
+                </button>
+                <button
+                  onClick={() => { setActiveTab("pdftools"); setPdfSubTab("mergesplit"); }}
+                  className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                    (activeTab === "mergesplit" || (activeTab === "pdftools" && pdfSubTab === "mergesplit"))
+                      ? "bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm scale-[1.02]"
+                      : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                  }`}
+                >
+                  <Merge className="w-4 h-4" /> 합치기 / 분할
+                </button>
+                <button
+                  onClick={() => { setActiveTab("pdftools"); setPdfSubTab("compress"); }}
+                  className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                    (activeTab === "compress" || (activeTab === "pdftools" && pdfSubTab === "compress"))
+                      ? "bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm scale-[1.02]"
+                      : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                  }`}
+                >
+                  <Archive className="w-4 h-4" /> PDF 압축
+                </button>
+              </div>
+
+              {/* 서브 컴포넌트 렌더링 */}
+              <div className="w-full">
+                {(activeTab === "img2pdf" || (activeTab === "pdftools" && pdfSubTab === "img2pdf")) && <ImageToPdfConverter />}
+                {(activeTab === "mergesplit" || (activeTab === "pdftools" && pdfSubTab === "mergesplit")) && <PdfMergeSplit />}
+                {(activeTab === "compress" || (activeTab === "pdftools" && pdfSubTab === "compress")) && <PdfCompress />}
+              </div>
+            </div>
+          )}
         </React.Suspense>
 
         {activeTab === "corporate" && (

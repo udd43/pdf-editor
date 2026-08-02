@@ -14,7 +14,8 @@ export type Tab =
   | "smartpdf"
   | "img2pdf"
   | "mergesplit"
-  | "compress";
+  | "compress"
+  | "pdftools";
 
 interface AppState {
   // Navigation
