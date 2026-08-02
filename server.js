@@ -25,6 +25,7 @@ app.post('/api/upscale', upload.single('image'), async (req, res) => {
     const file = req.file;
     const scaleStr = req.body.scale;
     const noiseStr = req.body.noise;
+    const modelStr = req.body.model || 'realesr-animevideov3';
 
     if (!file) {
       return res.status(400).json({ error: "이미지 파일이 필요합니다." });
@@ -50,7 +51,7 @@ app.post('/api/upscale', upload.single('image'), async (req, res) => {
         [
           '-i', inputPath,
           '-o', outputPath,
-          '-n', 'realesrgan-x4plus',
+          '-n', modelStr,
           '-s', String(scale),
           '-g', '0',
           '-j', '2:2:2',

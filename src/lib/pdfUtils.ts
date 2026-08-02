@@ -268,3 +268,90 @@ async function processRedactionsAndCompression(
   // Save the modified PDF
   return await pdfLibDoc.save({ useObjectStreams: true });
 }
+
+/**
+ * Merge multiple PDF ArrayBuffers in order.
+ */
+export async function mergeMultiplePdfs(buffers: ArrayBuffer[]): Promise<ArrayBuffer> {
+  if (buffers.length === 0) throw new Error("No PDFs to merge");
+  if (buffers.length === 1) return buffers[0];
+
+  const mergedPdf = await PDFDocument.create();
+  for (const buffer of buffers) {
+    const pdf = await PDFDocument.load(buffer);
+    const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+    copiedPages.forEach((page) => mergedPdf.addPage(page));
+  }
+  const mergedBytes = await mergedPdf.save();
+  return mergedBytes.buffer.slice(mergedBytes.byteOffset, mergedBytes.byteOffset + mergedBytes.byteLength) as ArrayBuffer;
+}
+
+/**
+ * Split specific pages (0-based indices) into a new PDF document.
+ */
+export async function extractPdfPages(buffer: ArrayBuffer, pageIndices: number[]): Promise<ArrayBuffer> {
+  const srcPdf = await PDFDocument.load(buffer);
+  const newPdf = await PDFDocument.create();
+  const copiedPages = await newPdf.copyPages(srcPdf, pageIndices);
+  copiedPages.forEach((page) => newPdf.addPage(page));
+  const newBytes = await newPdf.save();
+  return newBytes.buffer.slice(newBytes.byteOffset, newBytes.byteOffset + newBytes.byteLength) as ArrayBuffer;
+}
+
+/**
+ * Rotate specific pages or all pages by given degrees (90, 180, 270).
+ */
+export async function rotatePdfPages(buffer: ArrayBuffer, rotations: Map<number, number>): Promise<ArrayBuffer> {
+  const pdf = await PDFDocument.load(buffer);
+  const pages = pdf.getPages();
+
+  rotations.forEach((deg, pageIdx) => {
+    if (pageIdx >= 0 && pageIdx < pages.length) {
+      const currentRotation = pages[pageIdx].getRotation().angle;
+      pages[pageIdx].setRotation((currentRotation + deg) % 360 as any);
+    }
+  });
+
+  const modifiedBytes = await pdf.save();
+  return modifiedBytes.buffer.slice(modifiedBytes.byteOffset, modifiedBytes.byteOffset + modifiedBytes.byteLength) as ArrayBuffer;
+}
+
+/**
+ * Compress PDF by rendering pages into JPEG with chosen quality (0.1 ~ 1.0).
+ */
+export async function compressPdfBuffer(buffer: ArrayBuffer, quality: number = 0.65, scale: number = 1.2): Promise<ArrayBuffer> {
+  const loadingTask = pdfjsLib.getDocument({ data: buffer });
+  const pdfJsDoc = await loadingTask.promise;
+  const pdfLibDoc = await PDFDocument.create();
+
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d", { alpha: false });
+  if (!ctx) throw new Error("Canvas context creation failed");
+
+  for (let i = 1; i <= pdfJsDoc.numPages; i++) {
+    const page = await pdfJsDoc.getPage(i);
+    const viewport = page.getViewport({ scale });
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+
+    ctx.fillStyle = "white";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    await page.render({ canvasContext: ctx, viewport }).promise;
+    const dataUrl = canvas.toDataURL("image/jpeg", quality);
+    const imgBytes = await fetch(dataUrl).then((r) => r.arrayBuffer());
+    const embeddedImg = await pdfLibDoc.embedJpg(imgBytes);
+
+    const pdfPage = pdfLibDoc.addPage([viewport.width / scale, viewport.height / scale]);
+    pdfPage.drawImage(embeddedImg, {
+      x: 0,
+      y: 0,
+      width: viewport.width / scale,
+      height: viewport.height / scale,
+    });
+  }
+
+  const compressedBytes = await pdfLibDoc.save({ useObjectStreams: true });
+  return compressedBytes.buffer.slice(compressedBytes.byteOffset, compressedBytes.byteOffset + compressedBytes.byteLength) as ArrayBuffer;
+}
+

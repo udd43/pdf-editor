@@ -13,6 +13,7 @@ export default function ImageUpscaler() {
   const [originalFile, setOriginalFile] = useState<File | null>(null);
   const [originalSize, setOriginalSize] = useState({ w: 0, h: 0 });
   const [resultSize, setResultSize] = useState({ w: 0, h: 0 });
+  const [model, setModel] = useState("realesr-animevideov3");
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -44,8 +45,9 @@ export default function ImageUpscaler() {
       formData.append("image", originalFile);
       formData.append("scale", "2");
       formData.append("noise", "-1");
+      formData.append("model", model);
 
-      setProgress("Real-ESRGAN 초고속 모델 불러오는 중... (최대 10~30초 소요)");
+      setProgress("초고속 모델 불러오는 중... (최대 10~30초 소요)");
 
       const res = await fetch("/api/upscale", {
         method: "POST",
@@ -140,9 +142,22 @@ export default function ImageUpscaler() {
           </div>
 
           {/* 설정 패널 */}
-          <div className="w-full mb-6 flex justify-center">
+          <div className="w-full mb-6 flex flex-col sm:flex-row justify-center items-center gap-4">
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 whitespace-nowrap">모델 선택:</label>
+              <select 
+                value={model} 
+                onChange={(e) => setModel(e.target.value)}
+                className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 shadow-sm min-w-[200px]"
+              >
+                <option value="realesr-animevideov3">고속/애니메이션 (AnimeVideo v3)</option>
+                <option value="realesrgan-x4plus-anime">일러스트/애니 (Anime)</option>
+                <option value="realesrgan-x4plus">일반 사진 (RealESRGAN)</option>
+              </select>
+            </div>
+            
             <button onClick={handleUpscale} disabled={isProcessing}
-              className="flex items-center gap-2 px-8 py-3 bg-blue-600 text-white text-sm font-semibold rounded-full shadow-sm hover:bg-blue-700 hover:scale-[1.02] active:scale-95 disabled:opacity-50 transition-all">
+              className="flex items-center justify-center gap-2 px-8 py-2.5 h-[42px] bg-blue-600 text-white text-sm font-semibold rounded-full shadow-sm hover:bg-blue-700 hover:scale-[1.02] active:scale-95 disabled:opacity-50 transition-all w-full sm:w-auto">
               {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <ZoomIn className="w-4 h-4" />}
               {isProcessing ? "처리 중..." : "2배 업스케일링 시작"}
             </button>
