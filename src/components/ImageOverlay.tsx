@@ -145,18 +145,56 @@ export default function ImageOverlay({
     window.addEventListener("mouseup", handleUp);
   };
 
-  // 배경 제거 (누끼)
+  // 배경 제거 (누끼) - 원본 해상도 보존
   const handleRemoveBg = async () => {
     setIsRemovingBg(true);
     try {
+      // 1. 원본 이미지 로드
+      const origImg = new Image();
+      origImg.crossOrigin = "anonymous";
+      origImg.src = overlay.originalSrc;
+      await new Promise((resolve) => (origImg.onload = resolve));
+
+      // 2. AI 처리를 위해 축소 (속도 향상)
+      const MAX_SIZE = 800;
+      let sw = origImg.width, sh = origImg.height;
+      if (sw > MAX_SIZE || sh > MAX_SIZE) {
+        if (sw > sh) { sh = Math.round((sh * MAX_SIZE) / sw); sw = MAX_SIZE; }
+        else { sw = Math.round((sw * MAX_SIZE) / sh); sh = MAX_SIZE; }
+      }
+      const smallCanvas = document.createElement("canvas");
+      smallCanvas.width = sw;
+      smallCanvas.height = sh;
+      const smallCtx = smallCanvas.getContext("2d")!;
+      smallCtx.drawImage(origImg, 0, 0, sw, sh);
+      const smallBlob = await new Promise<Blob>((resolve) =>
+        smallCanvas.toBlob((b) => resolve(b!), "image/png")
+      );
+
+      // 3. 축소 이미지로 AI 배경 제거
       const { removeBackground } = await import("@imgly/background-removal");
-      const response = await fetch(overlay.originalSrc);
-      const blob = await response.blob();
-      const resultBlob = await removeBackground(blob, {
+      const smallResultBlob = await removeBackground(smallBlob, {
         model: "isnet_quint8",
         output: { format: "image/png" as const },
       });
-      const resultUrl = URL.createObjectURL(resultBlob);
+
+      // 4. 마스크를 원본 해상도에 덧씌우기
+      const maskImg = new Image();
+      maskImg.src = URL.createObjectURL(smallResultBlob);
+      await new Promise((resolve) => (maskImg.onload = resolve));
+
+      const finalCanvas = document.createElement("canvas");
+      finalCanvas.width = origImg.width;
+      finalCanvas.height = origImg.height;
+      const finalCtx = finalCanvas.getContext("2d")!;
+      finalCtx.drawImage(origImg, 0, 0);
+      finalCtx.globalCompositeOperation = "destination-in";
+      finalCtx.drawImage(maskImg, 0, 0, origImg.width, origImg.height);
+
+      const finalBlob = await new Promise<Blob>((resolve) =>
+        finalCanvas.toBlob((b) => resolve(b!), "image/png")
+      );
+      const resultUrl = URL.createObjectURL(finalBlob);
       onUpdate(overlay.id, { displaySrc: resultUrl, removedBgSrc: resultUrl });
     } catch (err) {
       console.error("배경 제거 실패:", err);

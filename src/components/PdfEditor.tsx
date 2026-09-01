@@ -587,26 +587,63 @@ export default function PdfEditor({ file, isCorporateMode = false }: PdfEditorPr
     setIsRemovingBg(true);
     setStatusMsg("배경을 제거하는 중...");
     try {
+      // 1. 원본 이미지 로드 (크기 보존용)
+      const originalUrl = URL.createObjectURL(imgFile);
+      const origImg = new Image();
+      origImg.src = originalUrl;
+      await new Promise((resolve) => (origImg.onload = resolve));
+
+      // 2. AI 처리를 위해 축소 (속도 향상)
+      const MAX_SIZE = 800;
+      let sw = origImg.width, sh = origImg.height;
+      if (sw > MAX_SIZE || sh > MAX_SIZE) {
+        if (sw > sh) { sh = Math.round((sh * MAX_SIZE) / sw); sw = MAX_SIZE; }
+        else { sw = Math.round((sw * MAX_SIZE) / sh); sh = MAX_SIZE; }
+      }
+      const smallCanvas = document.createElement("canvas");
+      smallCanvas.width = sw;
+      smallCanvas.height = sh;
+      const smallCtx = smallCanvas.getContext("2d")!;
+      smallCtx.drawImage(origImg, 0, 0, sw, sh);
+      const smallBlob = await new Promise<Blob>((resolve) =>
+        smallCanvas.toBlob((b) => resolve(b!), "image/png")
+      );
+
+      // 3. 축소 이미지로 AI 배경 제거
       const { removeBackground } = await import("@imgly/background-removal");
-      const resultBlob = await removeBackground(imgFile, {
+      const smallResultBlob = await removeBackground(smallBlob, {
         model: "isnet_quint8",
         output: { format: "image/png" as const },
       });
-      const resultUrl = URL.createObjectURL(resultBlob);
-      const originalUrl = URL.createObjectURL(imgFile);
-      const img = new Image();
-      img.onload = () => {
-        const { w, h, x, y } = getOptimizedImageCoords(img.width, img.height, imageOverlays.length);
-        const newOverlay: ImageOverlayData = {
-          id: `img-${Date.now()}`, originalSrc: originalUrl, displaySrc: resultUrl,
-          removedBgSrc: resultUrl, x, y, width: w, height: h, pageIndex: currentPage,
-        };
-        setImageOverlays((prev) => [...prev, newOverlay]);
-        setSelectedImageId(newOverlay.id);
-        setIsRemovingBg(false);
-        setStatusMsg("배경 제거 완료!");
+
+      // 4. 마스크를 원본 해상도에 덧씌우기
+      const maskImg = new Image();
+      maskImg.src = URL.createObjectURL(smallResultBlob);
+      await new Promise((resolve) => (maskImg.onload = resolve));
+
+      const finalCanvas = document.createElement("canvas");
+      finalCanvas.width = origImg.width;
+      finalCanvas.height = origImg.height;
+      const finalCtx = finalCanvas.getContext("2d")!;
+      finalCtx.drawImage(origImg, 0, 0);
+      finalCtx.globalCompositeOperation = "destination-in";
+      finalCtx.drawImage(maskImg, 0, 0, origImg.width, origImg.height);
+
+      const finalBlob = await new Promise<Blob>((resolve) =>
+        finalCanvas.toBlob((b) => resolve(b!), "image/png")
+      );
+      const resultUrl = URL.createObjectURL(finalBlob);
+
+      // 5. 원본 이미지 크기 기준으로 좌표 계산
+      const { w, h, x, y } = getOptimizedImageCoords(origImg.width, origImg.height, imageOverlays.length);
+      const newOverlay: ImageOverlayData = {
+        id: `img-${Date.now()}`, originalSrc: originalUrl, displaySrc: resultUrl,
+        removedBgSrc: resultUrl, x, y, width: w, height: h, pageIndex: currentPage,
       };
-      img.src = resultUrl;
+      setImageOverlays((prev) => [...prev, newOverlay]);
+      setSelectedImageId(newOverlay.id);
+      setIsRemovingBg(false);
+      setStatusMsg("배경 제거 완료!");
     } catch (err) {
       console.error("배경 제거 실패:", err);
       setIsRemovingBg(false);
