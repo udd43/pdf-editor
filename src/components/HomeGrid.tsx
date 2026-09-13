@@ -1,4 +1,4 @@
-"use client";
+
 
 import React, {
   useState,
@@ -18,9 +18,11 @@ import {
   Sparkles,
   ChevronRight,
   Wand2,
+  Smartphone,
 } from "lucide-react";
 import { PDFDocument } from "pdf-lib";
 import toast from "react-hot-toast";
+import { isHeicFile, convertHeicToPng } from "@/lib/imageUtils";
 
 export interface FeatureCardMeta {
   id: string;
@@ -57,6 +59,29 @@ export default function HomeGrid({
       onFileSelect(file);
       onTabSelect("pdf");
       return;
+    }
+    if (isHeicFile(file)) {
+      const toastId = toast.loading("아이폰 HEIC 이미지를 변환하는 중...");
+      try {
+        const pngBlob = await convertHeicToPng(file);
+        const ab = await pngBlob.arrayBuffer();
+        const pdfDoc = await PDFDocument.create();
+        const img = await pdfDoc.embedPng(ab);
+        const page = pdfDoc.addPage([img.width, img.height]);
+        page.drawImage(img, { x: 0, y: 0, width: img.width, height: img.height });
+        const bytes = await pdfDoc.save();
+        const blob = new Blob([bytes as any], { type: "application/pdf" });
+        const newFile = new File([blob], `${file.name.replace(/\.[^/.]+$/, "")}.pdf`, {
+          type: "application/pdf",
+        });
+        toast.success("HEIC 변환 완료! PDF 편집기로 열립니다.", { id: toastId });
+        onFileSelect(newFile);
+        onTabSelect("pdf");
+        return;
+      } catch (e) {
+        toast.error("HEIC 파일 변환 실패", { id: toastId });
+        return;
+      }
     }
     if (file.type.startsWith("image/")) {
       try {
@@ -116,6 +141,17 @@ export default function HomeGrid({
       iconBg: "bg-amber-50 text-amber-600 border-amber-100",
       iconBgDark: "dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800",
       action: "expand",
+    },
+    {
+      id: "heic",
+      title: "HEIC 변환",
+      description: "아이폰 고효율 사진(HEIC)을 어디서나 열리는 고화질 PNG로 변환합니다.",
+      icon: <Smartphone className="w-6 h-6" />,
+      accent: "from-sky-400 to-blue-600",
+      iconBg: "bg-sky-50 text-sky-600 border-sky-100",
+      iconBgDark: "dark:bg-sky-900/30 dark:text-sky-400 dark:border-sky-800",
+      action: "expand",
+      badge: "NEW",
     },
     {
       id: "bgremove",

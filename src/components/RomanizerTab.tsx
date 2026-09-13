@@ -1,4 +1,4 @@
-"use client";
+
 
 import React, { useState } from "react";
 import { Languages, Copy, Check, ArrowRight } from "lucide-react";

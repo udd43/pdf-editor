@@ -25,114 +25,112 @@ export async function exportEditedPdf(
   _scale: number, 
   filename: string = "edited_document.pdf"
 ): Promise<void> {
-  return new Promise(async (resolve, reject) => {
-    try {
-      // 1. 폰트 ArrayBuffer 로드 (캐시 사용)
-      const fontBuffers = await getFontBuffers();
+  // 1. 폰트 ArrayBuffer 로드 (캐시 사용)
+  const fontBuffers = await getFontBuffers();
 
-      // 2. 이미지들을 ArrayBuffer로 변환
-      const overlayDataForWorker = await Promise.all(
-        imageOverlays.map(async (overlay) => {
-          try {
-            const imgDataUrl = overlay.displaySrc;
-            const response = await fetch(imgDataUrl);
-            const imgBlob = await response.blob();
-            const imgBuffer = await imgBlob.arrayBuffer();
-            
-            return {
-              id: overlay.id,
-              pageIndex: overlay.pageIndex,
-              x: overlay.x,
-              y: overlay.y,
-              width: overlay.width,
-              height: overlay.height,
-              buffer: imgBuffer,
-              isPng: imgDataUrl.includes("image/png") || imgDataUrl.startsWith("blob:"),
-              rotation: overlay.rotation || 0
-            };
-          } catch (e) {
-            console.warn(`이미지 버퍼 로드 실패 (${overlay.id}):`, e);
-            return {
-              ...overlay,
-              buffer: null,
-              isPng: false,
-              rotation: 0
-            };
-          }
-        })
-      );
+  // 2. 이미지들을 ArrayBuffer로 변환
+  const overlayDataForWorker = await Promise.all(
+    imageOverlays.map(async (overlay) => {
+      try {
+        const imgDataUrl = overlay.displaySrc;
+        const response = await fetch(imgDataUrl);
+        const imgBlob = await response.blob();
+        const imgBuffer = await imgBlob.arrayBuffer();
+        
+        return {
+          id: overlay.id,
+          pageIndex: overlay.pageIndex,
+          x: overlay.x,
+          y: overlay.y,
+          width: overlay.width,
+          height: overlay.height,
+          buffer: imgBuffer,
+          isPng: imgDataUrl.includes("image/png") || imgDataUrl.startsWith("blob:"),
+          rotation: overlay.rotation || 0
+        };
+      } catch (e) {
+        console.warn(`이미지 버퍼 로드 실패 (${overlay.id}):`, e);
+        return {
+          ...overlay,
+          buffer: null,
+          isPng: false,
+          rotation: 0
+        };
+      }
+    })
+  );
 
-      // 3. Web Worker 생성 및 메시지 전송
-      const worker = new Worker(new URL('../workers/pdfExportWorker.ts', import.meta.url));
+  // 3. Web Worker 생성 및 메시지 전송 — Promise로 worker 완료를 기다림
+  const workerResult = await new Promise<{ pdfBytes: Uint8Array }>((resolve, reject) => {
+    const worker = new Worker(new URL('../workers/pdfExportWorker.ts', import.meta.url));
 
-      worker.onmessage = async (e) => {
-        worker.terminate();
-        const { success, pdfBytes, error } = e.data;
-        if (success && pdfBytes) {
-          let finalBytes = pdfBytes;
-          const isCompressing = finalBytes.byteLength > 20 * 1024 * 1024;
-          const hasRedactions = redactions && redactions.length > 0;
-          
-          if (hasRedactions || isCompressing) {
-            const toastId = toast.loading(isCompressing ? "20MB 초과: 자동 압축 및 처리 중..." : "블라인드 병합 처리 중...");
-            try {
-              finalBytes = await processRedactionsAndCompression(finalBytes, redactions || [], isCompressing);
-              toast.success("처리가 완료되었습니다!", { id: toastId });
-            } catch (err) {
-              console.error(err);
-              toast.error("처리 중 오류가 발생했습니다. 원본을 저장합니다.", { id: toastId });
-            }
-          }
+    worker.onmessage = (e) => {
+      worker.terminate();
+      const { success, pdfBytes, error } = e.data;
+      if (success && pdfBytes) {
+        resolve({ pdfBytes });
+      } else {
+        reject(new Error(error || "Worker PDF 생성 실패"));
+      }
+    };
 
-          const blob = new Blob([finalBytes], { type: "application/pdf" });
-          const url = URL.createObjectURL(blob);
-          const link = document.createElement("a");
-          link.href = url;
-          link.download = filename;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          URL.revokeObjectURL(url);
-          resolve();
-        } else {
-          reject(new Error(error || "Worker PDF 생성 실패"));
-        }
-      };
-
-      worker.onerror = (err) => {
-        worker.terminate();
-        reject(err);
-      };
-
-      // ArrayBuffer는 Transferable 객체이므로 복사본을 만들어 전달 (원본 보존)
-      const bufferCopy = originalPdfBuffer.slice(0);
-      const transferables = [bufferCopy];
-      
-      const fontsForWorker = {
-        NotoSansKR: fontBuffers.NotoSansKR ? fontBuffers.NotoSansKR.slice(0) : null,
-        NanumMyeongjo: fontBuffers.NanumMyeongjo ? fontBuffers.NanumMyeongjo.slice(0) : null,
-        Jua: fontBuffers.Jua ? fontBuffers.Jua.slice(0) : null,
-      };
-
-      if (fontsForWorker.NotoSansKR) transferables.push(fontsForWorker.NotoSansKR);
-      if (fontsForWorker.NanumMyeongjo) transferables.push(fontsForWorker.NanumMyeongjo);
-      if (fontsForWorker.Jua) transferables.push(fontsForWorker.Jua);
-      
-      overlayDataForWorker.forEach(o => {
-        if (o.buffer) transferables.push(o.buffer);
-      });
-
-      worker.postMessage({
-        originalPdfBuffer: bufferCopy,
-        editedBoxes,
-        imageOverlays: overlayDataForWorker,
-        fontBuffers: fontsForWorker
-      }, transferables);
-
-    } catch (err) {
+    worker.onerror = (err) => {
+      worker.terminate();
       reject(err);
-    }
+    };
+
+    // ArrayBuffer는 Transferable 객체이므로 복사본을 만들어 전달 (원본 보존)
+    const bufferCopy = originalPdfBuffer.slice(0);
+    const transferables: ArrayBuffer[] = [bufferCopy];
+    
+    const fontsForWorker = {
+      NotoSansKR: fontBuffers.NotoSansKR ? fontBuffers.NotoSansKR.slice(0) : null,
+      NanumMyeongjo: fontBuffers.NanumMyeongjo ? fontBuffers.NanumMyeongjo.slice(0) : null,
+      Jua: fontBuffers.Jua ? fontBuffers.Jua.slice(0) : null,
+    };
+
+    if (fontsForWorker.NotoSansKR) transferables.push(fontsForWorker.NotoSansKR);
+    if (fontsForWorker.NanumMyeongjo) transferables.push(fontsForWorker.NanumMyeongjo);
+    if (fontsForWorker.Jua) transferables.push(fontsForWorker.Jua);
+    
+    overlayDataForWorker.forEach(o => {
+      if (o.buffer) transferables.push(o.buffer);
+    });
+
+    worker.postMessage({
+      originalPdfBuffer: bufferCopy,
+      editedBoxes,
+      imageOverlays: overlayDataForWorker,
+      fontBuffers: fontsForWorker
+    }, transferables);
   });
+
+  // 4. Worker 결과 후처리 (redactions, compression)
+  let finalBytes: Uint8Array = workerResult.pdfBytes;
+  const isCompressing = finalBytes.byteLength > 20 * 1024 * 1024;
+  const hasRedactions = redactions && redactions.length > 0;
+  
+  if (hasRedactions || isCompressing) {
+    const toastId = toast.loading(isCompressing ? "20MB 초과: 자동 압축 및 처리 중..." : "블라인드 병합 처리 중...");
+    try {
+      finalBytes = await processRedactionsAndCompression(finalBytes, redactions || [], isCompressing);
+      toast.success("처리가 완료되었습니다!", { id: toastId });
+    } catch (err) {
+      console.error(err);
+      toast.error("처리 중 오류가 발생했습니다. 원본을 저장합니다.", { id: toastId });
+    }
+  }
+
+  // 5. 다운로드
+  const blob = new Blob([finalBytes as any], { type: "application/pdf" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
 }
 
 /**
@@ -190,7 +188,7 @@ export async function reorderPdfPages(buffer: ArrayBuffer, newOrder: number[]): 
  * Redaction(블라인드) 및 Compression(압축) 처리 함수
  */
 async function processRedactionsAndCompression(
-  pdfBuffer: ArrayBuffer,
+  pdfBuffer: ArrayBuffer | Uint8Array,
   redactions: RedactionData[],
   isCompressing: boolean
 ): Promise<Uint8Array> {
@@ -243,10 +241,12 @@ async function processRedactionsAndCompression(
       }
     }
 
-    // Convert to JPEG
+    // Convert to JPEG (using toBlob to avoid base64 overhead)
     const quality = isCompressing ? 0.65 : 0.9;
-    const dataUrl = canvas.toDataURL("image/jpeg", quality);
-    const imgBytes = await fetch(dataUrl).then(res => res.arrayBuffer());
+    const imgBlob = await new Promise<Blob>((resolve) =>
+      canvas.toBlob((b) => resolve(b!), "image/jpeg", quality)
+    );
+    const imgBytes = await imgBlob.arrayBuffer();
 
     // Replace page in pdf-lib
     const embeddedImage = await pdfLibDoc.embedJpg(imgBytes);
@@ -338,8 +338,10 @@ export async function compressPdfBuffer(buffer: ArrayBuffer, quality: number = 0
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     await page.render({ canvasContext: ctx, viewport }).promise;
-    const dataUrl = canvas.toDataURL("image/jpeg", quality);
-    const imgBytes = await fetch(dataUrl).then((r) => r.arrayBuffer());
+    const imgBlob = await new Promise<Blob>((resolve) =>
+      canvas.toBlob((b) => resolve(b!), "image/jpeg", quality)
+    );
+    const imgBytes = await imgBlob.arrayBuffer();
     const embeddedImg = await pdfLibDoc.embedJpg(imgBytes);
 
     const pdfPage = pdfLibDoc.addPage([viewport.width / scale, viewport.height / scale]);

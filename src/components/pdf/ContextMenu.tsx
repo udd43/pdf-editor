@@ -1,4 +1,4 @@
-"use client";
+
 
 import React, { useEffect } from "react";
 import { Copy, Trash2, Scissors, Download, Type, Lock } from "lucide-react";

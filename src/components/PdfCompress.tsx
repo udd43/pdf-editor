@@ -1,4 +1,4 @@
-"use client";
+
 
 import React, { useState, useRef } from "react";
 import { Archive, Upload, Download, Share2, Mail, FileText, Loader2, CheckCircle2 } from "lucide-react";

@@ -1,4 +1,4 @@
-"use client";
+
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import * as pdfjsLib from "pdfjs-dist";
@@ -9,6 +9,7 @@ import { PromptModal } from "./Modal";
 import { koreanToRoman } from "@/lib/romanize";
 import { ImageOverlayData } from "./ImageOverlay";
 import SignaturePad from "./SignaturePad";
+import { isHeicFile, convertHeicToPng, removeImageBackground } from "@/lib/imageUtils";
 import { usePdfElements } from "@/hooks/usePdfElements";
 import { usePdfRenderer } from "@/hooks/usePdfRenderer";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
@@ -234,12 +235,25 @@ export default function PdfEditor({ file, isCorporateMode = false }: PdfEditorPr
         }
         return;
       }
-      if (droppedFile.type.startsWith("image/")) {
+      if (isHeicFile(droppedFile) || droppedFile.type.startsWith("image/")) {
         const wrapper = canvasWrapperRef.current;
         if (!wrapper) return;
         const rect = wrapper.getBoundingClientRect();
         const dropX = (e.clientX - rect.left) / scale;
         const dropY = (e.clientY - rect.top) / scale;
+
+        let fileToLoad: Blob = droppedFile;
+        if (isHeicFile(droppedFile)) {
+          const toastId = toast.loading("아이폰 HEIC 이미지를 변환하는 중...");
+          try {
+            fileToLoad = await convertHeicToPng(droppedFile);
+            toast.success("HEIC 변환 완료!", { id: toastId });
+          } catch (err) {
+            toast.error("HEIC 이미지 변환 실패", { id: toastId });
+            return;
+          }
+        }
+
         const reader = new FileReader();
         reader.onload = (ev) => {
           const dataUrl = ev.target?.result as string;
@@ -267,7 +281,7 @@ export default function PdfEditor({ file, isCorporateMode = false }: PdfEditorPr
           };
           img.src = dataUrl;
         };
-        reader.readAsDataURL(droppedFile);
+        reader.readAsDataURL(fileToLoad);
       }
     }
   };
@@ -377,30 +391,30 @@ export default function PdfEditor({ file, isCorporateMode = false }: PdfEditorPr
   const handleTextChange = useCallback((id: string, newText: string) => {
     saveHistory(textBoxes, imageOverlays, redactions);
     setTextBoxes((prev) => prev.map((b) => (b.id === id ? { ...b, text: newText, isEdited: true } : b)));
-  }, [setTextBoxes, saveHistory, textBoxes, imageOverlays]);
+  }, [setTextBoxes, saveHistory, textBoxes, imageOverlays, redactions]);
 
   const handleDeleteBox = useCallback((id: string) => {
     saveHistory(textBoxes, imageOverlays, redactions);
     setTextBoxes((prev) => prev.filter((b) => b.id !== id));
     setSelectedTextId((prev) => (prev === id ? null : prev));
-  }, [setTextBoxes, saveHistory, textBoxes, imageOverlays, setSelectedTextId]);
+  }, [setTextBoxes, saveHistory, textBoxes, imageOverlays, redactions, setSelectedTextId]);
 
   const handleFontSizeChange = useCallback((id: string, delta: number) => {
     saveHistory(textBoxes, imageOverlays, redactions);
     setTextBoxes((prev) => prev.map((b) =>
       b.id === id ? { ...b, fontSize: Math.max(1, Math.min(72, b.fontSize + delta)), isEdited: true } : b
     ));
-  }, [setTextBoxes, saveHistory, textBoxes, imageOverlays]);
+  }, [setTextBoxes, saveHistory, textBoxes, imageOverlays, redactions]);
 
   const handleFontFamilyChange = useCallback((id: string, fontFamily: string) => {
     saveHistory(textBoxes, imageOverlays, redactions);
     setTextBoxes((prev) => prev.map((b) => (b.id === id ? { ...b, fontFamily, isEdited: true } : b)));
-  }, [setTextBoxes, saveHistory, textBoxes, imageOverlays]);
+  }, [setTextBoxes, saveHistory, textBoxes, imageOverlays, redactions]);
 
   const handleToggleTransparent = useCallback((id: string) => {
     saveHistory(textBoxes, imageOverlays, redactions);
     setTextBoxes((prev) => prev.map((b) => (b.id === id ? { ...b, isTransparent: !b.isTransparent, isEdited: true } : b)));
-  }, [setTextBoxes, saveHistory, textBoxes, imageOverlays]);
+  }, [setTextBoxes, saveHistory, textBoxes, imageOverlays, redactions]);
 
   // ── OCR ──
   const handleRunOcr = async () => {
@@ -558,9 +572,23 @@ export default function PdfEditor({ file, isCorporateMode = false }: PdfEditorPr
   }, [scale, setTextBoxes]);
 
   // ── Image handlers ──
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const imgFile = e.target.files?.[0];
     if (!imgFile) return;
+    e.target.value = "";
+
+    let fileToLoad: Blob = imgFile;
+    if (isHeicFile(imgFile)) {
+      const toastId = toast.loading("아이폰 HEIC 이미지를 PNG로 변환하는 중...");
+      try {
+        fileToLoad = await convertHeicToPng(imgFile);
+        toast.success("HEIC 변환 완료!", { id: toastId });
+      } catch (err) {
+        toast.error("HEIC 이미지 변환 실패", { id: toastId });
+        return;
+      }
+    }
+
     const reader = new FileReader();
     reader.onload = (ev) => {
       const dataUrl = ev.target?.result as string;
@@ -576,66 +604,34 @@ export default function PdfEditor({ file, isCorporateMode = false }: PdfEditorPr
       };
       img.src = dataUrl;
     };
-    reader.readAsDataURL(imgFile);
-    e.target.value = "";
+    reader.readAsDataURL(fileToLoad);
   };
 
   const handleBgRemoveUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const imgFile = e.target.files?.[0];
+    let imgFile = e.target.files?.[0];
     if (!imgFile) return;
     e.target.value = "";
+
+    if (isHeicFile(imgFile)) {
+      const toastId = toast.loading("아이폰 HEIC 이미지를 변환하는 중...");
+      try {
+        const pngBlob = await convertHeicToPng(imgFile);
+        imgFile = new File([pngBlob], `${imgFile.name.replace(/\.[^/.]+$/, "")}.png`, {
+          type: "image/png",
+        });
+        toast.success("HEIC 변환 완료!", { id: toastId });
+      } catch (err) {
+        toast.error("HEIC 이미지 변환 실패", { id: toastId });
+        return;
+      }
+    }
+
     setIsRemovingBg(true);
     setStatusMsg("배경을 제거하는 중...");
     try {
-      // 1. 원본 이미지 로드 (크기 보존용)
-      const originalUrl = URL.createObjectURL(imgFile);
-      const origImg = new Image();
-      origImg.src = originalUrl;
-      await new Promise((resolve) => (origImg.onload = resolve));
+      const { resultUrl, originalUrl, originalWidth, originalHeight } = await removeImageBackground(imgFile);
 
-      // 2. AI 처리를 위해 축소 (속도 향상)
-      const MAX_SIZE = 800;
-      let sw = origImg.width, sh = origImg.height;
-      if (sw > MAX_SIZE || sh > MAX_SIZE) {
-        if (sw > sh) { sh = Math.round((sh * MAX_SIZE) / sw); sw = MAX_SIZE; }
-        else { sw = Math.round((sw * MAX_SIZE) / sh); sh = MAX_SIZE; }
-      }
-      const smallCanvas = document.createElement("canvas");
-      smallCanvas.width = sw;
-      smallCanvas.height = sh;
-      const smallCtx = smallCanvas.getContext("2d")!;
-      smallCtx.drawImage(origImg, 0, 0, sw, sh);
-      const smallBlob = await new Promise<Blob>((resolve) =>
-        smallCanvas.toBlob((b) => resolve(b!), "image/png")
-      );
-
-      // 3. 축소 이미지로 AI 배경 제거
-      const { removeBackground } = await import("@imgly/background-removal");
-      const smallResultBlob = await removeBackground(smallBlob, {
-        model: "isnet_quint8",
-        output: { format: "image/png" as const },
-      });
-
-      // 4. 마스크를 원본 해상도에 덧씌우기
-      const maskImg = new Image();
-      maskImg.src = URL.createObjectURL(smallResultBlob);
-      await new Promise((resolve) => (maskImg.onload = resolve));
-
-      const finalCanvas = document.createElement("canvas");
-      finalCanvas.width = origImg.width;
-      finalCanvas.height = origImg.height;
-      const finalCtx = finalCanvas.getContext("2d")!;
-      finalCtx.drawImage(origImg, 0, 0);
-      finalCtx.globalCompositeOperation = "destination-in";
-      finalCtx.drawImage(maskImg, 0, 0, origImg.width, origImg.height);
-
-      const finalBlob = await new Promise<Blob>((resolve) =>
-        finalCanvas.toBlob((b) => resolve(b!), "image/png")
-      );
-      const resultUrl = URL.createObjectURL(finalBlob);
-
-      // 5. 원본 이미지 크기 기준으로 좌표 계산
-      const { w, h, x, y } = getOptimizedImageCoords(origImg.width, origImg.height, imageOverlays.length);
+      const { w, h, x, y } = getOptimizedImageCoords(originalWidth, originalHeight, imageOverlays.length);
       const newOverlay: ImageOverlayData = {
         id: `img-${Date.now()}`, originalSrc: originalUrl, displaySrc: resultUrl,
         removedBgSrc: resultUrl, x, y, width: w, height: h, pageIndex: currentPage,

@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { UploadCloud, Download, Trash2, ArrowUp, ArrowDown, FileImage, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { PDFDocument } from 'pdf-lib';
+import { isHeicFile, convertHeicToPng } from '@/lib/imageUtils';
 
 interface ImageFile {
   id: string;
@@ -14,23 +15,48 @@ export default function ImageToPdfConverter() {
   const [isProcessing, setIsProcessing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = Array.from(e.target.files || []);
     if (selectedFiles.length === 0) return;
 
-    const validFiles = selectedFiles.filter(f => f.type === 'image/jpeg' || f.type === 'image/png');
-    
-    if (validFiles.length !== selectedFiles.length) {
-      toast.error('PNG, JPEG 이미지만 업로드 가능합니다.');
+    const newImages: ImageFile[] = [];
+    let hasHeic = false;
+
+    for (const f of selectedFiles) {
+      if (isHeicFile(f)) {
+        hasHeic = true;
+        try {
+          const pngBlob = await convertHeicToPng(f);
+          const pngFile = new File([pngBlob], `${f.name.replace(/\.[^/.]+$/, "")}.png`, {
+            type: "image/png",
+          });
+          newImages.push({
+            id: Math.random().toString(36).substr(2, 9),
+            file: pngFile,
+            previewUrl: URL.createObjectURL(pngFile),
+          });
+        } catch (err) {
+          console.error("HEIC conversion failed:", err);
+          toast.error(`'${f.name}' 변환에 실패했습니다.`);
+        }
+      } else if (f.type === 'image/jpeg' || f.type === 'image/png') {
+        newImages.push({
+          id: Math.random().toString(36).substr(2, 9),
+          file: f,
+          previewUrl: URL.createObjectURL(f)
+        });
+      } else {
+        toast.error(`'${f.name}'은(는) 지원되지 않는 파일입니다. (PNG, JPG, HEIC 지원)`);
+      }
     }
 
-    const newImages = validFiles.map(file => ({
-      id: Math.random().toString(36).substr(2, 9),
-      file,
-      previewUrl: URL.createObjectURL(file)
-    }));
+    if (hasHeic) {
+      toast.success("HEIC 사진을 PNG로 자동 변환하여 추가했습니다!");
+    }
 
-    setImages(prev => [...prev, ...newImages]);
+    if (newImages.length > 0) {
+      setImages(prev => [...prev, ...newImages]);
+    }
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
@@ -107,8 +133,8 @@ export default function ImageToPdfConverter() {
       <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700">
         <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-xl cursor-pointer bg-gray-50 dark:bg-white/5 border-gray-300 dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors">
           <UploadCloud className="w-10 h-10 text-blue-500 mb-2" />
-          <span className="text-sm font-medium text-gray-700 dark:text-white">클릭하여 이미지 파일(PNG, JPEG) 여러 장 업로드</span>
-          <input ref={fileInputRef} type="file" multiple accept="image/png, image/jpeg" className="hidden" onChange={handleFileChange} />
+          <span className="text-sm font-medium text-gray-700 dark:text-white">클릭하여 이미지 파일(PNG, JPG, HEIC) 여러 장 업로드</span>
+          <input ref={fileInputRef} type="file" multiple accept="image/png, image/jpeg, .heic, .heif, .HEIC, .HEIF" className="hidden" onChange={handleFileChange} />
         </label>
 
         {images.length > 0 && (

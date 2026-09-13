@@ -36,6 +36,7 @@ function Thumbnail({
     const renderThumb = async () => {
       try {
         const page = await pdfDoc.getPage(pageNumber);
+        if (!isMounted) return;
         const viewport = page.getViewport({ scale: 0.2 });
         const canvas = canvasRef.current;
         if (!canvas) return;

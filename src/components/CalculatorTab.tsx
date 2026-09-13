@@ -1,4 +1,4 @@
-"use client";
+
 
 import React, { useState } from "react";
 import { Calculator, PieChart, RotateCcw, Delete, Info } from "lucide-react";

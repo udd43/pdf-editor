@@ -1,4 +1,4 @@
-"use client";
+
 
 import React, { useRef, useState } from "react";
 import { Scissors, Download, Loader2, Upload, RotateCcw } from "lucide-react";

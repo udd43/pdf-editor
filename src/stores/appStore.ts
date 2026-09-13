@@ -15,7 +15,8 @@ export type Tab =
   | "img2pdf"
   | "mergesplit"
   | "compress"
-  | "pdftools";
+  | "pdftools"
+  | "heic";
 
 interface AppState {
   // Navigation
@@ -34,8 +35,7 @@ interface AppState {
   isDarkMode: boolean;
   setIsDarkMode: (v: boolean) => void;
   toggleDarkMode: () => void;
-  darkModePreference: "light" | "dark" | "system";
-  setDarkModePreference: (pref: "light" | "dark" | "system") => void;
+
 
   isMobileMenuOpen: boolean;
   setIsMobileMenuOpen: (v: boolean) => void;
@@ -68,8 +68,7 @@ export const useAppStore = create<AppState>()(
       isDarkMode: false,
       setIsDarkMode: (isDarkMode) => set({ isDarkMode }),
       toggleDarkMode: () => set((state) => ({ isDarkMode: !state.isDarkMode })),
-      darkModePreference: "system",
-      setDarkModePreference: (pref) => set({ darkModePreference: pref }),
+
 
       isMobileMenuOpen: false,
       setIsMobileMenuOpen: (isMobileMenuOpen) => set({ isMobileMenuOpen }),
@@ -87,7 +86,6 @@ export const useAppStore = create<AppState>()(
       name: "pdf-editor-app-store",
       partialize: (state) => ({
         isDarkMode: state.isDarkMode,
-        darkModePreference: state.darkModePreference,
       }),
     }
   )
