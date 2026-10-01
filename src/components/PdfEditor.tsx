@@ -799,7 +799,7 @@ export default function PdfEditor({ file, isCorporateMode = false }: PdfEditorPr
   };
 
   const isLoading = status === "rendering" || status === "ocr";
-  const hasContent = textBoxes.length > 0 || imageOverlays.length > 0;
+  const hasContent = textBoxes.length > 0 || imageOverlays.length > 0 || redactions.length > 0;
 
   return (
     <div className="flex flex-col h-full w-full max-w-full">
