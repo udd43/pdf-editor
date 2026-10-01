@@ -205,9 +205,31 @@ async function processRedactionsAndCompression(
   for (let i = 0; i < numPages; i++) {
     const pageIndex = i + 1; // 1-based
     const pageRedactions = redactions.filter(r => r.pageIndex === pageIndex);
-    const needsProcessing = isCompressing || pageRedactions.length > 0;
 
-    if (!needsProcessing) continue;
+    // 흰색 블라인드는 pdf-lib 네이티브로 처리 (JPEG 래스터화 불필요)
+    const whiteRedactions = pageRedactions.filter(r => r.color === "#FFFFFF" || r.color === "white");
+    const blackRedactions = pageRedactions.filter(r => r.color !== "#FFFFFF" && r.color !== "white");
+
+    // 흰색 블라인드: pdf-lib drawRectangle 으로 직접 그리기 (PDF 품질 유지)
+    if (whiteRedactions.length > 0) {
+      const pdfPage = pdfLibDoc.getPage(i);
+      const { height: pageH } = pdfPage.getSize();
+      for (const r of whiteRedactions) {
+        // PDF 좌표계: Y 축이 아래→위이므로 변환 필요
+        pdfPage.drawRectangle({
+          x: r.x,
+          y: pageH - r.y - r.height,
+          width: r.width,
+          height: r.height,
+          color: rgb(1, 1, 1),
+          borderWidth: 0,
+        });
+      }
+    }
+
+    // 검은색 블라인드나 압축이 필요한 페이지만 캔버스 래스터화
+    const needsRasterization = isCompressing || blackRedactions.length > 0;
+    if (!needsRasterization) continue;
 
     // Render with pdf.js
     const page = await pdfJsDoc.getPage(pageIndex);
@@ -228,10 +250,10 @@ async function processRedactionsAndCompression(
       intent: "print"
     }).promise;
 
-    // Draw redactions on canvas
-    if (pageRedactions.length > 0) {
-      for (const r of pageRedactions) {
-        ctx.fillStyle = (r.color === "#FFFFFF" || r.color === "white") ? "#FFFFFF" : "#111827";
+    // 검은색 블라인드만 캔버스에 그리기 (흰색은 위에서 이미 처리)
+    if (blackRedactions.length > 0) {
+      ctx.fillStyle = "#111827";
+      for (const r of blackRedactions) {
         // Redaction coords are in PDF points (1 scale), so we scale them to the canvas viewport
         const rx = r.x * scale;
         const ry = r.y * scale;
@@ -243,9 +265,10 @@ async function processRedactionsAndCompression(
 
     // Convert to JPEG (using toBlob to avoid base64 overhead)
     const quality = isCompressing ? 0.65 : 0.9;
-    const imgBlob = await new Promise<Blob>((resolve) =>
-      canvas.toBlob((b) => resolve(b!), "image/jpeg", quality)
+    const imgBlob = await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob((b) => resolve(b), "image/jpeg", quality)
     );
+    if (!imgBlob) throw new Error(`페이지 ${pageIndex} JPEG 인코딩 실패`);
     const imgBytes = await imgBlob.arrayBuffer();
 
     // Replace page in pdf-lib
