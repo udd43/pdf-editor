@@ -31,11 +31,13 @@ export function usePdfRenderer({
 
         const arrayBuffer = await file.arrayBuffer();
         if (!isMounted) return;
-        const bufferCopy = arrayBuffer.slice(0);
-        setPdfBuffer(bufferCopy);
+        // 버퍼를 먼저 복사: pdfjs 렌더용 / 편집용으로 각각 독립 사용
+        const renderBuffer = arrayBuffer.slice(0);
+        const editBuffer = arrayBuffer.slice(0);
+        setPdfBuffer(editBuffer);
 
         setStatusMsg("PDF 문서를 파싱하는 중...");
-        const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+        const loadingTask = pdfjsLib.getDocument({ data: renderBuffer });
         const pdf = await loadingTask.promise;
         if (!isMounted) return;
         

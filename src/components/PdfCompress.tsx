@@ -23,7 +23,10 @@ export default function PdfCompress() {
     buffer: ArrayBuffer;
     size: number;
     filename: string;
+    autoRetried?: boolean;
   } | null>(null);
+
+  const TARGET_SIZE_MB = 20; // 메일 전송 목표 용량 (MB)
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -62,12 +65,22 @@ export default function PdfCompress() {
       const q = qualityLevel === "high" ? 0.8 : qualityLevel === "medium" ? 0.6 : 0.4;
       const scale = qualityLevel === "high" ? 1.4 : qualityLevel === "medium" ? 1.1 : 0.9;
 
-      const compressedBuf = await compressPdfBuffer(compressItem.buffer.slice(0), q, scale);
+      let compressedBuf = await compressPdfBuffer(compressItem.buffer.slice(0), q, scale);
+      let autoRetried = false;
+
+      // 20MB 초과 시 자동 재압축 (최대 압축 강도로 재시도)
+      const TARGET_BYTES = TARGET_SIZE_MB * 1024 * 1024;
+      if (compressedBuf.byteLength > TARGET_BYTES && qualityLevel !== "low") {
+        toast.loading(`결과가 ${TARGET_SIZE_MB}MB 초과 → 강도를 높여 자동 재압축 중...`, { id: toastId });
+        compressedBuf = await compressPdfBuffer(compressItem.buffer.slice(0), 0.3, 0.85);
+        autoRetried = true;
+      }
 
       setCompressedResult({
         buffer: compressedBuf,
         size: compressedBuf.byteLength,
         filename: `${compressItem.file.name.replace(/\.pdf$/i, "")}_compressed.pdf`,
+        autoRetried,
       });
 
       toast.success("PDF 압축이 완료되었습니다!", { id: toastId });
@@ -139,13 +152,17 @@ export default function PdfCompress() {
           <div className="w-12 h-12 bg-amber-50 dark:bg-amber-900/30 text-amber-500 rounded-2xl flex items-center justify-center border border-amber-100 dark:border-amber-800">
             <Archive className="w-6 h-6" />
           </div>
-          <div>
+        <div>
             <h2 className="text-xl font-bold text-gray-900 dark:text-white">
               PDF 전용 압축기 (Compress)
             </h2>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
               이메일 전송이나 저장 공간 절약을 위해 PDF 용량을 최적화하여 축소합니다.
             </p>
+            <div className="inline-flex items-center gap-1.5 mt-1.5 px-2.5 py-1 bg-blue-50 dark:bg-blue-900/30 border border-blue-100 dark:border-blue-800 rounded-full">
+              <Mail className="w-3 h-3 text-blue-500" />
+              <span className="text-[11px] font-bold text-blue-600 dark:text-blue-400">목표: 메일 첨부용 20MB 이하</span>
+            </div>
           </div>
         </div>
 
@@ -243,19 +260,34 @@ export default function PdfCompress() {
                 <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400 font-bold text-sm">
                   <CheckCircle2 className="w-5 h-5" />
                   압축이 성공적으로 끝났습니다! ({calculateReductionRatio()}% 감소)
+                  {compressedResult.autoRetried && (
+                    <span className="ml-2 text-[10px] font-bold px-2 py-0.5 bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 rounded-full border border-blue-200 dark:border-blue-700">
+                      자동 강화 압축 적용됨
+                    </span>
+                  )}
                 </div>
 
                 <div className="flex items-center justify-between bg-white dark:bg-gray-900 p-4 rounded-xl border border-amber-100 dark:border-amber-900">
                   <div>
                     <p className="text-xs text-gray-400">압축 완료된 크기</p>
-                    <p className="text-lg font-mono font-bold text-gray-800 dark:text-gray-100">
+                    <p className={`text-lg font-mono font-bold ${
+                      compressedResult.size > TARGET_SIZE_MB * 1024 * 1024
+                        ? "text-red-500"
+                        : "text-green-600 dark:text-green-400"
+                    }`}>
                       {formatSize(compressedResult.size)}
+                      {compressedResult.size <= TARGET_SIZE_MB * 1024 * 1024 && (
+                        <span className="ml-2 text-[11px] text-green-500 font-bold">✓ {TARGET_SIZE_MB}MB 이하</span>
+                      )}
+                      {compressedResult.size > TARGET_SIZE_MB * 1024 * 1024 && (
+                        <span className="ml-2 text-[11px] text-red-400 font-bold">⚠ {TARGET_SIZE_MB}MB 초과</span>
+                      )}
                     </p>
                   </div>
                   <div className="text-right">
                     <p className="text-xs text-gray-400">절감된 용량</p>
                     <p className="text-sm font-mono font-bold text-green-600">
-                      -{formatSize(compressItem.originalSize - compressedResult.size)}
+                      -{formatSize(compressItem!.originalSize - compressedResult.size)}
                     </p>
                   </div>
                 </div>

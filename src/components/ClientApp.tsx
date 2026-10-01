@@ -267,7 +267,14 @@ export default function ClientApp() {
         {/* Home bento grid */}
         {isHome && (
           <HomeGrid
-            onTabSelect={(tab) => setActiveTab(tab as Tab)}
+            onTabSelect={(tab) => {
+              if (tab === "img2pdf" || tab === "mergesplit" || tab === "compress") {
+                setActiveTab("pdftools" as Tab);
+                setPdfSubTab(tab as "img2pdf" | "mergesplit" | "compress");
+              } else {
+                setActiveTab(tab as Tab);
+              }
+            }}
             onFileSelect={(f) => openPdfEditor(f)}
             isSecretMode={isSecretMode}
           />
