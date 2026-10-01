@@ -133,7 +133,10 @@ self.onmessage = async (e: MessageEvent) => {
       }
     }
 
-    const pdfBytes = await pdfDoc.save();
+    const rawPdfBytes = await pdfDoc.save();
+    // 정확한 크기의 새 Uint8Array를 만들어 전송 (byteOffset/byteLength 불일치 방지)
+    const pdfBytes = new Uint8Array(rawPdfBytes.byteLength);
+    pdfBytes.set(rawPdfBytes);
     
     (self as any).postMessage({ success: true, pdfBytes }, [pdfBytes.buffer]);
   } catch (error: any) {

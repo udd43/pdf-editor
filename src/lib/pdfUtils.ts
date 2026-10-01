@@ -192,112 +192,63 @@ async function processRedactionsAndCompression(
   redactions: RedactionData[],
   isCompressing: boolean
 ): Promise<Uint8Array> {
-  // ⚠️ 중요: pdfjsLib.getDocument와 PDFDocument.load은 같은 버퍼를 콩호함
-  // 반드시 독립적인 복사본을 각각 넘곯주어야 함
-  const srcBuffer = pdfBuffer instanceof Uint8Array
-    ? pdfBuffer.buffer.slice(pdfBuffer.byteOffset, pdfBuffer.byteOffset + pdfBuffer.byteLength) as ArrayBuffer
-    : (pdfBuffer as ArrayBuffer).slice(0);
+  // 안전하게 독립적인 ArrayBuffer 복사본 생성
+  let safeBuffer: ArrayBuffer;
+  if (pdfBuffer instanceof Uint8Array) {
+    // Uint8Array → 새로운 독립 ArrayBuffer로 진짜 복사
+    const copy = new Uint8Array(pdfBuffer.byteLength);
+    copy.set(pdfBuffer);
+    safeBuffer = copy.buffer as ArrayBuffer;
+  } else {
+    safeBuffer = (pdfBuffer as ArrayBuffer).slice(0);
+  }
 
-  const pdjsBuffer = srcBuffer.slice(0) as ArrayBuffer; // pdfjs 렌더용
-  const plibBuffer = srcBuffer.slice(0) as ArrayBuffer; // pdf-lib 편집용
-
-  const loadingTask = pdfjsLib.getDocument({ data: pdjsBuffer });
-  const pdfJsDoc = await loadingTask.promise;
-  const pdfLibDoc = await PDFDocument.load(plibBuffer);
+  // 1단계: pdf-lib로 블라인드(검정/흰색 모두) 직접 그리기
+  //   → pdfjsLib 재로드 없이 pdf-lib만으로 처리하여 안정성 확보
+  const pdfLibDoc = await PDFDocument.load(safeBuffer);
   
-  const numPages = pdfJsDoc.numPages;
-  const canvas = document.createElement("canvas");
-  const ctx = canvas.getContext("2d", { alpha: false });
-  
-  if (!ctx) throw new Error("Canvas 2D context not available");
+  if (redactions && redactions.length > 0) {
+    const pages = pdfLibDoc.getPages();
+    for (let i = 0; i < pages.length; i++) {
+      const pageIndex = i + 1; // 1-based (UI 좌표계)
+      const pageRedactions = redactions.filter(r => r.pageIndex === pageIndex);
+      if (pageRedactions.length === 0) continue;
 
-  for (let i = 0; i < numPages; i++) {
-    const pageIndex = i + 1; // 1-based
-    const pageRedactions = redactions.filter(r => r.pageIndex === pageIndex);
+      const page = pages[i];
+      const { height: pageH } = page.getSize();
 
-    // 흰색 블라인드는 pdf-lib 네이티브로 처리 (JPEG 래스터화 불필요)
-    const whiteRedactions = pageRedactions.filter(r => r.color === "#FFFFFF" || r.color === "white");
-    const blackRedactions = pageRedactions.filter(r => r.color !== "#FFFFFF" && r.color !== "white");
+      for (const r of pageRedactions) {
+        const isWhite = r.color === "#FFFFFF" || r.color === "white";
+        const fillColor = isWhite ? rgb(1, 1, 1) : rgb(0.067, 0.094, 0.153); // #111827
 
-    // 흰색 블라인드: pdf-lib drawRectangle 으로 직접 그리기 (PDF 품질 유지)
-    if (whiteRedactions.length > 0) {
-      const pdfPage = pdfLibDoc.getPage(i);
-      const { height: pageH } = pdfPage.getSize();
-      for (const r of whiteRedactions) {
-        // PDF 좌표계: Y 축이 아래→위이므로 변환 필요
-        pdfPage.drawRectangle({
+        // PDF 좌표계: Y축이 아래→위이므로 변환
+        page.drawRectangle({
           x: r.x,
           y: pageH - r.y - r.height,
           width: r.width,
           height: r.height,
-          color: rgb(1, 1, 1),
+          color: fillColor,
           borderWidth: 0,
         });
       }
     }
-
-    // 검은색 블라인드나 압축이 필요한 페이지만 캔버스 래스터화
-    const needsRasterization = isCompressing || blackRedactions.length > 0;
-    if (!needsRasterization) continue;
-
-    // Render with pdf.js
-    const page = await pdfJsDoc.getPage(pageIndex);
-    // Compression: use scale 1.5, Redaction only: use scale 2.0 to maintain quality
-    const scale = isCompressing ? 1.5 : 2.0; 
-    const viewport = page.getViewport({ scale });
-
-    canvas.width = viewport.width;
-    canvas.height = viewport.height;
-    
-    // Draw white background
-    ctx.fillStyle = "white";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    await page.render({
-      canvasContext: ctx,
-      viewport: viewport,
-      intent: "print"
-    }).promise;
-
-    // 검은색 블라인드만 캔버스에 그리기 (흰색은 위에서 이미 처리)
-    if (blackRedactions.length > 0) {
-      ctx.fillStyle = "#111827";
-      for (const r of blackRedactions) {
-        // Redaction coords are in PDF points (1 scale), so we scale them to the canvas viewport
-        const rx = r.x * scale;
-        const ry = r.y * scale;
-        const rw = r.width * scale;
-        const rh = r.height * scale;
-        ctx.fillRect(rx, ry, rw, rh);
-      }
-    }
-
-    // Convert to JPEG (using toBlob to avoid base64 overhead)
-    const quality = isCompressing ? 0.65 : 0.9;
-    const imgBlob = await new Promise<Blob | null>((resolve) =>
-      canvas.toBlob((b) => resolve(b), "image/jpeg", quality)
-    );
-    if (!imgBlob) throw new Error(`페이지 ${pageIndex} JPEG 인코딩 실패`);
-    const imgBytes = await imgBlob.arrayBuffer();
-
-    // Replace page in pdf-lib
-    const embeddedImage = await pdfLibDoc.embedJpg(imgBytes);
-    const pdfPage = pdfLibDoc.getPage(i);
-    const { width, height } = pdfPage.getSize();
-    
-    // Clear the original page contents by creating a new blank page
-    // Actually, pdf-lib doesn't have an easy way to clear a page, so we remove and insert
-    pdfLibDoc.removePage(i);
-    const newPage = pdfLibDoc.insertPage(i, [width, height]);
-    newPage.drawImage(embeddedImage, {
-      x: 0,
-      y: 0,
-      width: width,
-      height: height
-    });
   }
 
-  // Save the modified PDF
+  // 2단계: 압축이 필요하면 래스터화 (20MB 초과 시)
+  if (isCompressing) {
+    // 블라인드가 적용된 PDF를 먼저 저장
+    const redactedBytes = await pdfLibDoc.save();
+    const redactedBuffer = redactedBytes.buffer.slice(
+      redactedBytes.byteOffset,
+      redactedBytes.byteOffset + redactedBytes.byteLength
+    ) as ArrayBuffer;
+
+    // pdfjsLib로 래스터화 압축
+    const compressedBuffer = await compressPdfBuffer(redactedBuffer, 0.65, 1.5);
+    return new Uint8Array(compressedBuffer);
+  }
+
+  // 블라인드만 적용 (압축 불필요)
   return await pdfLibDoc.save({ useObjectStreams: true });
 }
 
