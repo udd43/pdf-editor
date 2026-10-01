@@ -192,9 +192,18 @@ async function processRedactionsAndCompression(
   redactions: RedactionData[],
   isCompressing: boolean
 ): Promise<Uint8Array> {
-  const loadingTask = pdfjsLib.getDocument({ data: pdfBuffer });
+  // ⚠️ 중요: pdfjsLib.getDocument와 PDFDocument.load은 같은 버퍼를 콩호함
+  // 반드시 독립적인 복사본을 각각 넘곯주어야 함
+  const srcBuffer = pdfBuffer instanceof Uint8Array
+    ? pdfBuffer.buffer.slice(pdfBuffer.byteOffset, pdfBuffer.byteOffset + pdfBuffer.byteLength) as ArrayBuffer
+    : (pdfBuffer as ArrayBuffer).slice(0);
+
+  const pdjsBuffer = srcBuffer.slice(0) as ArrayBuffer; // pdfjs 렌더용
+  const plibBuffer = srcBuffer.slice(0) as ArrayBuffer; // pdf-lib 편집용
+
+  const loadingTask = pdfjsLib.getDocument({ data: pdjsBuffer });
   const pdfJsDoc = await loadingTask.promise;
-  const pdfLibDoc = await PDFDocument.load(pdfBuffer);
+  const pdfLibDoc = await PDFDocument.load(plibBuffer);
   
   const numPages = pdfJsDoc.numPages;
   const canvas = document.createElement("canvas");
@@ -343,7 +352,8 @@ export async function rotatePdfPages(buffer: ArrayBuffer, rotations: Map<number,
  * Compress PDF by rendering pages into JPEG with chosen quality (0.1 ~ 1.0).
  */
 export async function compressPdfBuffer(buffer: ArrayBuffer, quality: number = 0.65, scale: number = 1.2): Promise<ArrayBuffer> {
-  const loadingTask = pdfjsLib.getDocument({ data: buffer });
+  // buffer를 복사해서 pdfjsLib에 전달 (원본 버퍼가 소비되지 않도록)
+  const loadingTask = pdfjsLib.getDocument({ data: buffer.slice(0) });
   const pdfJsDoc = await loadingTask.promise;
   const pdfLibDoc = await PDFDocument.create();
 
