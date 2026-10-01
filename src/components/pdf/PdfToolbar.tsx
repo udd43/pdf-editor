@@ -17,7 +17,9 @@ interface PdfToolbarProps {
   handleUpscaleUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
   setIsSignatureOpen: (open: boolean) => void;
   isRedactMode: boolean;
-  setIsRedactMode: (v: boolean | ((prev: boolean) => boolean)) => void;
+  setIsRedactMode?: (v: boolean | ((prev: boolean) => boolean)) => void;
+  redactColor?: "black" | "white";
+  onToggleRedact?: (color: "black" | "white") => void;
   numPages: number;
   currentPage: number;
   setCurrentPage: React.Dispatch<React.SetStateAction<number>>;
@@ -33,7 +35,7 @@ export default function PdfToolbar({
   isCorporateDoc, isMacroFormOpen, setIsMacroFormOpen,
   handleImageUpload, isRemovingBg, handleBgRemoveUpload,
   isUpscaling, handleUpscaleUpload, setIsSignatureOpen,
-  isRedactMode, setIsRedactMode,
+  isRedactMode, setIsRedactMode, redactColor = "black", onToggleRedact,
   numPages, currentPage, setCurrentPage, handleZoom, scale,
   handleExport, isLoading, hasContent
 }: PdfToolbarProps) {
@@ -117,11 +119,20 @@ export default function PdfToolbar({
           <Pen className="w-3.5 h-3.5 text-emerald-500" /> 서명/그리기
         </button>
 
-        <button onClick={() => setIsRedactMode(p => !p)} disabled={status !== "done"}
-          className={`flex items-center gap-1 px-2.5 py-1.5 border text-[11px] font-semibold rounded-md disabled:opacity-30 transition-all shadow-sm whitespace-nowrap flex-shrink-0 ${
-            isRedactMode ? "bg-gray-900 text-white border-gray-900 dark:bg-gray-100 dark:text-gray-900 dark:border-gray-100" : "bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600"
-          }`}>
-          <div className="w-3.5 h-3.5 bg-gray-900 dark:bg-gray-200 border border-white dark:border-gray-900 rounded-sm" /> 블라인드
+        <button onClick={() => onToggleRedact ? onToggleRedact("black") : setIsRedactMode?.(p => !p)} disabled={status !== "done"}
+          className={`flex items-center gap-1.5 px-2.5 py-1.5 border text-[11px] font-semibold rounded-md disabled:opacity-30 transition-all shadow-sm whitespace-nowrap flex-shrink-0 ${
+            isRedactMode && redactColor === "black" ? "bg-gray-900 text-white border-gray-900 dark:bg-gray-100 dark:text-gray-900 dark:border-gray-100" : "bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600"
+          }`}
+          title="검은색 블라인드로 내용을 가립니다">
+          <div className="w-3.5 h-3.5 bg-gray-900 dark:bg-gray-200 border border-white dark:border-gray-900 rounded-sm" /> 블라인드(검정)
+        </button>
+
+        <button onClick={() => onToggleRedact ? onToggleRedact("white") : setIsRedactMode?.(p => !p)} disabled={status !== "done"}
+          className={`flex items-center gap-1.5 px-2.5 py-1.5 border text-[11px] font-semibold rounded-md disabled:opacity-30 transition-all shadow-sm whitespace-nowrap flex-shrink-0 ${
+            isRedactMode && redactColor === "white" ? "bg-blue-50 text-blue-700 border-blue-500 font-bold dark:bg-gray-100 dark:text-gray-900 dark:border-gray-100" : "bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600"
+          }`}
+          title="흰색 블라인드(수정액 효과)로 내용을 가립니다">
+          <div className="w-3.5 h-3.5 bg-white border border-gray-400 dark:border-gray-500 rounded-sm shadow-xs" /> 블라인드(흰색)
         </button>
         
         <div className="w-px h-5 bg-gray-200 dark:bg-gray-600 flex-shrink-0" />

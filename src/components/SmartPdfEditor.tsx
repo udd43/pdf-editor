@@ -74,13 +74,23 @@ export default function SmartPdfEditor() {
     textBoxes, setTextBoxes, imageOverlays, setImageOverlays, redactions, setRedactions,
     selectedImageId, setSelectedImageId, selectedTextId, setSelectedTextId,
     selectedRedactionId, setSelectedRedactionId, nextId, setNextId,
-    addRedaction, removeRedaction, saveHistory, resetElements,
+    addRedaction, updateRedaction, removeRedaction, saveHistory, resetElements,
   } = usePdfElements();
 
   const [draggingTextId, setDraggingTextId] = useState<string | null>(null);
   const [resizingTextId, setResizingTextId] = useState<string | null>(null);
   const [isSignatureOpen, setIsSignatureOpen] = useState(false);
   const [isRedactMode, setIsRedactMode] = useState(false);
+  const [redactColor, setRedactColor] = useState<"black" | "white">("black");
+
+  const handleToggleRedact = (color: "black" | "white") => {
+    if (isRedactMode && redactColor === color) {
+      setIsRedactMode(false);
+    } else {
+      setIsRedactMode(true);
+      setRedactColor(color);
+    }
+  };
   const [drawingRedaction, setDrawingRedaction] = useState<{ startX: number; startY: number; currentX: number; currentY: number; pageIndex: number } | null>(null);
   const [exportModal, setExportModal] = useState(false);
   const [exportDefaultName, setExportDefaultName] = useState("");
@@ -527,7 +537,7 @@ export default function SmartPdfEditor() {
 
   const handleRedactMouseDown = (e: React.MouseEvent, pageNum: number) => { if (!isRedactMode) return; const rect = e.currentTarget.getBoundingClientRect(); setDrawingRedaction({ startX: e.clientX-rect.left, startY: e.clientY-rect.top, currentX: e.clientX-rect.left, currentY: e.clientY-rect.top, pageIndex: pageNum }); };
   const handleRedactMouseMove = (e: React.MouseEvent, pageNum: number) => { if (!isRedactMode || !drawingRedaction || drawingRedaction.pageIndex !== pageNum) return; const rect = e.currentTarget.getBoundingClientRect(); setDrawingRedaction(prev => prev ? { ...prev, currentX: e.clientX-rect.left, currentY: e.clientY-rect.top } : null); };
-  const handleRedactMouseUp = (pageNum: number) => { if (!isRedactMode || !drawingRedaction || drawingRedaction.pageIndex !== pageNum) return; const { startX, startY, currentX, currentY } = drawingRedaction; const x = Math.min(startX, currentX)/scale, y = Math.min(startY, currentY)/scale, w = Math.abs(currentX-startX)/scale, h = Math.abs(currentY-startY)/scale; if (w > 5 && h > 5) addRedaction({ pageIndex: pageNum, x, y, width: w, height: h }); setDrawingRedaction(null); };
+  const handleRedactMouseUp = (pageNum: number) => { if (!isRedactMode || !drawingRedaction || drawingRedaction.pageIndex !== pageNum) return; const { startX, startY, currentX, currentY } = drawingRedaction; const x = Math.min(startX, currentX)/scale, y = Math.min(startY, currentY)/scale, w = Math.abs(currentX-startX)/scale, h = Math.abs(currentY-startY)/scale; if (w > 5 && h > 5) addRedaction({ pageIndex: pageNum, x, y, width: w, height: h, color: redactColor === "white" ? "#FFFFFF" : "#111827" }); setDrawingRedaction(null); };
 
   const handleExport = () => {
     if (!pdfBuffer) return;
@@ -594,7 +604,8 @@ export default function SmartPdfEditor() {
           <button onClick={() => imageInputRef.current?.click()} disabled={status !== "done"} className="flex items-center gap-1 px-2.5 py-1.5 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-[11px] font-semibold rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-30 transition-all shadow-sm whitespace-nowrap flex-shrink-0"><ImageIcon className="w-3.5 h-3.5 text-blue-500" /> 이미지</button>
           <input ref={imageInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
           <button onClick={() => setIsSignatureOpen(true)} disabled={status !== "done"} className="flex items-center gap-1 px-2.5 py-1.5 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-[11px] font-semibold rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-30 transition-all shadow-sm whitespace-nowrap flex-shrink-0"><Pen className="w-3.5 h-3.5 text-emerald-500" /> 서명</button>
-          <button onClick={() => setIsRedactMode(p => !p)} disabled={status !== "done"} className={`flex items-center gap-1 px-2.5 py-1.5 border text-[11px] font-semibold rounded-md disabled:opacity-30 transition-all shadow-sm whitespace-nowrap flex-shrink-0 ${isRedactMode ? "bg-gray-900 text-white border-gray-900" : "bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600"}`}><div className="w-3.5 h-3.5 bg-gray-900 dark:bg-gray-200 border border-white dark:border-gray-900 rounded-sm" /> 블라인드</button>
+          <button onClick={() => handleToggleRedact("black")} disabled={status !== "done"} className={`flex items-center gap-1.5 px-2.5 py-1.5 border text-[11px] font-semibold rounded-md disabled:opacity-30 transition-all shadow-sm whitespace-nowrap flex-shrink-0 ${isRedactMode && redactColor === "black" ? "bg-gray-900 text-white border-gray-900" : "bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600"}`} title="검은색 블라인드로 내용을 가립니다"><div className="w-3.5 h-3.5 bg-gray-900 dark:bg-gray-200 border border-white dark:border-gray-900 rounded-sm" /> 블라인드(검정)</button>
+          <button onClick={() => handleToggleRedact("white")} disabled={status !== "done"} className={`flex items-center gap-1.5 px-2.5 py-1.5 border text-[11px] font-semibold rounded-md disabled:opacity-30 transition-all shadow-sm whitespace-nowrap flex-shrink-0 ${isRedactMode && redactColor === "white" ? "bg-blue-50 text-blue-700 border-blue-500 font-bold dark:bg-gray-100 dark:text-gray-900" : "bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600"}`} title="흰색 블라인드(수정액 효과)로 내용을 가립니다"><div className="w-3.5 h-3.5 bg-white border border-gray-400 dark:border-gray-500 rounded-sm shadow-xs" /> 블라인드(흰색)</button>
           <div className="w-px h-5 bg-gray-200 dark:bg-gray-600 flex-shrink-0" />
 
           <div className="flex items-center bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md overflow-hidden shadow-sm flex-shrink-0">
@@ -670,16 +681,23 @@ export default function SmartPdfEditor() {
               ))}
 
               {/* 블라인드 */}
-              {status === "done" && redactions.filter(r => r.pageIndex === pageNum).map(r => (
-                <div key={r.id} className="absolute bg-gray-900 z-10" style={{ left: r.x*scale, top: r.y*scale, width: r.width*scale, height: r.height*scale }}>
-                  <button className={`absolute -top-3 -right-3 bg-white rounded-full p-1 shadow-md text-red-500 hover:text-red-700 opacity-0 hover:opacity-100 transition-opacity ${selectedRedactionId === r.id ? 'opacity-100' : ''}`}
-                    onClick={() => removeRedaction(r.id)} onMouseEnter={() => setSelectedRedactionId(r.id)} onMouseLeave={() => setSelectedRedactionId(null)}>
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              ))}
+              {status === "done" && redactions.filter(r => r.pageIndex === pageNum).map(r => {
+                const isWhite = r.color === "#FFFFFF" || r.color === "white";
+                return (
+                  <div key={r.id} className={`absolute z-10 group transition-[border-color,box-shadow] ${isWhite ? "bg-white border border-gray-300 dark:border-gray-600 shadow-xs hover:border-blue-400" : "bg-gray-900"} ${selectedRedactionId === r.id ? "ring-2 ring-blue-500" : ""}`} style={{ left: r.x*scale, top: r.y*scale, width: r.width*scale, height: r.height*scale }} onClick={(e) => { e.stopPropagation(); setSelectedRedactionId(r.id); }}>
+                    <button className={`absolute -top-3 -right-3 bg-white dark:bg-gray-800 rounded-full p-1 shadow-md text-red-500 hover:text-red-700 opacity-0 group-hover:opacity-100 hover:scale-110 transition-all z-20 ${selectedRedactionId === r.id ? 'opacity-100' : ''}`}
+                      onClick={(e) => { e.stopPropagation(); removeRedaction(r.id); }} onMouseEnter={() => setSelectedRedactionId(r.id)} onMouseLeave={() => setSelectedRedactionId(null)} title="블라인드 삭제">
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                    <button className={`absolute -top-3 -left-3 bg-white dark:bg-gray-800 rounded-full p-1 shadow-md text-gray-600 hover:text-gray-900 dark:text-gray-300 opacity-0 group-hover:opacity-100 hover:scale-110 transition-all z-20 ${selectedRedactionId === r.id ? 'opacity-100' : ''}`}
+                      onClick={(e) => { e.stopPropagation(); updateRedaction(r.id, { color: isWhite ? "#111827" : "#FFFFFF" }); }} onMouseEnter={() => setSelectedRedactionId(r.id)} onMouseLeave={() => setSelectedRedactionId(null)} title={isWhite ? "검은색 블라인드로 변경" : "흰색 블라인드로 변경"}>
+                      <div className={`w-3.5 h-3.5 rounded-full border border-gray-400 ${isWhite ? "bg-gray-900" : "bg-white"}`} />
+                    </button>
+                  </div>
+                );
+              })}
               {isRedactMode && drawingRedaction && drawingRedaction.pageIndex === pageNum && (
-                <div className="absolute bg-gray-900/80 border-2 border-gray-900 z-20" style={{
+                <div className={`absolute z-20 pointer-events-none ${redactColor === "white" ? "bg-white/90 border-2 border-dashed border-gray-600 shadow-md" : "bg-gray-900/80 border-2 border-gray-900"}`} style={{
                   left: Math.min(drawingRedaction.startX, drawingRedaction.currentX), top: Math.min(drawingRedaction.startY, drawingRedaction.currentY),
                   width: Math.abs(drawingRedaction.currentX - drawingRedaction.startX), height: Math.abs(drawingRedaction.currentY - drawingRedaction.startY),
                 }} />

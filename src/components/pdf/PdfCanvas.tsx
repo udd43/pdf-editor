@@ -44,7 +44,9 @@ interface PdfCanvasProps {
   selectedRedactionId: string | null;
   onSelectRedaction: (id: string | null) => void;
   onRemoveRedaction: (id: string) => void;
+  onUpdateRedaction?: (id: string, updates: Partial<RedactionData>) => void;
   drawingRedaction: { startX: number; startY: number; currentX: number; currentY: number } | null;
+  redactColor?: "black" | "white";
 
   // Canvas events
   onCanvasDoubleClick: (e: React.MouseEvent<HTMLDivElement>) => void;
@@ -88,7 +90,9 @@ export default function PdfCanvas({
   selectedRedactionId,
   onSelectRedaction,
   onRemoveRedaction,
+  onUpdateRedaction,
   drawingRedaction,
+  redactColor = "black",
   onCanvasDoubleClick,
   onDragOver,
   onDragLeave,
@@ -195,34 +199,72 @@ export default function PdfCanvas({
         {status === "done" &&
           redactions
             .filter((r) => r.pageIndex === currentPage)
-            .map((r) => (
-              <div
-                key={r.id}
-                className="absolute bg-gray-900 z-10"
-                style={{
-                  left: r.x * scale,
-                  top: r.y * scale,
-                  width: r.width * scale,
-                  height: r.height * scale,
-                }}
-              >
-                <button
-                  className={`absolute -top-3 -right-3 bg-white rounded-full p-1 shadow-md text-red-500 hover:text-red-700 opacity-0 hover:opacity-100 transition-opacity ${
-                    selectedRedactionId === r.id ? "opacity-100" : ""
-                  }`}
-                  onClick={() => onRemoveRedaction(r.id)}
-                  onMouseEnter={() => onSelectRedaction(r.id)}
-                  onMouseLeave={() => onSelectRedaction(null)}
+            .map((r) => {
+              const isWhite = r.color === "#FFFFFF" || r.color === "white";
+              return (
+                <div
+                  key={r.id}
+                  className={`absolute z-10 group transition-[border-color,box-shadow] ${
+                    isWhite
+                      ? "bg-white border border-gray-300 dark:border-gray-600 shadow-xs hover:border-blue-400"
+                      : "bg-gray-900"
+                  } ${selectedRedactionId === r.id ? "ring-2 ring-blue-500" : ""}`}
+                  style={{
+                    left: r.x * scale,
+                    top: r.y * scale,
+                    width: r.width * scale,
+                    height: r.height * scale,
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onSelectRedaction(r.id);
+                  }}
                 >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            ))}
+                  {/* Delete button */}
+                  <button
+                    className={`absolute -top-3 -right-3 bg-white dark:bg-gray-800 rounded-full p-1 shadow-md text-red-500 hover:text-red-700 opacity-0 group-hover:opacity-100 hover:scale-110 transition-all z-20 ${
+                      selectedRedactionId === r.id ? "opacity-100" : ""
+                    }`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onRemoveRedaction(r.id);
+                    }}
+                    onMouseEnter={() => onSelectRedaction(r.id)}
+                    onMouseLeave={() => onSelectRedaction(null)}
+                    title="블라인드 삭제"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+
+                  {/* Color toggle button */}
+                  {onUpdateRedaction && (
+                    <button
+                      className={`absolute -top-3 -left-3 bg-white dark:bg-gray-800 rounded-full p-1 shadow-md text-gray-600 hover:text-gray-900 dark:text-gray-300 opacity-0 group-hover:opacity-100 hover:scale-110 transition-all z-20 ${
+                        selectedRedactionId === r.id ? "opacity-100" : ""
+                      }`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onUpdateRedaction(r.id, { color: isWhite ? "#111827" : "#FFFFFF" });
+                      }}
+                      onMouseEnter={() => onSelectRedaction(r.id)}
+                      onMouseLeave={() => onSelectRedaction(null)}
+                      title={isWhite ? "검은색 블라인드로 변경" : "흰색 블라인드로 변경"}
+                    >
+                      <div className={`w-3.5 h-3.5 rounded-full border border-gray-400 ${isWhite ? "bg-gray-900" : "bg-white"}`} />
+                    </button>
+                  )}
+                </div>
+              );
+            })}
 
         {/* Drawing Redaction */}
         {isRedactMode && drawingRedaction && (
           <div
-            className="absolute bg-gray-900/80 border-2 border-gray-900 z-20"
+            className={`absolute z-20 pointer-events-none ${
+              redactColor === "white"
+                ? "bg-white/90 border-2 border-dashed border-gray-600 shadow-md"
+                : "bg-gray-900/80 border-2 border-gray-900"
+            }`}
             style={{
               left: Math.min(drawingRedaction.startX, drawingRedaction.currentX),
               top: Math.min(drawingRedaction.startY, drawingRedaction.currentY),

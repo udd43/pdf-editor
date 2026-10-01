@@ -230,8 +230,8 @@ async function processRedactionsAndCompression(
 
     // Draw redactions on canvas
     if (pageRedactions.length > 0) {
-      ctx.fillStyle = "#111827"; // gray-900 (or black)
       for (const r of pageRedactions) {
+        ctx.fillStyle = (r.color === "#FFFFFF" || r.color === "white") ? "#FFFFFF" : "#111827";
         // Redaction coords are in PDF points (1 scale), so we scale them to the canvas viewport
         const rx = r.x * scale;
         const ry = r.y * scale;

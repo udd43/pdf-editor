@@ -61,6 +61,16 @@ export default function PdfEditor({ file, isCorporateMode = false }: PdfEditorPr
   const [isUpscaling, setIsUpscaling] = useState(false);
   const [isSignatureOpen, setIsSignatureOpen] = useState(false);
   const [isRedactMode, setIsRedactMode] = useState(false);
+  const [redactColor, setRedactColor] = useState<"black" | "white">("black");
+
+  const handleToggleRedact = (color: "black" | "white") => {
+    if (isRedactMode && redactColor === color) {
+      setIsRedactMode(false);
+    } else {
+      setIsRedactMode(true);
+      setRedactColor(color);
+    }
+  };
   const [drawingRedaction, setDrawingRedaction] = useState<{
     startX: number;
     startY: number;
@@ -93,7 +103,7 @@ export default function PdfEditor({ file, isCorporateMode = false }: PdfEditorPr
     textBoxes, setTextBoxes, imageOverlays, setImageOverlays, redactions, setRedactions,
     selectedImageId, setSelectedImageId, selectedTextId, setSelectedTextId,
     selectedRedactionId, setSelectedRedactionId, nextId, setNextId,
-    addRedaction, removeRedaction, undo, redo, saveHistory, resetElements,
+    addRedaction, updateRedaction, removeRedaction, undo, redo, saveHistory, resetElements,
   } = usePdfElements();
 
   const {
@@ -776,7 +786,14 @@ export default function PdfEditor({ file, isCorporateMode = false }: PdfEditorPr
     const w = Math.abs(currentX - startX) / scale;
     const h = Math.abs(currentY - startY) / scale;
     if (w > 5 && h > 5) {
-      addRedaction({ pageIndex: currentPage, x, y, width: w, height: h });
+      addRedaction({
+        pageIndex: currentPage,
+        x,
+        y,
+        width: w,
+        height: h,
+        color: redactColor === "white" ? "#FFFFFF" : "#111827",
+      });
     }
     setDrawingRedaction(null);
   };
@@ -803,6 +820,8 @@ export default function PdfEditor({ file, isCorporateMode = false }: PdfEditorPr
         setIsSignatureOpen={setIsSignatureOpen}
         isRedactMode={isRedactMode}
         setIsRedactMode={setIsRedactMode}
+        redactColor={redactColor}
+        onToggleRedact={handleToggleRedact}
         numPages={numPages}
         currentPage={currentPage}
         setCurrentPage={setCurrentPage}
@@ -879,7 +898,9 @@ export default function PdfEditor({ file, isCorporateMode = false }: PdfEditorPr
           selectedRedactionId={selectedRedactionId}
           onSelectRedaction={setSelectedRedactionId}
           onRemoveRedaction={removeRedaction}
+          onUpdateRedaction={updateRedaction}
           drawingRedaction={drawingRedaction}
+          redactColor={redactColor}
           onCanvasDoubleClick={handleCanvasDoubleClick}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}

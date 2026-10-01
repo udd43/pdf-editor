@@ -9,6 +9,7 @@ export interface RedactionData {
   y: number;
   width: number;
   height: number;
+  color?: string;
 }
 
 interface HistoryState {
