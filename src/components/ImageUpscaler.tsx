@@ -2,6 +2,7 @@
 
 import React, { useRef, useState } from "react";
 import { ZoomIn, Download, Loader2, Upload, RotateCcw } from "lucide-react";
+import { upscaleImage, type UpscaleModel } from "@/lib/upscale";
 
 export default function ImageUpscaler() {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -13,7 +14,7 @@ export default function ImageUpscaler() {
   const [originalFile, setOriginalFile] = useState<File | null>(null);
   const [originalSize, setOriginalSize] = useState({ w: 0, h: 0 });
   const [resultSize, setResultSize] = useState({ w: 0, h: 0 });
-  const [model, setModel] = useState("realesr-animevideov3");
+  const [model, setModel] = useState<UpscaleModel>("realesrgan-x4plus");
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -41,32 +42,12 @@ export default function ImageUpscaler() {
     setResultSrc(null);
 
     try {
-      const formData = new FormData();
-      formData.append("image", originalFile);
-      formData.append("scale", "2");
-      formData.append("noise", "-1");
-      formData.append("model", model);
+      setProgress("AI 모델로 업스케일링 중... (최대 10~30초 소요)");
 
-      setProgress("초고속 모델 불러오는 중... (최대 10~30초 소요)");
-
-      const res = await fetch("/api/upscale", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || "업스케일링 실패");
-      }
-
-      const blob = await res.blob();
+      const { blob, width, height } = await upscaleImage(originalFile, { model, scale: 2 });
       const resultUrl = URL.createObjectURL(blob);
       setResultSrc(resultUrl);
-
-      // 결과 크기 측정
-      const img = new Image();
-      img.onload = () => setResultSize({ w: img.width, h: img.height });
-      img.src = resultUrl;
+      setResultSize({ w: width, h: height });
 
       setProgress("");
     } catch (err: any) {
@@ -147,12 +128,12 @@ export default function ImageUpscaler() {
               <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 whitespace-nowrap">모델 선택:</label>
               <select 
                 value={model} 
-                onChange={(e) => setModel(e.target.value)}
+                onChange={(e) => setModel(e.target.value as UpscaleModel)}
                 className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 shadow-sm min-w-[200px]"
               >
-                <option value="realesr-animevideov3">고속/애니메이션 (AnimeVideo v3)</option>
+                <option value="realesrgan-x4plus">일반 사진/문서 (RealESRGAN, 권장)</option>
                 <option value="realesrgan-x4plus-anime">일러스트/애니 (Anime)</option>
-                <option value="realesrgan-x4plus">일반 사진 (RealESRGAN)</option>
+                <option value="realesr-animevideov3">고속/애니메이션 (AnimeVideo v3)</option>
               </select>
             </div>
             

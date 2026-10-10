@@ -24,15 +24,23 @@ app.post('/api/upscale', upload.single('image'), async (req, res) => {
 
     const file = req.file;
     const scaleStr = req.body.scale;
-    const noiseStr = req.body.noise;
-    const modelStr = req.body.model || 'realesr-animevideov3';
+    const requestedModel = req.body.model || 'realesrgan-x4plus';
 
     if (!file) {
       return res.status(400).json({ error: "이미지 파일이 필요합니다." });
     }
 
-    const scale = parseInt(scaleStr) || 2;
-    const noise = parseInt(noiseStr) ?? 1;
+    // 모델별 지원 배율 (x4plus 계열은 4배 전용 — 다른 배율로 돌리면 결과가 깨짐)
+    const MODEL_SCALES = {
+      'realesrgan-x4plus': [4],
+      'realesrgan-x4plus-anime': [4],
+      'realesr-animevideov3': [2, 3, 4],
+    };
+    const modelStr = MODEL_SCALES[requestedModel] ? requestedModel : 'realesrgan-x4plus';
+    const requestedScale = parseInt(scaleStr) || 2;
+    const supported = MODEL_SCALES[modelStr];
+    // 요청 배율 이상인 지원 배율 중 가장 작은 값으로 실행 (초과분은 클라이언트에서 고품질 축소)
+    const scale = supported.find((s) => s >= requestedScale) || supported[supported.length - 1];
 
     const timestamp = Date.now();
     const inputPath = file.path;
@@ -53,8 +61,9 @@ app.post('/api/upscale', upload.single('image'), async (req, res) => {
           '-o', outputPath,
           '-n', modelStr,
           '-s', String(scale),
-          '-g', '0',
-          '-j', '2:2:2',
+          '-t', '256',
+          '-f', 'png',
+          '-j', '1:2:2',
           '-m', modelsPath
         ],
         { timeout: 120000 },

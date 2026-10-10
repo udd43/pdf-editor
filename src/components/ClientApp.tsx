@@ -181,9 +181,9 @@ export default function ClientApp() {
 
       {/* ── Header ── */}
       <header className="bg-[#F9F6ED] dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-40 transition-colors duration-300">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex-1 flex justify-start">
-            <button onClick={goHome} className="shrink-0 outline-none flex items-center gap-2">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+          <div className="flex-1 flex justify-start shrink-0">
+            <button onClick={goHome} className="shrink-0 whitespace-nowrap outline-none flex items-center gap-2">
               <span
                 className="text-xl font-bold tracking-tight text-gray-900 dark:text-white"
                 style={{ fontFamily: "Inter, system-ui, sans-serif" }}
@@ -193,27 +193,28 @@ export default function ClientApp() {
             </button>
           </div>
 
-          <nav className="hidden lg:flex shrink-0 items-center bg-gray-200/50 dark:bg-gray-800/50 rounded-full p-1 border border-gray-200 dark:border-gray-700 gap-1 transition-colors duration-300">
+          <nav className="hidden lg:flex shrink-0 items-center bg-gray-200/50 dark:bg-gray-800/50 rounded-full p-1 border border-gray-200 dark:border-gray-700 gap-0.5 transition-colors duration-300">
             {tabs.map((tab) => {
               const isActive = activeTab === tab.id || (tab.id === "pdftools" && activeTab === "pdftools");
               return (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold rounded-full transition-all duration-200 ${
+                  title={tab.label}
+                  className={`flex items-center gap-1 px-2 py-1.5 text-[10.5px] whitespace-nowrap font-semibold rounded-full transition-all duration-200 ${
                     isActive
                       ? tab.activeBg
                       : "text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200/50 dark:hover:bg-gray-700/50"
                   }`}
                 >
-                  {tab.icon}
+                  <span className="hidden xl:inline-flex">{tab.icon}</span>
                   <span>{tab.label}</span>
                 </button>
               );
             })}
           </nav>
 
-          <div className="flex-1 flex justify-end gap-2 items-center">
+          <div className="flex-1 flex justify-end gap-2 items-center shrink-0">
             {activeTab === "pdf" && file && (
               <>
                 <button

@@ -662,18 +662,10 @@ export default function PdfEditor({ file, isCorporateMode = false }: PdfEditorPr
     if (!imgFile) return;
     e.target.value = "";
     setIsUpscaling(true);
-    setStatusMsg("Real-ESRGAN 초고속 모델 불러오는 중... (최대 10~30초 소요)");
+    setStatusMsg("Real-ESRGAN AI 업스케일링 중... (최대 10~30초 소요)");
     try {
-      const formData = new FormData();
-      formData.append("image", imgFile);
-      formData.append("scale", "2");
-      formData.append("noise", "1");
-      const res = await fetch("/api/upscale", { method: "POST", body: formData });
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || "업스케일링 실패");
-      }
-      const blob = await res.blob();
+      const { upscaleImage } = await import("@/lib/upscale");
+      const { blob } = await upscaleImage(imgFile, { model: "realesrgan-x4plus", scale: 2 });
       const resultUrl = URL.createObjectURL(blob);
       const img = new Image();
       img.onload = () => {

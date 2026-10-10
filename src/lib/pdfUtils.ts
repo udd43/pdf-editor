@@ -105,15 +105,14 @@ export async function exportEditedPdf(
     }, transferables);
   });
 
-  // 4. Worker 결과 후처리 (redactions, compression)
+  // 4. Worker 결과 후처리 (redactions만 처리 — 압축은 '압축 도구' 메뉴에서만 수행)
   let finalBytes: Uint8Array = workerResult.pdfBytes;
-  const isCompressing = finalBytes.byteLength > 20 * 1024 * 1024;
   const hasRedactions = redactions && redactions.length > 0;
   
-  if (hasRedactions || isCompressing) {
-    const toastId = toast.loading(isCompressing ? "20MB 초과: 자동 압축 및 처리 중..." : "블라인드 병합 처리 중...");
+  if (hasRedactions) {
+    const toastId = toast.loading("블라인드 병합 처리 중...");
     try {
-      finalBytes = await processRedactionsAndCompression(finalBytes, redactions || [], isCompressing);
+      finalBytes = await processRedactions(finalBytes, redactions || []);
       toast.success("처리가 완료되었습니다!", { id: toastId });
     } catch (err) {
       console.error(err);
@@ -185,12 +184,11 @@ export async function reorderPdfPages(buffer: ArrayBuffer, newOrder: number[]): 
 }
 
 /**
- * Redaction(블라인드) 및 Compression(압축) 처리 함수
+ * Redaction(블라인드) 처리 함수 (원본 화질 유지, 래스터화/압축 없음)
  */
-async function processRedactionsAndCompression(
+async function processRedactions(
   pdfBuffer: ArrayBuffer | Uint8Array,
-  redactions: RedactionData[],
-  isCompressing: boolean
+  redactions: RedactionData[]
 ): Promise<Uint8Array> {
   // 안전하게 독립적인 ArrayBuffer 복사본 생성
   let safeBuffer: ArrayBuffer;
@@ -234,21 +232,6 @@ async function processRedactionsAndCompression(
     }
   }
 
-  // 2단계: 압축이 필요하면 래스터화 (20MB 초과 시)
-  if (isCompressing) {
-    // 블라인드가 적용된 PDF를 먼저 저장
-    const redactedBytes = await pdfLibDoc.save();
-    const redactedBuffer = redactedBytes.buffer.slice(
-      redactedBytes.byteOffset,
-      redactedBytes.byteOffset + redactedBytes.byteLength
-    ) as ArrayBuffer;
-
-    // pdfjsLib로 래스터화 압축
-    const compressedBuffer = await compressPdfBuffer(redactedBuffer, 0.65, 1.5);
-    return new Uint8Array(compressedBuffer);
-  }
-
-  // 블라인드만 적용 (압축 불필요)
   return await pdfLibDoc.save({ useObjectStreams: true });
 }
 
