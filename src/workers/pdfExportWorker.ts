@@ -126,7 +126,30 @@ self.onmessage = async (e: MessageEvent) => {
           // Normalize rotation to 0-360
           finalRotationAngle = (finalRotationAngle % 360 + 360) % 360;
 
-          page.drawImage(embeddedImage, { x: imgDrawX, y: imgDrawY, width: realW, height: realH, rotate: degrees(finalRotationAngle) });
+          let drawW = realW;
+          let drawH = realH;
+          let drawX = imgDrawX;
+          let drawY = imgDrawY;
+
+          // customRotation과 rotationAngle이 0일 때, 박스 크기와 원본 이미지 비율이 다르면
+          // 브라우저의 object-contain과 동일하게 정비율을 유지하며 중앙 배치 (타원형 왜곡 방지)
+          if (rotationAngle === 0 && customRotation === 0 && embeddedImage.width && embeddedImage.height) {
+            const imgRatio = embeddedImage.width / embeddedImage.height;
+            const boxRatio = realW / (realH || 1);
+            if (Math.abs(imgRatio - boxRatio) > 0.02) {
+              if (imgRatio > boxRatio) {
+                drawW = realW;
+                drawH = realW / imgRatio;
+                drawY = imgDrawY + (realH - drawH) / 2;
+              } else {
+                drawH = realH;
+                drawW = realH * imgRatio;
+                drawX = imgDrawX + (realW - drawW) / 2;
+              }
+            }
+          }
+
+          page.drawImage(embeddedImage, { x: drawX, y: drawY, width: drawW, height: drawH, rotate: degrees(finalRotationAngle) });
         } catch (imgError) {
           console.warn(`이미지 삽입 실패 (${overlay.id}):`, imgError);
         }

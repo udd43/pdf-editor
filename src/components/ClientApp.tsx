@@ -181,8 +181,8 @@ export default function ClientApp() {
 
       {/* ── Header ── */}
       <header className="bg-[#F9F6ED] dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-40 transition-colors duration-300">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
-          <div className="flex-1 flex justify-start shrink-0">
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
+          <div className="flex items-center justify-start shrink-0">
             <button onClick={goHome} className="shrink-0 whitespace-nowrap outline-none flex items-center gap-2">
               <span
                 className="text-xl font-bold tracking-tight text-gray-900 dark:text-white"
@@ -193,7 +193,7 @@ export default function ClientApp() {
             </button>
           </div>
 
-          <nav className="hidden lg:flex shrink-0 items-center bg-gray-200/50 dark:bg-gray-800/50 rounded-full p-1 border border-gray-200 dark:border-gray-700 gap-0.5 transition-colors duration-300">
+          <nav className="hidden lg:flex shrink min-w-0 items-center bg-gray-200/50 dark:bg-gray-800/50 rounded-full p-1 border border-gray-200 dark:border-gray-700 gap-0.5 transition-colors duration-300">
             {tabs.map((tab) => {
               const isActive = activeTab === tab.id || (tab.id === "pdftools" && activeTab === "pdftools");
               return (
@@ -214,12 +214,12 @@ export default function ClientApp() {
             })}
           </nav>
 
-          <div className="flex-1 flex justify-end gap-2 items-center shrink-0">
+          <div className="flex items-center justify-end gap-2 shrink-0">
             {activeTab === "pdf" && file && (
               <>
                 <button
                   onClick={() => document.getElementById("ref-upload")?.click()}
-                  className="text-xs text-blue-600 bg-blue-50 dark:bg-blue-900/30 dark:text-blue-400 px-4 py-1.5 rounded-full border border-blue-100 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-800/50 transition-all font-semibold"
+                  className="text-xs text-blue-600 bg-blue-50 dark:bg-blue-900/30 dark:text-blue-400 px-3.5 py-1.5 rounded-full border border-blue-100 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-800/50 transition-all font-semibold whitespace-nowrap shrink-0"
                 >
                   대조 원본 추가
                 </button>
@@ -232,7 +232,7 @@ export default function ClientApp() {
                 />
                 <button
                   onClick={goHome}
-                  className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white px-3 py-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-all font-medium"
+                  className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white px-3 py-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-all font-medium whitespace-nowrap shrink-0"
                 >
                   처음으로
                 </button>
@@ -241,21 +241,21 @@ export default function ClientApp() {
             {!isHome && activeTab !== "pdf" && (
               <button
                 onClick={goHome}
-                className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white px-3 py-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-all font-medium"
+                className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white px-3 py-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-all font-medium whitespace-nowrap shrink-0"
               >
                 홈으로
               </button>
             )}
             <button
               onClick={cycleDarkMode}
-              className="p-2 ml-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 transition-colors"
+              className="p-2 ml-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 transition-colors shrink-0"
               title={darkModeTitle}
             >
               {darkModeIcon}
             </button>
             <button
               onClick={() => setIsMobileMenuOpen(true)}
-              className="lg:hidden p-2 ml-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 transition-colors"
+              className="lg:hidden p-2 ml-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 transition-colors shrink-0"
             >
               <Menu className="w-5 h-5" />
             </button>

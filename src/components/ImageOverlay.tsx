@@ -1,7 +1,7 @@
 
 
 import React, { useRef, useState, useCallback } from "react";
-import { Loader2, Scissors, Palette, Trash2, Move, Download } from "lucide-react";
+import { Loader2, Scissors, Palette, Trash2, Move, Download, Maximize2 } from "lucide-react";
 import toast from "react-hot-toast";
 import ColorPicker from "./ColorPicker";
 import { removeImageBackground } from "@/lib/imageUtils";
@@ -86,7 +86,7 @@ export default function ImageOverlay({
     window.addEventListener("mouseup", handleUp);
   };
 
-  // 리사이즈 시작
+  // 리사이즈 시작 (기본: 정비율/종횡비 유지, Shift 누르면 자유 조절)
   const handleResizeStart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -96,12 +96,25 @@ export default function ImageOverlay({
     const startY = e.clientY;
     const startW = overlay.width;
     const startH = overlay.height;
+    const aspectRatio = startW / (startH || 1);
 
     const handleMove = (ev: MouseEvent) => {
       const dx = (ev.clientX - startX) / scale;
       const dy = (ev.clientY - startY) / scale;
-      const newW = Math.max(30, startW + dx);
-      const newH = Math.max(30, startH + dy);
+
+      let newW: number;
+      let newH: number;
+
+      if (ev.shiftKey) {
+        // Shift 키 누르면 가로/세로 각각 자유 변형
+        newW = Math.max(20, Math.round(startW + dx));
+        newH = Math.max(20, Math.round(startH + dy));
+      } else {
+        // 기본값: 원본 종횡비(정비율) 유지 (구형 이미지가 타원형으로 찌그러지지 않도록 방지)
+        const delta = Math.abs(dx) > Math.abs(dy) ? dx : dy * aspectRatio;
+        newW = Math.max(20, Math.round(startW + delta));
+        newH = Math.max(20, Math.round(newW / aspectRatio));
+      }
       onUpdate(overlay.id, { width: newW, height: newH });
     };
     const handleUp = () => {
@@ -111,6 +124,19 @@ export default function ImageOverlay({
     };
     window.addEventListener("mousemove", handleMove);
     window.addEventListener("mouseup", handleUp);
+  };
+
+  // 이미지 원본 비율(1:1 등) 복원
+  const handleResetAspectRatio = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const img = new Image();
+    img.onload = () => {
+      const naturalRatio = img.naturalWidth / (img.naturalHeight || 1);
+      const newHeight = Math.round(overlay.width / naturalRatio);
+      onUpdate(overlay.id, { height: newHeight });
+      toast.success("이미지가 원본 비율로 복원되었습니다.");
+    };
+    img.src = overlay.displaySrc;
   };
 
   // 회전 핸들 드래그 - 마우스로 직접 돌리기
@@ -283,6 +309,15 @@ export default function ImageOverlay({
               <Palette className="w-4 h-4" />
             </button>
 
+            {/* 원본 비율(1:1 등) 복원 */}
+            <button
+              onClick={handleResetAspectRatio}
+              className="p-1.5 text-gray-600 hover:bg-indigo-50 hover:text-indigo-600 rounded transition-colors"
+              title="원본 종횡비(정비율) 복원 (구형/원형 찌그러짐 복구)"
+            >
+              <Maximize2 className="w-4 h-4" />
+            </button>
+
             {/* 다운로드 */}
             <button
               onClick={handleDownload}
@@ -329,7 +364,8 @@ export default function ImageOverlay({
           {/* 리사이즈 핸들 (우하단) */}
           <div
             onMouseDown={handleResizeStart}
-            className="absolute -bottom-2 -right-2 w-5 h-5 bg-blue-500 rounded-full cursor-se-resize border-2 border-white shadow"
+            className="absolute -bottom-2 -right-2 w-5 h-5 bg-blue-500 rounded-full cursor-se-resize border-2 border-white shadow hover:scale-125 transition-transform"
+            title="크기 조절 (기본: 정비율 고정 유지, Shift 누르면 자유 조절)"
           />
         </>
       )}
