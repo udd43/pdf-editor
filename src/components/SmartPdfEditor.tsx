@@ -9,8 +9,8 @@ import ImageOverlayComponent, { ImageOverlayData } from './ImageOverlay';
 import SignaturePad from './SignaturePad';
 import TextBoxOverlay from './TextBoxOverlay';
 import { usePdfElements } from '@/hooks/usePdfElements';
-import { PromptModal } from './Modal';
-import { exportEditedPdf } from '@/lib/pdfUtils';
+import { PromptModal, ConfirmModal } from './Modal';
+import { exportEditedPdf, exportPdfViaRasterFallback } from '@/lib/pdfUtils';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.mjs`;
 
@@ -94,6 +94,8 @@ export default function SmartPdfEditor() {
   const [drawingRedaction, setDrawingRedaction] = useState<{ startX: number; startY: number; currentX: number; currentY: number; pageIndex: number } | null>(null);
   const [exportModal, setExportModal] = useState(false);
   const [exportDefaultName, setExportDefaultName] = useState("");
+  const [safeExportModal, setSafeExportModal] = useState(false);
+  const [pendingExportName, setPendingExportName] = useState("");
 
   const canvasWrapperRef = useRef<HTMLDivElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -551,12 +553,44 @@ export default function SmartPdfEditor() {
     setExportModal(false);
     if (!pdfBuffer) return;
     const finalFileName = exportName.trim() === "" ? (file?.name || "document.pdf") : `${exportName.trim()}.pdf`;
-    setIsProcessing(true); setStatusMsg("PDF 생성 중...");
+    setIsProcessing(true);
+    setStatusMsg("PDF 생성 중...");
     const toastId = toast.loading("PDF 생성 중...");
     try {
       await exportEditedPdf(pdfBuffer, textBoxes, imageOverlays, redactions, 1, finalFileName);
       toast.success("다운로드 완료!", { id: toastId });
-    } catch (e: any) { console.error(e); toast.error("내보내기 실패", { id: toastId }); } finally { setIsProcessing(false); }
+      setIsProcessing(false);
+    } catch (e: any) {
+      console.warn("스마트 편집 일반 내보내기 실패, 안전 모드 대기:", e);
+      toast.dismiss(toastId);
+      setIsProcessing(false);
+      setPendingExportName(finalFileName);
+      setSafeExportModal(true);
+    }
+  };
+
+  const handleSafeExportConfirm = async () => {
+    setSafeExportModal(false);
+    if (!pdfBuffer) return;
+    setIsProcessing(true);
+    setStatusMsg("안전 모드로 PDF 생성 중...");
+    const toastId = toast.loading("안전 모드(고화질 래스터화)로 PDF를 생성하고 있습니다...");
+    try {
+      await exportPdfViaRasterFallback(
+        pdfBuffer,
+        textBoxes,
+        imageOverlays,
+        redactions,
+        pendingExportName || "document_safe.pdf",
+        (msg) => setStatusMsg(msg)
+      );
+      toast.success("안전 모드로 성공적으로 다운로드되었습니다!", { id: toastId });
+    } catch (err: any) {
+      console.error("안전 모드 내보내기 실패:", err);
+      toast.error("안전 모드 내보내기에도 실패했습니다.", { id: toastId });
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   // ========================================
@@ -711,6 +745,15 @@ export default function SmartPdfEditor() {
       <PromptModal isOpen={exportModal} title="PDF 내보내기" message="저장할 파일 이름을 입력하세요 (확장자 제외)"
         placeholder="파일 이름" defaultValue={exportDefaultName} confirmLabel="다운로드"
         onConfirm={handleExportConfirm} onCancel={() => setExportModal(false)} />
+      <ConfirmModal
+        isOpen={safeExportModal}
+        title="안전 모드로 내보내기"
+        message={`문서의 내부 보안 설정(권한 암호화, XFA, 손상된 구조 등)으로 인해 일반 내보내기에 실패했습니다.\n\n화면에 보이는 그대로 고화질 이미지(안전 모드)로 내보내시겠습니까?`}
+        confirmLabel="안전 모드로 내보내기"
+        cancelLabel="취소"
+        onConfirm={handleSafeExportConfirm}
+        onCancel={() => setSafeExportModal(false)}
+      />
     </div>
   );
 }

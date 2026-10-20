@@ -5,7 +5,10 @@ self.onmessage = async (e: MessageEvent) => {
   const { originalPdfBuffer, editedBoxes, imageOverlays, fontBuffers } = e.data;
 
   try {
-    const pdfDoc = await PDFDocument.load(originalPdfBuffer);
+    const pdfDoc = await PDFDocument.load(originalPdfBuffer, {
+      ignoreEncryption: true,
+      updateMetadata: false,
+    });
     pdfDoc.registerFontkit(fontkit);
 
     const fontCache: Record<string, any> = {};
@@ -156,7 +159,7 @@ self.onmessage = async (e: MessageEvent) => {
       }
     }
 
-    const rawPdfBytes = await pdfDoc.save();
+    const rawPdfBytes = await pdfDoc.save({ useObjectStreams: false });
     // 정확한 크기의 새 Uint8Array를 만들어 전송 (byteOffset/byteLength 불일치 방지)
     const pdfBytes = new Uint8Array(rawPdfBytes.byteLength);
     pdfBytes.set(rawPdfBytes);

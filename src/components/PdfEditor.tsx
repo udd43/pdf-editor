@@ -4,8 +4,8 @@ import React, { useEffect, useRef, useState, useCallback } from "react";
 import * as pdfjsLib from "pdfjs-dist";
 import { Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
-import { exportEditedPdf, mergePdfs, deletePdfPage, reorderPdfPages } from "@/lib/pdfUtils";
-import { PromptModal } from "./Modal";
+import { exportEditedPdf, exportPdfViaRasterFallback, mergePdfs, deletePdfPage, reorderPdfPages } from "@/lib/pdfUtils";
+import { PromptModal, ConfirmModal } from "./Modal";
 import { koreanToRoman } from "@/lib/romanize";
 import { ImageOverlayData } from "./ImageOverlay";
 import SignaturePad from "./SignaturePad";
@@ -81,6 +81,8 @@ export default function PdfEditor({ file, isCorporateMode = false }: PdfEditorPr
   const [romanizeModal, setRomanizeModal] = useState(false);
   const [exportModal, setExportModal] = useState(false);
   const [exportDefaultName, setExportDefaultName] = useState("");
+  const [safeExportModal, setSafeExportModal] = useState(false);
+  const [pendingExportName, setPendingExportName] = useState("");
 
   const [dragPageNumber, setDragPageNumber] = useState<number | null>(null);
   const [dragTargetPage, setDragTargetPage] = useState<number | null>(null);
@@ -719,11 +721,39 @@ export default function PdfEditor({ file, isCorporateMode = false }: PdfEditorPr
       setStatusMsg("PDF가 다운로드되었습니다!");
       toast.success("성공적으로 다운로드되었습니다!", { id: toastId });
     } catch (e: any) {
-      console.error(e);
+      console.warn("일반 내보내기 실패, 안전 모드 폴백 대기:", e);
+      toast.dismiss(toastId);
+      setStatus("done");
+      setStatusMsg("일반 내보내기 실패 (안전 모드로 저장 가능)");
+      setPendingExportName(finalFileName);
+      setSafeExportModal(true);
+    }
+  };
+
+  const handleSafeExportConfirm = async () => {
+    setSafeExportModal(false);
+    if (!pdfBuffer) return;
+    setStatus("rendering");
+    setStatusMsg("안전 모드로 PDF 생성 중...");
+    const toastId = toast.loading("안전 모드(고화질 래스터화)로 PDF를 생성하고 있습니다...");
+    try {
+      await exportPdfViaRasterFallback(
+        pdfBuffer,
+        textBoxes,
+        imageOverlays,
+        redactions,
+        pendingExportName || "document_safe.pdf",
+        (msg) => setStatusMsg(msg)
+      );
+      setStatus("done");
+      setStatusMsg("PDF가 안전 모드로 다운로드되었습니다!");
+      toast.success("안전 모드로 성공적으로 다운로드되었습니다!", { id: toastId });
+    } catch (err: any) {
+      console.error("안전 모드 내보내기 실패:", err);
       setStatus("error");
-      setStatusMsg("PDF 내보내기 실패");
-      setErrorDetail(e?.message || String(e));
-      toast.error("다운로드에 실패했습니다.", { id: toastId });
+      setStatusMsg("안전 모드 내보내기 실패");
+      setErrorDetail(err?.message || String(err));
+      toast.error("안전 모드 내보내기에도 실패했습니다.", { id: toastId });
     }
   };
 
@@ -934,6 +964,15 @@ export default function PdfEditor({ file, isCorporateMode = false }: PdfEditorPr
         confirmLabel="다운로드"
         onConfirm={handleExportConfirm}
         onCancel={() => setExportModal(false)}
+      />
+      <ConfirmModal
+        isOpen={safeExportModal}
+        title="안전 모드로 내보내기"
+        message={`문서의 내부 보안 설정(권한 암호화, XFA, 손상된 구조 등)으로 인해 일반 내보내기에 실패했습니다.\n\n화면에 보이는 그대로 고화질 이미지(안전 모드)로 내보내시겠습니까?`}
+        confirmLabel="안전 모드로 내보내기"
+        cancelLabel="취소"
+        onConfirm={handleSafeExportConfirm}
+        onCancel={() => setSafeExportModal(false)}
       />
     </div>
   );

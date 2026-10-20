@@ -139,15 +139,15 @@ export async function exportEditedPdf(
  * @returns A new ArrayBuffer containing the merged PDF
  */
 export async function mergePdfs(buffer1: ArrayBuffer, buffer2: ArrayBuffer): Promise<ArrayBuffer> {
-  const pdf1 = await PDFDocument.load(buffer1);
-  const pdf2 = await PDFDocument.load(buffer2);
+  const pdf1 = await PDFDocument.load(buffer1, { ignoreEncryption: true, updateMetadata: false });
+  const pdf2 = await PDFDocument.load(buffer2, { ignoreEncryption: true, updateMetadata: false });
 
   const copiedPages = await pdf1.copyPages(pdf2, pdf2.getPageIndices());
   copiedPages.forEach((page) => {
     pdf1.addPage(page);
   });
 
-  const mergedBytes = await pdf1.save();
+  const mergedBytes = await pdf1.save({ useObjectStreams: false });
   return mergedBytes.buffer.slice(mergedBytes.byteOffset, mergedBytes.byteOffset + mergedBytes.byteLength) as ArrayBuffer;
 }
 
@@ -158,10 +158,10 @@ export async function mergePdfs(buffer1: ArrayBuffer, buffer2: ArrayBuffer): Pro
  * @returns A new ArrayBuffer containing the PDF with the page removed
  */
 export async function deletePdfPage(buffer: ArrayBuffer, pageIndex: number): Promise<ArrayBuffer> {
-  const pdf = await PDFDocument.load(buffer);
+  const pdf = await PDFDocument.load(buffer, { ignoreEncryption: true, updateMetadata: false });
   pdf.removePage(pageIndex);
   
-  const modifiedBytes = await pdf.save();
+  const modifiedBytes = await pdf.save({ useObjectStreams: false });
   return modifiedBytes.buffer.slice(modifiedBytes.byteOffset, modifiedBytes.byteOffset + modifiedBytes.byteLength) as ArrayBuffer;
 }
 
@@ -173,13 +173,13 @@ export async function deletePdfPage(buffer: ArrayBuffer, pageIndex: number): Pro
  * @returns A new ArrayBuffer containing the reordered PDF
  */
 export async function reorderPdfPages(buffer: ArrayBuffer, newOrder: number[]): Promise<ArrayBuffer> {
-  const srcPdf = await PDFDocument.load(buffer);
+  const srcPdf = await PDFDocument.load(buffer, { ignoreEncryption: true, updateMetadata: false });
   const newPdf = await PDFDocument.create();
 
   const copiedPages = await newPdf.copyPages(srcPdf, newOrder);
   copiedPages.forEach((page) => newPdf.addPage(page));
 
-  const reorderedBytes = await newPdf.save();
+  const reorderedBytes = await newPdf.save({ useObjectStreams: false });
   return reorderedBytes.buffer.slice(reorderedBytes.byteOffset, reorderedBytes.byteOffset + reorderedBytes.byteLength) as ArrayBuffer;
 }
 
@@ -203,7 +203,7 @@ async function processRedactions(
 
   // 1단계: pdf-lib로 블라인드(검정/흰색 모두) 직접 그리기
   //   → pdfjsLib 재로드 없이 pdf-lib만으로 처리하여 안정성 확보
-  const pdfLibDoc = await PDFDocument.load(safeBuffer);
+  const pdfLibDoc = await PDFDocument.load(safeBuffer, { ignoreEncryption: true, updateMetadata: false });
   
   if (redactions && redactions.length > 0) {
     const pages = pdfLibDoc.getPages();
@@ -232,7 +232,7 @@ async function processRedactions(
     }
   }
 
-  return await pdfLibDoc.save({ useObjectStreams: true });
+  return await pdfLibDoc.save({ useObjectStreams: false });
 }
 
 /**
@@ -244,11 +244,11 @@ export async function mergeMultiplePdfs(buffers: ArrayBuffer[]): Promise<ArrayBu
 
   const mergedPdf = await PDFDocument.create();
   for (const buffer of buffers) {
-    const pdf = await PDFDocument.load(buffer);
+    const pdf = await PDFDocument.load(buffer, { ignoreEncryption: true, updateMetadata: false });
     const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
     copiedPages.forEach((page) => mergedPdf.addPage(page));
   }
-  const mergedBytes = await mergedPdf.save();
+  const mergedBytes = await mergedPdf.save({ useObjectStreams: false });
   return mergedBytes.buffer.slice(mergedBytes.byteOffset, mergedBytes.byteOffset + mergedBytes.byteLength) as ArrayBuffer;
 }
 
@@ -256,11 +256,11 @@ export async function mergeMultiplePdfs(buffers: ArrayBuffer[]): Promise<ArrayBu
  * Split specific pages (0-based indices) into a new PDF document.
  */
 export async function extractPdfPages(buffer: ArrayBuffer, pageIndices: number[]): Promise<ArrayBuffer> {
-  const srcPdf = await PDFDocument.load(buffer);
+  const srcPdf = await PDFDocument.load(buffer, { ignoreEncryption: true, updateMetadata: false });
   const newPdf = await PDFDocument.create();
   const copiedPages = await newPdf.copyPages(srcPdf, pageIndices);
   copiedPages.forEach((page) => newPdf.addPage(page));
-  const newBytes = await newPdf.save();
+  const newBytes = await newPdf.save({ useObjectStreams: false });
   return newBytes.buffer.slice(newBytes.byteOffset, newBytes.byteOffset + newBytes.byteLength) as ArrayBuffer;
 }
 
@@ -268,7 +268,7 @@ export async function extractPdfPages(buffer: ArrayBuffer, pageIndices: number[]
  * Rotate specific pages or all pages by given degrees (90, 180, 270).
  */
 export async function rotatePdfPages(buffer: ArrayBuffer, rotations: Map<number, number>): Promise<ArrayBuffer> {
-  const pdf = await PDFDocument.load(buffer);
+  const pdf = await PDFDocument.load(buffer, { ignoreEncryption: true, updateMetadata: false });
   const pages = pdf.getPages();
 
   rotations.forEach((deg, pageIdx) => {
@@ -278,8 +278,142 @@ export async function rotatePdfPages(buffer: ArrayBuffer, rotations: Map<number,
     }
   });
 
-  const modifiedBytes = await pdf.save();
+  const modifiedBytes = await pdf.save({ useObjectStreams: false });
   return modifiedBytes.buffer.slice(modifiedBytes.byteOffset, modifiedBytes.byteOffset + modifiedBytes.byteLength) as ArrayBuffer;
+}
+
+/**
+ * 캔버스 기반 고화질 이미지 래스터화 내보내기 (안전 모드 폴백)
+ * 
+ * 비표준 PDF, 손상된 XRef, XFA 동적 폼, 복잡한 권한 암호화 등으로 인해
+ * 일반 벡터 조립 저장이 실패할 때, 브라우저 화면에 렌더링된 그대로
+ * 각 페이지를 고해상도(2.0x) 이미지로 캡처하여 새 표준 PDF 1.7 파일로 안전하게 재작성합니다.
+ */
+export async function exportPdfViaRasterFallback(
+  originalPdfBuffer: ArrayBuffer,
+  editedBoxes: TextBox[],
+  imageOverlays: ImageOverlayData[],
+  redactions: RedactionData[],
+  filename: string = "document_safe_export.pdf",
+  onProgress?: (msg: string) => void
+): Promise<void> {
+  if (onProgress) onProgress("안전 모드: 문서 파싱 중...");
+  const loadingTask = pdfjsLib.getDocument({ data: originalPdfBuffer.slice(0) });
+  const pdfJsDoc = await loadingTask.promise;
+  const pdfLibDoc = await PDFDocument.create();
+
+  const numPages = pdfJsDoc.numPages;
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+  if (!ctx) throw new Error("Canvas context 생성 실패");
+
+  for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+    if (onProgress) onProgress(`안전 모드: ${pageNum}/${numPages} 페이지 고화질 처리 중...`);
+    const page = await pdfJsDoc.getPage(pageNum);
+    const scale = 2.0; // 인쇄 품질을 위한 2배 고해상도 렌더링
+    const viewport = page.getViewport({ scale });
+
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+
+    // 1. 기본 흰색 배경 및 원본 PDF 렌더링
+    ctx.fillStyle = "#FFFFFF";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    await page.render({ canvasContext: ctx, viewport } as any).promise;
+
+    // 2. 블라인드(Redactions) 합성
+    const pageRedactions = (redactions || []).filter(r => r.pageIndex === pageNum);
+    for (const r of pageRedactions) {
+      const isWhite = r.color === "#FFFFFF" || r.color === "white";
+      ctx.fillStyle = isWhite ? "#FFFFFF" : "#111827";
+      ctx.fillRect(r.x * scale, r.y * scale, r.width * scale, r.height * scale);
+    }
+
+    // 3. 이미지 오버레이 합성
+    const pageOverlays = (imageOverlays || []).filter(o => o.pageIndex === pageNum);
+    for (const o of pageOverlays) {
+      try {
+        const img = new Image();
+        img.src = o.displaySrc;
+        if (!img.complete) {
+          await new Promise((res) => { img.onload = res; img.onerror = res; });
+        }
+        ctx.save();
+        const rot = o.rotation || 0;
+        const cx = (o.x + o.width / 2) * scale;
+        const cy = (o.y + o.height / 2) * scale;
+        ctx.translate(cx, cy);
+        if (rot !== 0) {
+          ctx.rotate((rot * Math.PI) / 180);
+        }
+        ctx.drawImage(
+          img,
+          (-o.width / 2) * scale,
+          (-o.height / 2) * scale,
+          o.width * scale,
+          o.height * scale
+        );
+        ctx.restore();
+      } catch (err) {
+        console.warn("오버레이 이미지 렌더링 실패:", err);
+      }
+    }
+
+    // 4. 텍스트 상자 합성
+    const pageBoxes = (editedBoxes || []).filter(b => b.pageIndex === pageNum && (b.isEdited || b.isNew));
+    for (const b of pageBoxes) {
+      const boxX = b.x * scale;
+      const boxY = b.y * scale;
+      const boxW = b.width * scale;
+      const boxH = b.height * scale;
+
+      if (!b.isTransparent) {
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fillRect(boxX, boxY, boxW, boxH);
+      }
+
+      const fontSize = (b.fontSize || 16) * scale;
+      const fontFamily = b.fontFamily === "NanumMyeongjo" ? "NanumMyeongjo" : b.fontFamily === "Jua" ? "Jua" : "Noto Sans KR";
+      ctx.font = `${fontSize}px "${fontFamily}", sans-serif`;
+      ctx.fillStyle = "#000000";
+      ctx.textBaseline = "top";
+      
+      const lines = (b.text || "").split("\n");
+      const lineHeight = fontSize * 1.35;
+      lines.forEach((line, idx) => {
+        ctx.fillText(line, boxX, boxY + idx * lineHeight, boxW);
+      });
+    }
+
+    // 5. 캔버스를 고화질 JPEG 이미지(0.92 퀄리티)로 압축하여 새 PDF 페이지에 추가
+    const imgBlob = await new Promise<Blob>((resolve) =>
+      canvas.toBlob((b) => resolve(b!), "image/jpeg", 0.92)
+    );
+    const imgBytes = await imgBlob.arrayBuffer();
+    const embeddedImg = await pdfLibDoc.embedJpg(imgBytes);
+
+    const pdfPage = pdfLibDoc.addPage([viewport.width / scale, viewport.height / scale]);
+    pdfPage.drawImage(embeddedImg, {
+      x: 0,
+      y: 0,
+      width: viewport.width / scale,
+      height: viewport.height / scale,
+    });
+  }
+
+  if (onProgress) onProgress("안전 모드: 새 PDF 파일 저장 중...");
+  const finalBytes = await pdfLibDoc.save({ useObjectStreams: false });
+
+  // 6. 다운로드 트리거
+  const blob = new Blob([finalBytes as any], { type: "application/pdf" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
 }
 
 /**
