@@ -20,6 +20,9 @@ import PdfToolbar from "./pdf/PdfToolbar";
 import PdfCanvas from "./pdf/PdfCanvas";
 import PdfSidebar from "./pdf/PdfSidebar";
 import PdfOcrPanel from "./pdf/PdfOcrPanel";
+import type { PatchInfo } from "./MagicEraser";
+
+const MagicEraser = React.lazy(() => import("./MagicEraser"));
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.mjs`;
 
@@ -85,6 +88,8 @@ export default function PdfEditor({ file, isCorporateMode = false }: PdfEditorPr
   const [exportDefaultName, setExportDefaultName] = useState("");
   const [safeExportModal, setSafeExportModal] = useState(false);
   const [pendingExportName, setPendingExportName] = useState("");
+  const [isEraserOpen, setIsEraserOpen] = useState(false);
+  const [eraserInitialImage, setEraserInitialImage] = useState<string | null>(null);
 
   const [dragPageNumber, setDragPageNumber] = useState<number | null>(null);
   const [dragTargetPage, setDragTargetPage] = useState<number | null>(null);
@@ -756,6 +761,73 @@ export default function PdfEditor({ file, isCorporateMode = false }: PdfEditorPr
     if (selectedImageId === id) setSelectedImageId(null);
   };
 
+  // ── AI Smart Eraser (Magic Inpainting) ──
+  const handleOpenEraser = async () => {
+    if (status !== "done" || !pdfDoc) return;
+    const toastId = toast.loading("현재 PDF 페이지를 불러오는 중...");
+    try {
+      const page = await pdfDoc.getPage(currentPage);
+      // Crisp 2.0 scale for sharp inpainting
+      const viewport = page.getViewport({ scale: 2.0 });
+      const offCanvas = document.createElement("canvas");
+      offCanvas.width = viewport.width;
+      offCanvas.height = viewport.height;
+      const ctx = offCanvas.getContext("2d");
+      if (!ctx) throw new Error("캔버스 생성 실패");
+      await page.render({ canvasContext: ctx, viewport } as any).promise;
+      const dataUrl = offCanvas.toDataURL("image/png");
+      setEraserInitialImage(dataUrl);
+      setIsEraserOpen(true);
+      toast.dismiss(toastId);
+    } catch (e: any) {
+      console.error("지우개 페이지 로드 실패:", e);
+      toast.error("페이지 불러오기 실패", { id: toastId });
+    }
+  };
+
+  const handleApplyEraserResult = (resultDataUrl: string, patchInfo?: PatchInfo) => {
+    saveHistory(textBoxes, imageOverlays, redactions);
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const unscaledW = canvas.width / scale;
+    const unscaledH = canvas.height / scale;
+
+    let overlayX = 0;
+    let overlayY = 0;
+    let overlayW = unscaledW;
+    let overlayH = unscaledH;
+    let displaySrc = resultDataUrl;
+
+    if (patchInfo && patchInfo.fullW > 0 && patchInfo.fullH > 0 && patchInfo.patchDataUrl) {
+      // Scale ROI coordinates back to unscaled PDF points
+      const ratioX = unscaledW / patchInfo.fullW;
+      const ratioY = unscaledH / patchInfo.fullH;
+      overlayX = Math.round(patchInfo.roiX * ratioX);
+      overlayY = Math.round(patchInfo.roiY * ratioY);
+      overlayW = Math.round(patchInfo.roiW * ratioX);
+      overlayH = Math.round(patchInfo.roiH * ratioY);
+      displaySrc = patchInfo.patchDataUrl;
+    }
+
+    const newOverlay: ImageOverlayData = {
+      id: `img-eraser-${Date.now()}`,
+      originalSrc: displaySrc,
+      displaySrc: displaySrc,
+      removedBgSrc: null,
+      x: overlayX,
+      y: overlayY,
+      width: overlayW,
+      height: overlayH,
+      pageIndex: currentPage,
+    };
+
+    setImageOverlays((prev) => [...prev, newOverlay]);
+    setSelectedImageId(newOverlay.id);
+    setIsEraserOpen(false);
+    toast.success("스마트 지우개 적용 완료! 현재 페이지에 반영되었습니다.");
+  };
+
   // ── Export ──
   const handleExport = async () => {
     if (!pdfBuffer) return;
@@ -906,6 +978,7 @@ export default function PdfEditor({ file, isCorporateMode = false }: PdfEditorPr
         handleBgRemoveUpload={handleBgRemoveUpload}
         isUpscaling={isUpscaling}
         handleUpscaleUpload={handleUpscaleUpload}
+        handleOpenEraser={handleOpenEraser}
         setIsSignatureOpen={setIsSignatureOpen}
         isRedactMode={isRedactMode}
         setIsRedactMode={setIsRedactMode}
@@ -1012,6 +1085,18 @@ export default function PdfEditor({ file, isCorporateMode = false }: PdfEditorPr
         onClose={() => setIsSignatureOpen(false)}
         onSave={handleSignatureSave}
       />
+
+      {isEraserOpen && (
+        <React.Suspense fallback={null}>
+          <MagicEraser
+            isModal={true}
+            initialImageSrc={eraserInitialImage}
+            initialFileName={`${file.name.replace(/\.[^/.]+$/, "")}_p${currentPage}`}
+            onApplyToPdfEditor={handleApplyEraserResult}
+            onClose={() => setIsEraserOpen(false)}
+          />
+        </React.Suspense>
+      )}
 
       <PromptModal
         isOpen={romanizeModal}

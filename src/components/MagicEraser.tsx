@@ -11,6 +11,8 @@ import {
   Trash2,
   Loader2,
   Sliders,
+  X,
+  Check,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { runInpainting } from "@/lib/inpaintEngine";
@@ -18,16 +20,40 @@ import { useAppStore } from "@/stores/appStore";
 import { PDFDocument } from "pdf-lib";
 import * as pdfjsLib from "pdfjs-dist";
 
-export default function MagicEraser() {
+export interface PatchInfo {
+  patchDataUrl: string;
+  roiX: number;
+  roiY: number;
+  roiW: number;
+  roiH: number;
+  fullW: number;
+  fullH: number;
+}
+
+export interface MagicEraserProps {
+  initialImageSrc?: string | null;
+  initialFileName?: string;
+  isModal?: boolean;
+  onApplyToPdfEditor?: (resultDataUrl: string, patchInfo?: PatchInfo) => void;
+  onClose?: () => void;
+}
+
+export default function MagicEraser({
+  initialImageSrc,
+  initialFileName,
+  isModal = false,
+  onApplyToPdfEditor,
+  onClose,
+}: MagicEraserProps = {}) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const imageCanvasRef = useRef<HTMLCanvasElement>(null);
   const maskCanvasRef = useRef<HTMLCanvasElement>(null);
   const cursorCanvasRef = useRef<HTMLCanvasElement>(null);
 
-  const [imageSrc, setImageSrc] = useState<string | null>(null);
-  const [originalSrc, setOriginalSrc] = useState<string | null>(null);
-  const [fileName, setFileName] = useState("document");
+  const [imageSrc, setImageSrc] = useState<string | null>(initialImageSrc || null);
+  const [originalSrc, setOriginalSrc] = useState<string | null>(initialImageSrc || null);
+  const [fileName, setFileName] = useState(initialFileName || "document");
   const [brushSize, setBrushSize] = useState(28);
   const [isDrawing, setIsDrawing] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -35,13 +61,24 @@ export default function MagicEraser() {
   const [progressPercent, setProgressPercent] = useState(0);
   const [hasMask, setHasMask] = useState(false);
   const [isComparing, setIsComparing] = useState(false);
+  const [hasErased, setHasErased] = useState(false);
 
   // History stack for Undo
   const historyRef = useRef<ImageData[]>([]);
   const maskHistoryRef = useRef<ImageData[]>([]);
   const [canUndo, setCanUndo] = useState(false);
+  const lastRoiRef = useRef<{ roiX: number; roiY: number; roiW: number; roiH: number } | null>(null);
 
   const openPdfEditor = useAppStore((state) => state.openPdfEditor);
+
+  // If initialImageSrc is passed, load onto canvas
+  useEffect(() => {
+    if (initialImageSrc) {
+      setImageSrc(initialImageSrc);
+      setOriginalSrc(initialImageSrc);
+      loadImageToCanvas(initialImageSrc, true);
+    }
+  }, [initialImageSrc]);
 
   // Initialize and draw base image onto canvas
   const loadImageToCanvas = useCallback((src: string, isOriginalUpload = false) => {
@@ -287,6 +324,10 @@ export default function MagicEraser() {
         },
       });
 
+      if ((resultCanvas as any).roi) {
+        lastRoiRef.current = (resultCanvas as any).roi;
+      }
+
       // Update base canvas with result
       const imgCtx = imgCanvas.getContext("2d");
       if (imgCtx) {
@@ -296,6 +337,7 @@ export default function MagicEraser() {
         setCanUndo(true);
       }
 
+      setHasErased(true);
       // Clear mask
       handleClearMask();
       toast.success("AI 지우개 처리가 완료되었습니다!");
@@ -307,6 +349,41 @@ export default function MagicEraser() {
       setProgressPercent(0);
       setProgressStatus("");
     }
+  };
+
+  const handleApplyToCurrentPage = () => {
+    const imgCanvas = imageCanvasRef.current;
+    if (!imgCanvas || !onApplyToPdfEditor) return;
+
+    if (!hasErased && !canUndo) {
+      toast.error("먼저 지우고 싶은 부분을 브러시로 칠하고 [지우기 실행]을 눌러주세요.");
+      return;
+    }
+
+    const fullDataUrl = imgCanvas.toDataURL("image/png");
+    let patchInfo: PatchInfo | undefined = undefined;
+
+    if (lastRoiRef.current && lastRoiRef.current.roiW > 0 && lastRoiRef.current.roiH > 0) {
+      const { roiX, roiY, roiW, roiH } = lastRoiRef.current;
+      const patchCanvas = document.createElement("canvas");
+      patchCanvas.width = roiW;
+      patchCanvas.height = roiH;
+      const pctx = patchCanvas.getContext("2d");
+      if (pctx) {
+        pctx.drawImage(imgCanvas, roiX, roiY, roiW, roiH, 0, 0, roiW, roiH);
+        patchInfo = {
+          patchDataUrl: patchCanvas.toDataURL("image/png"),
+          roiX,
+          roiY,
+          roiW,
+          roiH,
+          fullW: imgCanvas.width,
+          fullH: imgCanvas.height,
+        };
+      }
+    }
+
+    onApplyToPdfEditor(fullDataUrl, patchInfo);
   };
 
   const handleDownloadPng = () => {
@@ -378,32 +455,301 @@ export default function MagicEraser() {
     }
   };
 
-  return (
-    <div className="flex flex-col items-center w-full max-w-5xl mx-auto px-4 py-6">
-      {/* Upload Zone (when no image) */}
-      {!imageSrc && (
-        <div
-          onClick={() => fileInputRef.current?.click()}
-          className="w-full max-w-4xl min-h-[420px] p-12 border-2 border-dashed border-gray-300 dark:border-gray-700 hover:border-purple-400 dark:hover:border-purple-500 rounded-3xl bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm transition-all cursor-pointer flex flex-col items-center justify-center shadow-sm hover:shadow-xl group"
-        >
-          <div className="w-20 h-20 mb-6 rounded-3xl bg-purple-50 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400 border border-purple-100 dark:border-purple-800/60 flex items-center justify-center group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 shadow-md">
-            <Eraser className="w-10 h-10" />
-          </div>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-50 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 text-xs font-semibold mb-3">
-            <Sparkles className="w-3.5 h-3.5" /> WebGPU 고속 가속 · 100% 로컬 연산
-          </div>
-          <h3 className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white mb-2 text-center">
-            AI 스마트 지우개
-          </h3>
-          <p className="text-gray-500 dark:text-gray-400 text-sm max-w-md text-center mb-8 leading-relaxed">
-            문서나 사진에서 지우고 싶은 도장, 오타, 얼룩, 민감정보를 브러시로 칠하면 AI가 종이 질감을 살려 감쪽같이 지워냅니다.
-          </p>
-          <button className="flex items-center gap-2 px-8 py-3.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-full font-bold text-sm shadow-lg shadow-purple-500/25 transition-all hover:scale-105 active:scale-95">
-            <Upload className="w-4 h-4" /> 문서 또는 이미지 선택 (PDF, JPG, PNG)
+  const uploadZone = (
+    <div
+      onClick={() => fileInputRef.current?.click()}
+      className="w-full max-w-4xl min-h-[420px] p-12 border-2 border-dashed border-gray-300 dark:border-gray-700 hover:border-purple-400 dark:hover:border-purple-500 rounded-3xl bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm transition-all cursor-pointer flex flex-col items-center justify-center shadow-sm hover:shadow-xl group"
+    >
+      <div className="w-20 h-20 mb-6 rounded-3xl bg-purple-50 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400 border border-purple-100 dark:border-purple-800/60 flex items-center justify-center group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 shadow-md">
+        <Eraser className="w-10 h-10" />
+      </div>
+      <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-50 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 text-xs font-semibold mb-3">
+        <Sparkles className="w-3.5 h-3.5" /> WebGPU 고속 가속 · 100% 로컬 연산
+      </div>
+      <h3 className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white mb-2 text-center">
+        AI 스마트 지우개
+      </h3>
+      <p className="text-gray-500 dark:text-gray-400 text-sm max-w-md text-center mb-8 leading-relaxed">
+        문서나 사진에서 지우고 싶은 도장, 오타, 얼룩, 민감정보를 브러시로 칠하면 AI가 종이 질감을 살려 감쪽같이 지워냅니다.
+      </p>
+      <button className="flex items-center gap-2 px-8 py-3.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-full font-bold text-sm shadow-lg shadow-purple-500/25 transition-all hover:scale-105 active:scale-95">
+        <Upload className="w-4 h-4" /> 문서 또는 이미지 선택 (PDF, JPG, PNG)
+      </button>
+    </div>
+  );
+
+  const editorWorkspace = (
+    <div className="w-full flex flex-col gap-4">
+      {/* Top Control Bar */}
+      <div className="w-full flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-gray-800 p-4 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm">
+        {/* Left: File info + reset */}
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-bold text-gray-900 dark:text-white truncate max-w-xs">
+            📄 {fileName}
+          </span>
+          <button
+            onClick={handleResetToOriginal}
+            className="flex items-center gap-1 text-xs px-2.5 py-1 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all"
+            title="처음 원본으로 복원"
+          >
+            <RotateCcw className="w-3 h-3" /> 원본 복원
           </button>
         </div>
-      )}
 
+        {/* Center: Brush Size Control */}
+        <div className="flex items-center gap-3 bg-gray-50 dark:bg-gray-900/80 px-3.5 py-1.5 rounded-xl border border-gray-200 dark:border-gray-700">
+          <span className="text-xs font-semibold text-gray-600 dark:text-gray-300 flex items-center gap-1">
+            <Sliders className="w-3.5 h-3.5 text-purple-500" />
+            브러시 {brushSize}px
+          </span>
+          <input
+            type="range"
+            min="8"
+            max="80"
+            value={brushSize}
+            onChange={(e) => setBrushSize(parseInt(e.target.value, 10))}
+            className="w-24 accent-purple-600 cursor-pointer"
+          />
+          <div className="flex gap-1">
+            {[15, 30, 55].map((s) => (
+              <button
+                key={s}
+                onClick={() => setBrushSize(s)}
+                className={`text-[10px] px-2 py-0.5 rounded-md font-bold transition-all ${
+                  brushSize === s
+                    ? "bg-purple-600 text-white shadow-xs"
+                    : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200"
+                }`}
+              >
+                {s}px
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Right: Brush Actions */}
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={handleUndo}
+            disabled={!canUndo && maskHistoryRef.current.length === 0}
+            className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-xl disabled:opacity-40 transition-all"
+            title="실행 취소"
+          >
+            <Undo2 className="w-3.5 h-3.5" />
+            취소
+          </button>
+          <button
+            onClick={handleClearMask}
+            disabled={!hasMask}
+            className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-700 hover:bg-red-50 dark:hover:bg-red-950/40 hover:text-red-600 rounded-xl disabled:opacity-40 transition-all"
+            title="선택 마스크 모두 지우기"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            마스크 초기화
+          </button>
+          <button
+            onMouseDown={() => setIsComparing(true)}
+            onMouseUp={() => setIsComparing(false)}
+            onTouchStart={() => setIsComparing(true)}
+            onTouchEnd={() => setIsComparing(false)}
+            className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/40 hover:bg-indigo-100 rounded-xl transition-all select-none"
+            title="누르고 있는 동안 원본을 비교합니다"
+          >
+            <Eye className="w-3.5 h-3.5" />
+            원본 대조
+          </button>
+        </div>
+      </div>
+
+      {/* Interactive Canvas Area */}
+      <div
+        ref={containerRef}
+        className="relative w-full overflow-auto bg-gray-100 dark:bg-gray-950 rounded-3xl border border-gray-200 dark:border-gray-800 p-4 flex items-center justify-center min-h-[480px] select-none"
+        style={{ cursor: "crosshair" }}
+      >
+        <div className="relative inline-block max-w-full max-h-[72vh] shadow-2xl rounded-xl overflow-hidden bg-white">
+          {/* Base Image Canvas */}
+          <canvas
+            ref={imageCanvasRef}
+            className={`max-w-full max-h-[72vh] object-contain block transition-opacity ${
+              isComparing ? "opacity-0" : "opacity-100"
+            }`}
+          />
+
+          {/* Original image underlay for instant comparison */}
+          {isComparing && originalSrc && (
+            <img
+              src={originalSrc}
+              alt="Original"
+              className="absolute inset-0 w-full h-full object-contain pointer-events-none"
+            />
+          )}
+
+          {/* Drawing Mask Layer */}
+          <canvas
+            ref={maskCanvasRef}
+            className="absolute inset-0 w-full h-full pointer-events-auto"
+            onMouseDown={startDrawing}
+            onMouseMove={draw}
+            onMouseUp={stopDrawing}
+            onMouseLeave={stopDrawing}
+            onTouchStart={startDrawing}
+            onTouchMove={draw}
+            onTouchEnd={stopDrawing}
+          />
+
+          {/* Dynamic Cursor Indicator Layer */}
+          <canvas
+            ref={cursorCanvasRef}
+            className="absolute inset-0 w-full h-full pointer-events-none"
+          />
+        </div>
+
+        {/* Processing Overlay */}
+        {isProcessing && (
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-xs flex flex-col items-center justify-center z-30 rounded-3xl animate-[fadeIn_150ms_ease-out]">
+            <div className="w-16 h-16 rounded-2xl bg-purple-600/90 text-white flex items-center justify-center mb-4 shadow-xl shadow-purple-500/30">
+              <Sparkles className="w-8 h-8 animate-spin" />
+            </div>
+            <h4 className="text-lg font-bold text-white mb-2">AI 스마트 지우개 실행 중</h4>
+            <p className="text-xs text-purple-200 mb-4">{progressStatus || "연산 중..."}</p>
+            {progressPercent > 0 && (
+              <div className="w-64 bg-white/20 rounded-full h-2 overflow-hidden mb-2">
+                <div
+                  className="bg-purple-400 h-full transition-all duration-300"
+                  style={{ width: `${progressPercent}%` }}
+                />
+              </div>
+            )}
+            <span className="text-[11px] text-gray-300">WebGPU / WASM 하드웨어 가속 구동</span>
+          </div>
+        )}
+      </div>
+
+      {/* Action Toolbar */}
+      <div className="w-full flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-gray-800 p-4 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm">
+        <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+          <span className="inline-block w-2.5 h-2.5 rounded-full bg-purple-500" />
+          <span>지우고 싶은 부분을 브러시로 칠한 후 <strong>[지우기 실행]</strong>을 누르세요.</span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleRunInpaint}
+            disabled={!hasMask || isProcessing}
+            className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 disabled:opacity-40 text-white font-bold rounded-xl shadow-md shadow-purple-500/25 transition-all hover:scale-105 active:scale-95 text-xs"
+          >
+            {isProcessing ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                지우는 중...
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-4 h-4" />
+                지우기 실행
+              </>
+            )}
+          </button>
+
+          <div className="h-6 w-px bg-gray-200 dark:bg-gray-700 mx-1" />
+
+          {isModal && onApplyToPdfEditor ? (
+            <button
+              onClick={handleApplyToCurrentPage}
+              disabled={isProcessing}
+              className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-rose-500 via-pink-500 to-indigo-600 hover:from-rose-600 hover:to-indigo-700 disabled:opacity-40 text-white font-extrabold rounded-xl shadow-lg shadow-rose-500/25 transition-all hover:scale-105 active:scale-95 text-xs"
+              title="지워진 영역을 현재 PDF 편집 화면에 즉시 적용합니다"
+            >
+              <Check className="w-4 h-4" />
+              현재 페이지에 적용
+            </button>
+          ) : (
+            <button
+              onClick={handleSendToPdfEditor}
+              disabled={isProcessing}
+              className="flex items-center gap-1.5 px-4 py-2.5 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-800/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 font-bold rounded-xl text-xs transition-all"
+            >
+              PDF 편집기로 열기 →
+            </button>
+          )}
+
+          <button
+            onClick={handleDownloadPng}
+            disabled={isProcessing}
+            className="flex items-center gap-1.5 px-4 py-2.5 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-600 font-semibold rounded-xl text-xs transition-all"
+          >
+            <Download className="w-3.5 h-3.5" /> PNG 저장
+          </button>
+
+          <button
+            onClick={handleDownloadPdf}
+            disabled={isProcessing}
+            className="flex items-center gap-1.5 px-4 py-2.5 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-600 font-semibold rounded-xl text-xs transition-all"
+          >
+            <FileText className="w-3.5 h-3.5" /> PDF 저장
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  if (isModal) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
+        <div className="relative w-full max-w-5xl max-h-[94vh] flex flex-col bg-[#F9F6ED] dark:bg-gray-900 rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+          {/* Modal Header */}
+          <div className="flex items-center justify-between px-6 py-3.5 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shrink-0">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 flex items-center justify-center border border-rose-200 dark:border-rose-900">
+                <Eraser className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                  AI 스마트 지우개
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-300">
+                    현재 PDF 페이지 편집
+                  </span>
+                </h3>
+                <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                  지우고 싶은 도장이나 서명을 브러시로 칠한 후 <strong>[지우기 실행]</strong> &rarr; <strong>[현재 페이지에 적용]</strong>을 누르세요.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="text-xs text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white px-3 py-1.5 rounded-xl border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 font-medium transition-all"
+              >
+                다른 파일 불러오기
+              </button>
+              <button
+                onClick={onClose}
+                className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-4">
+            {!imageSrc ? uploadZone : editorWorkspace}
+          </div>
+        </div>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*, application/pdf"
+          className="hidden"
+          onChange={handleFileSelect}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col items-center w-full max-w-5xl mx-auto px-4 py-6">
+      {!imageSrc ? uploadZone : editorWorkspace}
       <input
         ref={fileInputRef}
         type="file"
@@ -411,211 +757,6 @@ export default function MagicEraser() {
         className="hidden"
         onChange={handleFileSelect}
       />
-
-      {/* Editor Workspace */}
-      {imageSrc && (
-        <div className="w-full flex flex-col gap-4">
-          {/* Top Control Bar */}
-          <div className="w-full flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-gray-800 p-4 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm">
-            {/* Left: File info + reset */}
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-gray-900 dark:text-white truncate max-w-xs">
-                📄 {fileName}
-              </span>
-              <button
-                onClick={handleResetToOriginal}
-                className="flex items-center gap-1 text-xs px-2.5 py-1 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all"
-                title="처음 원본으로 복원"
-              >
-                <RotateCcw className="w-3 h-3" /> 원본 복원
-              </button>
-            </div>
-
-            {/* Center: Brush Size Control */}
-            <div className="flex items-center gap-3 bg-gray-50 dark:bg-gray-900/80 px-3.5 py-1.5 rounded-xl border border-gray-200 dark:border-gray-700">
-              <span className="text-xs font-semibold text-gray-600 dark:text-gray-300 flex items-center gap-1">
-                <Sliders className="w-3.5 h-3.5 text-purple-500" />
-                브러시 {brushSize}px
-              </span>
-              <input
-                type="range"
-                min="8"
-                max="80"
-                value={brushSize}
-                onChange={(e) => setBrushSize(parseInt(e.target.value, 10))}
-                className="w-24 accent-purple-600 cursor-pointer"
-              />
-              <div className="flex gap-1">
-                {[15, 30, 55].map((s) => (
-                  <button
-                    key={s}
-                    onClick={() => setBrushSize(s)}
-                    className={`text-[10px] px-2 py-0.5 rounded-md font-bold transition-all ${
-                      brushSize === s
-                        ? "bg-purple-600 text-white shadow-xs"
-                        : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200"
-                    }`}
-                  >
-                    {s}px
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Right: Brush Actions */}
-            <div className="flex items-center gap-1.5">
-              <button
-                onClick={handleUndo}
-                disabled={!canUndo && maskHistoryRef.current.length === 0}
-                className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-xl disabled:opacity-40 transition-all"
-                title="실행 취소"
-              >
-                <Undo2 className="w-3.5 h-3.5" />
-                취소
-              </button>
-              <button
-                onClick={handleClearMask}
-                disabled={!hasMask}
-                className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-700 hover:bg-red-50 dark:hover:bg-red-950/40 hover:text-red-600 rounded-xl disabled:opacity-40 transition-all"
-                title="선택 마스크 모두 지우기"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-                마스크 초기화
-              </button>
-              <button
-                onMouseDown={() => setIsComparing(true)}
-                onMouseUp={() => setIsComparing(false)}
-                onTouchStart={() => setIsComparing(true)}
-                onTouchEnd={() => setIsComparing(false)}
-                className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/40 hover:bg-indigo-100 rounded-xl transition-all select-none"
-                title="누르고 있는 동안 원본을 비교합니다"
-              >
-                <Eye className="w-3.5 h-3.5" />
-                원본 대조
-              </button>
-            </div>
-          </div>
-
-          {/* Interactive Canvas Area */}
-          <div
-            ref={containerRef}
-            className="relative w-full overflow-auto bg-gray-100 dark:bg-gray-950 rounded-3xl border border-gray-200 dark:border-gray-800 p-4 flex items-center justify-center min-h-[480px] select-none"
-            style={{ cursor: "crosshair" }}
-          >
-            <div className="relative inline-block max-w-full max-h-[72vh] shadow-2xl rounded-xl overflow-hidden bg-white">
-              {/* Base Image Canvas */}
-              <canvas
-                ref={imageCanvasRef}
-                className={`max-w-full max-h-[72vh] object-contain block transition-opacity ${
-                  isComparing ? "opacity-0" : "opacity-100"
-                }`}
-              />
-
-              {/* Original image underlay for instant comparison */}
-              {isComparing && originalSrc && (
-                <img
-                  src={originalSrc}
-                  alt="Original"
-                  className="absolute inset-0 w-full h-full object-contain pointer-events-none"
-                />
-              )}
-
-              {/* Drawing Mask Layer */}
-              <canvas
-                ref={maskCanvasRef}
-                className="absolute inset-0 w-full h-full pointer-events-auto"
-                onMouseDown={startDrawing}
-                onMouseMove={draw}
-                onMouseUp={stopDrawing}
-                onMouseLeave={stopDrawing}
-                onTouchStart={startDrawing}
-                onTouchMove={draw}
-                onTouchEnd={stopDrawing}
-              />
-
-              {/* Dynamic Cursor Indicator Layer */}
-              <canvas
-                ref={cursorCanvasRef}
-                className="absolute inset-0 w-full h-full pointer-events-none"
-              />
-            </div>
-
-            {/* Processing Overlay */}
-            {isProcessing && (
-              <div className="absolute inset-0 bg-black/60 backdrop-blur-xs flex flex-col items-center justify-center z-30 rounded-3xl animate-[fadeIn_150ms_ease-out]">
-                <div className="w-16 h-16 rounded-2xl bg-purple-600/90 text-white flex items-center justify-center mb-4 shadow-xl shadow-purple-500/30">
-                  <Sparkles className="w-8 h-8 animate-spin" />
-                </div>
-                <h4 className="text-lg font-bold text-white mb-2">AI 스마트 지우개 실행 중</h4>
-                <p className="text-xs text-purple-200 mb-4">{progressStatus || "연산 중..."}</p>
-                {progressPercent > 0 && (
-                  <div className="w-64 bg-white/20 rounded-full h-2 overflow-hidden mb-2">
-                    <div
-                      className="bg-purple-400 h-full transition-all duration-300"
-                      style={{ width: `${progressPercent}%` }}
-                    />
-                  </div>
-                )}
-                <span className="text-[11px] text-gray-300">WebGPU / WASM 하드웨어 가속 구동</span>
-              </div>
-            )}
-          </div>
-
-          {/* Action Toolbar */}
-          <div className="w-full flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-gray-800 p-4 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm">
-            <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-              <span className="inline-block w-2.5 h-2.5 rounded-full bg-purple-500" />
-              <span>지우고 싶은 부분을 브러시로 칠한 후 <strong>[지우기]</strong>를 누르세요.</span>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handleRunInpaint}
-                disabled={!hasMask || isProcessing}
-                className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 disabled:opacity-40 text-white font-bold rounded-xl shadow-md shadow-purple-500/25 transition-all hover:scale-105 active:scale-95 text-xs"
-              >
-                {isProcessing ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    지우는 중...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-4 h-4" />
-                    지우기 실행
-                  </>
-                )}
-              </button>
-
-              <div className="h-6 w-px bg-gray-200 dark:bg-gray-700 mx-1" />
-
-              <button
-                onClick={handleDownloadPng}
-                disabled={isProcessing}
-                className="flex items-center gap-1.5 px-4 py-2.5 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-600 font-semibold rounded-xl text-xs transition-all"
-              >
-                <Download className="w-3.5 h-3.5" /> PNG 저장
-              </button>
-
-              <button
-                onClick={handleDownloadPdf}
-                disabled={isProcessing}
-                className="flex items-center gap-1.5 px-4 py-2.5 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-600 font-semibold rounded-xl text-xs transition-all"
-              >
-                <FileText className="w-3.5 h-3.5" /> PDF 저장
-              </button>
-
-              <button
-                onClick={handleSendToPdfEditor}
-                disabled={isProcessing}
-                className="flex items-center gap-1.5 px-4 py-2.5 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-800/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 font-bold rounded-xl text-xs transition-all"
-              >
-                PDF 편집기로 열기 →
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

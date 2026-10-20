@@ -252,6 +252,8 @@ export async function runInpainting(
   // Draw scaled inpainted ROI over the ROI region
   finalCtx.drawImage(roiImgCanvas, 0, 0, targetW, targetH, roiX, roiY, roiW, roiH);
 
+  (finalCanvas as any).roi = { roiX, roiY, roiW, roiH };
+
   onProgress?.(100, "완료");
   return finalCanvas;
 }

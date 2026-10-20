@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Loader2, Scissors, ZoomIn, Pen, Minus, Plus, Download, Image as ImageIcon } from 'lucide-react';
+import { Loader2, Scissors, ZoomIn, Pen, Minus, Plus, Download, Image as ImageIcon, Eraser } from 'lucide-react';
 
 interface PdfToolbarProps {
   status: string;
@@ -15,6 +15,7 @@ interface PdfToolbarProps {
   handleBgRemoveUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
   isUpscaling: boolean;
   handleUpscaleUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  handleOpenEraser?: () => void;
   setIsSignatureOpen: (open: boolean) => void;
   isRedactMode: boolean;
   setIsRedactMode?: (v: boolean | ((prev: boolean) => boolean)) => void;
@@ -34,7 +35,7 @@ export default function PdfToolbar({
   status, statusMsg, handleRunOcr, handleAddText, handleAddRomanizedName,
   isCorporateDoc, isMacroFormOpen, setIsMacroFormOpen,
   handleImageUpload, isRemovingBg, handleBgRemoveUpload,
-  isUpscaling, handleUpscaleUpload, setIsSignatureOpen,
+  isUpscaling, handleUpscaleUpload, handleOpenEraser, setIsSignatureOpen,
   isRedactMode, setIsRedactMode, redactColor = "black", onToggleRedact,
   numPages, currentPage, setCurrentPage, handleZoom, scale,
   handleExport, isLoading, hasContent
@@ -114,6 +115,12 @@ export default function PdfToolbar({
         <input ref={bgRemoveInputRef} type="file" accept="image/*,.heic,.heif,.HEIC,.HEIF" className="hidden" onChange={handleBgRemoveUpload} />
         <input ref={upscaleInputRef} type="file" accept="image/*,.heic,.heif,.HEIC,.HEIF" className="hidden" onChange={handleUpscaleUpload} />
         
+        <button onClick={handleOpenEraser} disabled={status !== "done"}
+          className="flex items-center gap-1 px-2.5 py-1.5 bg-rose-50 dark:bg-rose-900/30 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-400 text-[11px] font-bold rounded-md hover:bg-rose-100 dark:hover:bg-rose-800/50 disabled:opacity-30 transition-all shadow-sm whitespace-nowrap flex-shrink-0"
+          title="문서 속 도장, 서명, 불필요한 개체를 AI로 감쪽같이 지웁니다">
+          <Eraser className="w-3.5 h-3.5 text-rose-500" /> 스마트 지우개
+        </button>
+
         <button onClick={() => setIsSignatureOpen(true)} disabled={status !== "done"}
           className="flex items-center gap-1 px-2.5 py-1.5 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-[11px] font-semibold rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-30 transition-all shadow-sm whitespace-nowrap flex-shrink-0">
           <Pen className="w-3.5 h-3.5 text-emerald-500" /> 서명/그리기
