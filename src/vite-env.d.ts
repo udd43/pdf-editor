@@ -7,3 +7,7 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
+
+declare module "onnxruntime-web" {
+  export * from "onnxruntime-common";
+}

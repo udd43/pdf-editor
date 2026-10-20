@@ -22,7 +22,7 @@ RUN mkdir -p /opt/realesrgan && \
 FROM base AS deps
 WORKDIR /app
 COPY package.json package-lock.json* ./
-RUN npm ci
+RUN npm ci --legacy-peer-deps
 
 # 3. Builder Image: Vite 빌드
 FROM base AS builder
@@ -35,7 +35,7 @@ RUN npm run build
 FROM base AS runner
 WORKDIR /app
 
-ENV NODE_ENV production
+ENV NODE_ENV=production
 
 # 서버 파일 및 빌드된 프론트엔드 복사
 COPY --from=builder /app/package.json ./
@@ -45,7 +45,7 @@ COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/public ./public
 
 EXPOSE 3000
-ENV PORT 3000
+ENV PORT=3000
 
 # Express 서버 실행
 CMD ["npm", "start"]
