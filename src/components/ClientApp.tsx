@@ -21,6 +21,8 @@ const ImageToPdfConverter = React.lazy(() => import("@/components/ImageToPdfConv
 const PdfMergeSplit = React.lazy(() => import("@/components/PdfMergeSplit"));
 const PdfCompress = React.lazy(() => import("@/components/PdfCompress"));
 const HeicConverter = React.lazy(() => import("@/components/HeicConverter"));
+import AutoSaveBanner from "@/components/AutoSaveBanner";
+import { loadEditorSession, clearEditorSession, AutoSaveSession } from "@/lib/autoSaveStorage";
 import { Loader2 } from "lucide-react";
 
 export default function ClientApp() {
@@ -40,6 +42,39 @@ export default function ClientApp() {
   // Local-only states
   const [secretClickCount, setSecretClickCount] = useState(0);
   const [showEasterEgg, setShowEasterEgg] = useState(false);
+  const [savedSession, setSavedSession] = useState<AutoSaveSession | null>(null);
+
+  // Check for auto-saved session on initial load or file close
+  useEffect(() => {
+    loadEditorSession().then((session) => {
+      if (session && !file) {
+        setSavedSession(session);
+      } else if (file) {
+        setSavedSession(null);
+      }
+    });
+  }, [file]);
+
+  const handleRestoreSession = () => {
+    if (!savedSession) return;
+    try {
+      const recoveredFile = new File([savedSession.fileBuffer], savedSession.fileName, {
+        type: "application/pdf",
+      });
+      useAppStore.getState().setRecoveredSession(savedSession);
+      openPdfEditor(recoveredFile);
+      setSavedSession(null);
+    } catch (e) {
+      console.error("복구 실패:", e);
+      toast.error("작업 복구 중 오류가 발생했습니다.");
+    }
+  };
+
+  const handleDiscardSession = async () => {
+    await clearEditorSession();
+    setSavedSession(null);
+    toast.success("저장된 작업 세션을 삭제했습니다.");
+  };
 
   // referenceFile Object URL 관리 (메모리 누수 방지)
   const referenceUrl = useMemo(() => {
@@ -265,6 +300,15 @@ export default function ClientApp() {
 
       {/* ── Main ── */}
       <main className="flex-1 flex flex-col items-center justify-start p-4 sm:p-8 z-10 w-full max-w-6xl mx-auto">
+        {/* AutoSave recovery banner */}
+        {savedSession && !file && (
+          <AutoSaveBanner
+            session={savedSession}
+            onRestore={handleRestoreSession}
+            onDiscard={handleDiscardSession}
+          />
+        )}
+
         {/* Home bento grid */}
         {isHome && (
           <HomeGrid

@@ -30,6 +30,8 @@ interface AppState {
   setReferenceFile: (file: File | null) => void;
   isCorporateMode: boolean;
   setIsCorporateMode: (v: boolean) => void;
+  recoveredSession: any | null;
+  setRecoveredSession: (session: any | null) => void;
 
   // UI toggles
   isDarkMode: boolean;
@@ -63,6 +65,8 @@ export const useAppStore = create<AppState>()(
       setReferenceFile: (referenceFile) => set({ referenceFile }),
       isCorporateMode: false,
       setIsCorporateMode: (isCorporateMode) => set({ isCorporateMode }),
+      recoveredSession: null,
+      setRecoveredSession: (recoveredSession) => set({ recoveredSession }),
 
       // UI toggles
       isDarkMode: false,

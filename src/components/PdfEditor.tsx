@@ -5,7 +5,7 @@ import * as pdfjsLib from "pdfjs-dist";
 import { Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { exportEditedPdf, exportPdfViaRasterFallback, mergePdfs, deletePdfPage, reorderPdfPages } from "@/lib/pdfUtils";
-import { PromptModal, ConfirmModal } from "./Modal";
+import { PromptModal, ConfirmModal, ExportModal } from "./Modal";
 import { koreanToRoman } from "@/lib/romanize";
 import { ImageOverlayData } from "./ImageOverlay";
 import SignaturePad from "./SignaturePad";
@@ -13,6 +13,8 @@ import { isHeicFile, convertHeicToPng, removeImageBackground } from "@/lib/image
 import { usePdfElements } from "@/hooks/usePdfElements";
 import { usePdfRenderer } from "@/hooks/usePdfRenderer";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
+import { saveEditorSession, clearEditorSession } from "@/lib/autoSaveStorage";
+import { useAppStore } from "@/stores/appStore";
 import MacroForm from "./pdf/MacroForm";
 import PdfToolbar from "./pdf/PdfToolbar";
 import PdfCanvas from "./pdf/PdfCanvas";
@@ -123,6 +125,61 @@ export default function PdfEditor({ file, isCorporateMode = false }: PdfEditorPr
     setTextBoxes, setImageOverlays, setRedactions,
     setNextId, setSelectedImageId, setSelectedTextId, setSelectedRedactionId,
   });
+
+  // ── Auto-Save & Recovery ──
+  const recoveredSession = useAppStore((state) => state.recoveredSession);
+  const setRecoveredSession = useAppStore((state) => state.setRecoveredSession);
+  const isRecoveredAppliedRef = useRef(false);
+
+  // Restore recovered session if available
+  useEffect(() => {
+    if (recoveredSession && pdfDoc && !isRecoveredAppliedRef.current) {
+      isRecoveredAppliedRef.current = true;
+      if (recoveredSession.textBoxes && recoveredSession.textBoxes.length > 0) {
+        setTextBoxes(recoveredSession.textBoxes);
+      }
+      if (recoveredSession.imageOverlays && recoveredSession.imageOverlays.length > 0) {
+        setImageOverlays(recoveredSession.imageOverlays);
+      }
+      if (recoveredSession.redactions && recoveredSession.redactions.length > 0) {
+        setRedactions(recoveredSession.redactions);
+      }
+      if (recoveredSession.currentPage && recoveredSession.currentPage <= numPages) {
+        setCurrentPage(recoveredSession.currentPage);
+      }
+      setRecoveredSession(null);
+      toast.success("이전 작업 내용을 성공적으로 복구했습니다!");
+    }
+  }, [recoveredSession, pdfDoc, numPages, setTextBoxes, setImageOverlays, setRedactions, setCurrentPage, setRecoveredSession]);
+
+  // Debounced auto-save to IndexedDB
+  const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+  useEffect(() => {
+    if (!pdfBuffer || !file) return;
+
+    if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+
+    autoSaveTimerRef.current = setTimeout(async () => {
+      try {
+        await saveEditorSession({
+          fileName: file.name,
+          fileSize: file.size,
+          fileBuffer: pdfBuffer.slice(0),
+          textBoxes,
+          imageOverlays,
+          redactions,
+          currentPage,
+          updatedAt: Date.now(),
+        });
+      } catch (err) {
+        console.warn("Auto-save failed:", err);
+      }
+    }, 1200);
+
+    return () => {
+      if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+    };
+  }, [pdfBuffer, file, textBoxes, imageOverlays, redactions, currentPage]);
 
   // ── Render page ──
   useEffect(() => {
@@ -708,18 +765,27 @@ export default function PdfEditor({ file, isCorporateMode = false }: PdfEditorPr
     setExportModal(true);
   };
 
-  const handleExportConfirm = async (exportName: string) => {
+  const handleExportConfirm = async (options: { fileName: string; isTrueRedaction: boolean }) => {
     setExportModal(false);
     if (!pdfBuffer) return;
-    const finalFileName = exportName.trim() === "" ? file.name : `${exportName.trim()}.pdf`;
+    const trimmed = options.fileName.trim();
+    const finalFileName =
+      trimmed === ""
+        ? file.name
+        : trimmed.toLowerCase().endsWith(".pdf")
+        ? trimmed
+        : `${trimmed}.pdf`;
     setStatus("rendering");
     setStatusMsg("새 PDF를 생성하는 중 (백그라운드 처리 중)...");
     const toastId = toast.loading("PDF를 병합하고 있습니다. 잠시만 기다려주세요...");
     try {
-      await exportEditedPdf(pdfBuffer, textBoxes, imageOverlays, redactions, 1, finalFileName);
+      await exportEditedPdf(pdfBuffer, textBoxes, imageOverlays, redactions, 1, finalFileName, {
+        isTrueRedaction: options.isTrueRedaction,
+      });
       setStatus("done");
       setStatusMsg("PDF가 다운로드되었습니다!");
       toast.success("성공적으로 다운로드되었습니다!", { id: toastId });
+      clearEditorSession().catch(() => {});
     } catch (e: any) {
       console.warn("일반 내보내기 실패, 안전 모드 폴백 대기:", e);
       toast.dismiss(toastId);
@@ -748,6 +814,7 @@ export default function PdfEditor({ file, isCorporateMode = false }: PdfEditorPr
       setStatus("done");
       setStatusMsg("PDF가 안전 모드로 다운로드되었습니다!");
       toast.success("안전 모드로 성공적으로 다운로드되었습니다!", { id: toastId });
+      clearEditorSession().catch(() => {});
     } catch (err: any) {
       console.error("안전 모드 내보내기 실패:", err);
       setStatus("error");
@@ -955,13 +1022,10 @@ export default function PdfEditor({ file, isCorporateMode = false }: PdfEditorPr
         onConfirm={handleRomanizeConfirm}
         onCancel={() => setRomanizeModal(false)}
       />
-      <PromptModal
+      <ExportModal
         isOpen={exportModal}
-        title="PDF 내보내기"
-        message="저장할 파일 이름을 입력하세요 (확장자 제외)"
-        placeholder="파일 이름"
-        defaultValue={exportDefaultName}
-        confirmLabel="다운로드"
+        defaultName={exportDefaultName}
+        hasRedactions={redactions.length > 0}
         onConfirm={handleExportConfirm}
         onCancel={() => setExportModal(false)}
       />

@@ -9,7 +9,7 @@ import ImageOverlayComponent, { ImageOverlayData } from './ImageOverlay';
 import SignaturePad from './SignaturePad';
 import TextBoxOverlay from './TextBoxOverlay';
 import { usePdfElements } from '@/hooks/usePdfElements';
-import { PromptModal, ConfirmModal } from './Modal';
+import { PromptModal, ConfirmModal, ExportModal } from './Modal';
 import { exportEditedPdf, exportPdfViaRasterFallback } from '@/lib/pdfUtils';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.mjs`;
@@ -549,15 +549,24 @@ export default function SmartPdfEditor() {
     setExportModal(true);
   };
 
-  const handleExportConfirm = async (exportName: string) => {
+  const handleExportConfirm = async (options: { fileName: string; isTrueRedaction: boolean }) => {
     setExportModal(false);
     if (!pdfBuffer) return;
-    const finalFileName = exportName.trim() === "" ? (file?.name || "document.pdf") : `${exportName.trim()}.pdf`;
+    const trimmed = options.fileName.trim();
+    const fallbackName = file?.name || "document.pdf";
+    const finalFileName =
+      trimmed === ""
+        ? fallbackName
+        : trimmed.toLowerCase().endsWith(".pdf")
+        ? trimmed
+        : `${trimmed}.pdf`;
     setIsProcessing(true);
     setStatusMsg("PDF 생성 중...");
     const toastId = toast.loading("PDF 생성 중...");
     try {
-      await exportEditedPdf(pdfBuffer, textBoxes, imageOverlays, redactions, 1, finalFileName);
+      await exportEditedPdf(pdfBuffer, textBoxes, imageOverlays, redactions, 1, finalFileName, {
+        isTrueRedaction: options.isTrueRedaction,
+      });
       toast.success("다운로드 완료!", { id: toastId });
       setIsProcessing(false);
     } catch (e: any) {
@@ -741,10 +750,13 @@ export default function SmartPdfEditor() {
         })}
       </div>
 
-      <SignaturePad isOpen={isSignatureOpen} onClose={() => setIsSignatureOpen(false)} onSave={handleSignatureSave} />
-      <PromptModal isOpen={exportModal} title="PDF 내보내기" message="저장할 파일 이름을 입력하세요 (확장자 제외)"
-        placeholder="파일 이름" defaultValue={exportDefaultName} confirmLabel="다운로드"
-        onConfirm={handleExportConfirm} onCancel={() => setExportModal(false)} />
+      <ExportModal
+        isOpen={exportModal}
+        defaultName={exportDefaultName}
+        hasRedactions={redactions.length > 0}
+        onConfirm={handleExportConfirm}
+        onCancel={() => setExportModal(false)}
+      />
       <ConfirmModal
         isOpen={safeExportModal}
         title="안전 모드로 내보내기"

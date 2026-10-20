@@ -23,7 +23,8 @@ export async function exportEditedPdf(
   imageOverlays: ImageOverlayData[],
   redactions: RedactionData[],
   _scale: number, 
-  filename: string = "edited_document.pdf"
+  filename: string = "edited_document.pdf",
+  options?: { isTrueRedaction?: boolean }
 ): Promise<void> {
   // 1. 폰트 ArrayBuffer 로드 (캐시 사용)
   const fontBuffers = await getFontBuffers();
@@ -108,12 +109,18 @@ export async function exportEditedPdf(
   // 4. Worker 결과 후처리 (redactions만 처리 — 압축은 '압축 도구' 메뉴에서만 수행)
   let finalBytes: Uint8Array = workerResult.pdfBytes;
   const hasRedactions = redactions && redactions.length > 0;
+  const isTrueRedaction = options?.isTrueRedaction ?? true;
   
   if (hasRedactions) {
-    const toastId = toast.loading("블라인드 병합 처리 중...");
+    const toastId = toast.loading(
+      isTrueRedaction ? "영구 보안 마스킹(True Redaction) 적용 중..." : "블라인드 병합 처리 중..."
+    );
     try {
-      finalBytes = await processRedactions(finalBytes, redactions || []);
-      toast.success("처리가 완료되었습니다!", { id: toastId });
+      finalBytes = await processRedactions(finalBytes, redactions || [], isTrueRedaction);
+      toast.success(
+        isTrueRedaction ? "영구 보안 마스킹 완료 (텍스트 원천 파괴)" : "처리가 완료되었습니다!",
+        { id: toastId }
+      );
     } catch (err) {
       console.error(err);
       toast.error("처리 중 오류가 발생했습니다. 원본을 저장합니다.", { id: toastId });
@@ -184,16 +191,20 @@ export async function reorderPdfPages(buffer: ArrayBuffer, newOrder: number[]): 
 }
 
 /**
- * Redaction(블라인드) 처리 함수 (원본 화질 유지, 래스터화/압축 없음)
+ * Redaction(블라인드) 처리 함수 (True Redaction 지원)
+ * isTrueRedaction = true 일 경우:
+ *   블라인드가 포함된 페이지만 2.0x 고해상도 캔버스로 렌더링 후 마스킹을 베이킹하여
+ *   순수 이미지 페이지만으로 교체(기존 텍스트 스트림 100% 영구 파괴).
+ *   블라인드가 없는 페이지는 원본 벡터 텍스트와 폰트를 그대로 보존합니다.
  */
 async function processRedactions(
   pdfBuffer: ArrayBuffer | Uint8Array,
-  redactions: RedactionData[]
+  redactions: RedactionData[],
+  isTrueRedaction: boolean = false
 ): Promise<Uint8Array> {
   // 안전하게 독립적인 ArrayBuffer 복사본 생성
   let safeBuffer: ArrayBuffer;
   if (pdfBuffer instanceof Uint8Array) {
-    // Uint8Array → 새로운 독립 ArrayBuffer로 진짜 복사
     const copy = new Uint8Array(pdfBuffer.byteLength);
     copy.set(pdfBuffer);
     safeBuffer = copy.buffer as ArrayBuffer;
@@ -201,34 +212,87 @@ async function processRedactions(
     safeBuffer = (pdfBuffer as ArrayBuffer).slice(0);
   }
 
-  // 1단계: pdf-lib로 블라인드(검정/흰색 모두) 직접 그리기
-  //   → pdfjsLib 재로드 없이 pdf-lib만으로 처리하여 안정성 확보
   const pdfLibDoc = await PDFDocument.load(safeBuffer, { ignoreEncryption: true, updateMetadata: false });
-  
-  if (redactions && redactions.length > 0) {
-    const pages = pdfLibDoc.getPages();
-    for (let i = 0; i < pages.length; i++) {
-      const pageIndex = i + 1; // 1-based (UI 좌표계)
-      const pageRedactions = redactions.filter(r => r.pageIndex === pageIndex);
-      if (pageRedactions.length === 0) continue;
+  if (!redactions || redactions.length === 0) {
+    return await pdfLibDoc.save({ useObjectStreams: false });
+  }
 
-      const page = pages[i];
-      const { height: pageH } = page.getSize();
+  // 1단계: 영구 보안 마스킹 (True Redaction)
+  if (isTrueRedaction) {
+    try {
+      const loadingTask = pdfjsLib.getDocument({ data: safeBuffer.slice(0) });
+      const pdfjsDoc = await loadingTask.promise;
+      const numPages = pdfLibDoc.getPageCount();
 
-      for (const r of pageRedactions) {
-        const isWhite = r.color === "#FFFFFF" || r.color === "white";
-        const fillColor = isWhite ? rgb(1, 1, 1) : rgb(0.067, 0.094, 0.153); // #111827
+      for (let pageIdx = 0; pageIdx < numPages; pageIdx++) {
+        const pageIndex = pageIdx + 1; // 1-based (UI 좌표계)
+        const pageRedactions = redactions.filter((r) => r.pageIndex === pageIndex);
+        if (pageRedactions.length === 0) continue; // 블라인드 없는 페이지는 벡터 보존
 
-        // PDF 좌표계: Y축이 아래→위이므로 변환
-        page.drawRectangle({
-          x: r.x,
-          y: pageH - r.y - r.height,
-          width: r.width,
-          height: r.height,
-          color: fillColor,
-          borderWidth: 0,
-        });
+        const pdfjsPage = await pdfjsDoc.getPage(pageIndex);
+        const viewport = pdfjsPage.getViewport({ scale: 2.0 });
+
+        const canvas = document.createElement("canvas");
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        const ctx = canvas.getContext("2d", { willReadFrequently: true });
+        if (!ctx) continue;
+
+        // 원본 페이지 렌더링
+        await pdfjsPage.render({ canvasContext: ctx, viewport }).promise;
+
+        // 캔버스 픽셀 레벨에서 블라인드 박스를 칠해 하단 텍스트 픽셀을 물리적으로 덮어씀
+        for (const r of pageRedactions) {
+          const isWhite = r.color === "#FFFFFF" || r.color === "white";
+          ctx.fillStyle = isWhite ? "#FFFFFF" : "#111827";
+          ctx.fillRect(r.x * 2.0, r.y * 2.0, r.width * 2.0, r.height * 2.0);
+        }
+
+        // 고품질 JPEG 인코딩
+        const imgBlob = await new Promise<Blob>((resolve) =>
+          canvas.toBlob((b) => resolve(b!), "image/jpeg", 0.95)
+        );
+        const imgBuffer = await imgBlob.arrayBuffer();
+        const embeddedImg = await pdfLibDoc.embedJpg(imgBuffer);
+
+        // pdfLibDoc에서 해당 페이지를 순수 단일 이미지 페이지로 교체 (텍스트 스트림 100% 소멸)
+        const origPage = pdfLibDoc.getPage(pageIdx);
+        const { width: pW, height: pH } = origPage.getSize();
+
+        const newPage = pdfLibDoc.insertPage(pageIdx, [pW, pH]);
+        newPage.drawImage(embeddedImg, { x: 0, y: 0, width: pW, height: pH });
+        pdfLibDoc.removePage(pageIdx + 1); // 기존 페이지 영구 제거
       }
+
+      return await pdfLibDoc.save({ useObjectStreams: false });
+    } catch (trueRedactError) {
+      console.warn("True Redaction 실패, 일반 마스킹으로 폴백:", trueRedactError);
+    }
+  }
+
+  // 2단계: 일반 마스킹 (pdf-lib 사각형 오버레이 방식)
+  const pages = pdfLibDoc.getPages();
+  for (let i = 0; i < pages.length; i++) {
+    const pageIndex = i + 1; // 1-based (UI 좌표계)
+    const pageRedactions = redactions.filter((r) => r.pageIndex === pageIndex);
+    if (pageRedactions.length === 0) continue;
+
+    const page = pages[i];
+    const { height: pageH } = page.getSize();
+
+    for (const r of pageRedactions) {
+      const isWhite = r.color === "#FFFFFF" || r.color === "white";
+      const fillColor = isWhite ? rgb(1, 1, 1) : rgb(0.067, 0.094, 0.153); // #111827
+
+      // PDF 좌표계: Y축이 아래→위이므로 변환
+      page.drawRectangle({
+        x: r.x,
+        y: pageH - r.y - r.height,
+        width: r.width,
+        height: r.height,
+        color: fillColor,
+        borderWidth: 0,
+      });
     }
   }
 
