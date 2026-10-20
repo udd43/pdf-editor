@@ -19,6 +19,7 @@ import {
   ChevronRight,
   Wand2,
   Smartphone,
+  Eraser,
 } from "lucide-react";
 import { PDFDocument } from "pdf-lib";
 import toast from "react-hot-toast";
@@ -131,6 +132,17 @@ export default function HomeGrid({
       iconBgDark: "dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800",
       action: "upload",
       badge: "AI 추천",
+    },
+    {
+      id: "eraser",
+      title: "AI 스마트 지우개",
+      description: "문서 속 도장, 서명, 불필요한 개체를 브러시로 쓱 문지르면 감쪽같이 지워집니다.",
+      icon: <Eraser className="w-6 h-6" />,
+      accent: "from-rose-500 via-pink-500 to-indigo-500",
+      iconBg: "bg-rose-50 text-rose-600 border-rose-100",
+      iconBgDark: "dark:bg-rose-900/30 dark:text-rose-400 dark:border-rose-800",
+      action: "expand",
+      badge: "WebGPU AI",
     },
     {
       id: "upscale",
@@ -302,45 +314,64 @@ export default function HomeGrid({
           onDragOver={() => {}} onDragLeave={() => {}} onDrop={() => {}}
           style={{ gridColumn: "7 / 13", gridRow: "1 / 3" }} size="featured" />
 
-        {/* Row 3: 누끼따기 + 색상 변경 + 업스케일 */}
+        {/* Row 3: AI 스마트 지우개 + 누끼따기 + 업스케일 */}
+        <BentoCard card={card("eraser")} isHovered={hoveredCard === "eraser"} isDragging={false}
+          onMouseEnter={() => setHoveredCard("eraser")} onMouseLeave={() => setHoveredCard(null)}
+          onClick={() => handleCardClick(card("eraser"))}
+          onDragOver={() => {}} onDragLeave={() => {}} onDrop={() => {}}
+          style={{ gridColumn: "1 / 7", gridRow: "3 / 4" }} size="md" />
+
         <BentoCard card={card("bgremove")} isHovered={hoveredCard === "bgremove"} isDragging={false}
           onMouseEnter={() => setHoveredCard("bgremove")} onMouseLeave={() => setHoveredCard(null)}
           onClick={() => handleCardClick(card("bgremove"))}
           onDragOver={() => {}} onDragLeave={() => {}} onDrop={() => {}}
-          style={{ gridColumn: "1 / 5", gridRow: "3 / 4" }} size="md" />
-
-        <BentoCard card={card("colorize")} isHovered={hoveredCard === "colorize"} isDragging={false}
-          onMouseEnter={() => setHoveredCard("colorize")} onMouseLeave={() => setHoveredCard(null)}
-          onClick={() => handleCardClick(card("colorize"))}
-          onDragOver={() => {}} onDragLeave={() => {}} onDrop={() => {}}
-          style={{ gridColumn: "5 / 9", gridRow: "3 / 4" }} size="md" />
+          style={{ gridColumn: "7 / 10", gridRow: "3 / 4" }} size="md" />
 
         <BentoCard card={card("upscale")} isHovered={hoveredCard === "upscale"} isDragging={false}
           onMouseEnter={() => setHoveredCard("upscale")} onMouseLeave={() => setHoveredCard(null)}
           onClick={() => handleCardClick(card("upscale"))}
           onDragOver={() => {}} onDragLeave={() => {}} onDrop={() => {}}
-          style={{ gridColumn: "9 / 13", gridRow: "3 / 4" }} size="md" />
+          style={{ gridColumn: "10 / 13", gridRow: "3 / 4" }} size="md" />
 
-        {/* Row 4: 영문명 변환 + 서명 그리기 + 계산기 */}
-        <BentoCard card={card("romanize")} isHovered={hoveredCard === "romanize"} isDragging={false}
-          onMouseEnter={() => setHoveredCard("romanize")} onMouseLeave={() => setHoveredCard(null)}
-          onClick={() => handleCardClick(card("romanize"))}
+        {/* Row 4: HEIC 변환 + 색상 변경 + 서명 그리기 */}
+        <BentoCard card={card("heic")} isHovered={hoveredCard === "heic"} isDragging={false}
+          onMouseEnter={() => setHoveredCard("heic")} onMouseLeave={() => setHoveredCard(null)}
+          onClick={() => handleCardClick(card("heic"))}
           onDragOver={() => {}} onDragLeave={() => {}} onDrop={() => {}}
           style={{ gridColumn: "1 / 5", gridRow: "4 / 5" }} size="sm" />
+
+        <BentoCard card={card("colorize")} isHovered={hoveredCard === "colorize"} isDragging={false}
+          onMouseEnter={() => setHoveredCard("colorize")} onMouseLeave={() => setHoveredCard(null)}
+          onClick={() => handleCardClick(card("colorize"))}
+          onDragOver={() => {}} onDragLeave={() => {}} onDrop={() => {}}
+          style={{ gridColumn: "5 / 9", gridRow: "4 / 5" }} size="sm" />
 
         <BentoCard card={card("signature")} isHovered={hoveredCard === "signature"} isDragging={false}
           onMouseEnter={() => setHoveredCard("signature")} onMouseLeave={() => setHoveredCard(null)}
           onClick={() => handleCardClick(card("signature"))}
           onDragOver={() => {}} onDragLeave={() => {}} onDrop={() => {}}
-          style={{ gridColumn: "5 / 9", gridRow: "4 / 5" }} size="sm" />
+          style={{ gridColumn: "9 / 13", gridRow: "4 / 5" }} size="sm" />
+
+        {/* Row 5: 영문명 변환 + 계산기 + PDF 합치기/분할 */}
+        <BentoCard card={card("romanize")} isHovered={hoveredCard === "romanize"} isDragging={false}
+          onMouseEnter={() => setHoveredCard("romanize")} onMouseLeave={() => setHoveredCard(null)}
+          onClick={() => handleCardClick(card("romanize"))}
+          onDragOver={() => {}} onDragLeave={() => {}} onDrop={() => {}}
+          style={{ gridColumn: "1 / 5", gridRow: "5 / 6" }} size="sm" />
 
         <BentoCard card={card("calculator")} isHovered={hoveredCard === "calculator"} isDragging={false}
           onMouseEnter={() => setHoveredCard("calculator")} onMouseLeave={() => setHoveredCard(null)}
           onClick={() => handleCardClick(card("calculator"))}
           onDragOver={() => {}} onDragLeave={() => {}} onDrop={() => {}}
-          style={{ gridColumn: "9 / 13", gridRow: "4 / 5" }} size="sm" />
+          style={{ gridColumn: "5 / 9", gridRow: "5 / 6" }} size="sm" />
 
-        {/* Row 5: 이미지 → PDF */}
+        <BentoCard card={card("mergesplit")} isHovered={hoveredCard === "mergesplit"} isDragging={false}
+          onMouseEnter={() => setHoveredCard("mergesplit")} onMouseLeave={() => setHoveredCard(null)}
+          onClick={() => handleCardClick(card("mergesplit"))}
+          onDragOver={() => {}} onDragLeave={() => {}} onDrop={() => {}}
+          style={{ gridColumn: "9 / 13", gridRow: "5 / 6" }} size="sm" />
+
+        {/* Row 6: 이미지 → PDF */}
         <BentoCard card={{
             id: "img2pdf", title: "이미지 → PDF", description: "여러 장의 PNG/JPEG 이미지를 하나의 PDF로 병합합니다.",
             icon: <FileText className="w-6 h-6" />, accent: "from-blue-400 to-cyan-500",
@@ -350,14 +381,14 @@ export default function HomeGrid({
           onMouseEnter={() => setHoveredCard("img2pdf")} onMouseLeave={() => setHoveredCard(null)}
           onClick={() => onTabSelect("img2pdf")}
           onDragOver={() => {}} onDragLeave={() => {}} onDrop={() => {}}
-          style={{ gridColumn: "1 / 13", gridRow: "5 / 6" }} size="sm" />
+          style={{ gridColumn: "1 / 13", gridRow: "6 / 7" }} size="sm" />
 
         {isSecretMode && (
           <BentoCard card={card("corporate")} isHovered={hoveredCard === "corporate"} isDragging={false}
             onMouseEnter={() => setHoveredCard("corporate")} onMouseLeave={() => setHoveredCard(null)}
             onClick={() => handleCardClick(card("corporate"))}
             onDragOver={() => {}} onDragLeave={() => {}} onDrop={() => {}}
-            style={{ gridColumn: "1 / 13", gridRow: "6 / 7" }} size="sm" />
+            style={{ gridColumn: "1 / 13", gridRow: "7 / 8" }} size="sm" />
         )}
       </div>
 

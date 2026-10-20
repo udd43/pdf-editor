@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import {
   FileText, Scissors, Palette, Moon, Sun, Menu, X,
-  Languages, PenTool, Calculator, Building2, Sparkles, Merge, Archive, Smartphone
+  Languages, PenTool, Calculator, Building2, Sparkles, Merge, Archive, Smartphone, Eraser
 } from "lucide-react";
 import PdfUploader from "@/components/PdfUploader";
 import PdfEditor from "@/components/PdfEditor";
@@ -21,6 +21,7 @@ const ImageToPdfConverter = React.lazy(() => import("@/components/ImageToPdfConv
 const PdfMergeSplit = React.lazy(() => import("@/components/PdfMergeSplit"));
 const PdfCompress = React.lazy(() => import("@/components/PdfCompress"));
 const HeicConverter = React.lazy(() => import("@/components/HeicConverter"));
+const MagicEraser = React.lazy(() => import("@/components/MagicEraser"));
 import AutoSaveBanner from "@/components/AutoSaveBanner";
 import { loadEditorSession, clearEditorSession, AutoSaveSession } from "@/lib/autoSaveStorage";
 import { Loader2 } from "lucide-react";
@@ -178,6 +179,7 @@ export default function ClientApp() {
 
   const tabs: { id: Tab; label: string; icon: React.ReactNode; color: string; activeBg: string }[] = [
     { id: "pdf", label: "PDF 편집", icon: <FileText className="w-3.5 h-3.5" />, color: "text-gray-600 dark:text-gray-300", activeBg: "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm" },
+    { id: "eraser", label: "AI 지우개", icon: <Eraser className="w-3.5 h-3.5 text-rose-500" />, color: "text-rose-600 dark:text-rose-400", activeBg: "bg-rose-50 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300 shadow-sm font-bold border border-rose-200 dark:border-rose-800" },
     { id: "bgremove", label: "누끼따기", icon: <Scissors className="w-3.5 h-3.5" />, color: "text-gray-600 dark:text-gray-300", activeBg: "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm" },
     { id: "upscale", label: "업스케일", icon: <Sparkles className="w-3.5 h-3.5" />, color: "text-gray-600 dark:text-gray-300", activeBg: "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm" },
     { id: "colorize", label: "색상 변경", icon: <Palette className="w-3.5 h-3.5" />, color: "text-gray-600 dark:text-gray-300", activeBg: "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm" },
@@ -358,6 +360,7 @@ export default function ClientApp() {
             </div>
           }
         >
+          {activeTab === "eraser" && <MagicEraser />}
           {activeTab === "bgremove" && <BgRemover />}
           {activeTab === "upscale" && <ImageUpscaler />}
           {activeTab === "colorize" && <ImageColorizer />}

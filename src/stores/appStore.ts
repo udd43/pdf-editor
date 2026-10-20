@@ -16,6 +16,7 @@ export type Tab =
   | "mergesplit"
   | "compress"
   | "pdftools"
+  | "eraser"
   | "heic";
 
 interface AppState {
