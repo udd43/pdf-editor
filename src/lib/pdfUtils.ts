@@ -112,15 +112,10 @@ export async function exportEditedPdf(
   const isTrueRedaction = options?.isTrueRedaction ?? true;
   
   if (hasRedactions) {
-    const toastId = toast.loading(
-      isTrueRedaction ? "영구 보안 마스킹(True Redaction) 적용 중..." : "블라인드 병합 처리 중..."
-    );
+    const toastId = toast.loading("블라인드 처리 및 PDF 생성 중...");
     try {
       finalBytes = await processRedactions(finalBytes, redactions || [], isTrueRedaction);
-      toast.success(
-        isTrueRedaction ? "영구 보안 마스킹 완료 (텍스트 원천 파괴)" : "처리가 완료되었습니다!",
-        { id: toastId }
-      );
+      toast.success("PDF가 성공적으로 생성되었습니다!", { id: toastId });
     } catch (err) {
       console.error(err);
       toast.error("처리 중 오류가 발생했습니다. 원본을 저장합니다.", { id: toastId });

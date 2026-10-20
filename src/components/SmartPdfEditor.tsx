@@ -549,10 +549,10 @@ export default function SmartPdfEditor() {
     setExportModal(true);
   };
 
-  const handleExportConfirm = async (options: { fileName: string; isTrueRedaction: boolean }) => {
+  const handleExportConfirm = async (exportName: string) => {
     setExportModal(false);
     if (!pdfBuffer) return;
-    const trimmed = options.fileName.trim();
+    const trimmed = exportName.trim();
     const fallbackName = file?.name || "document.pdf";
     const finalFileName =
       trimmed === ""
@@ -565,7 +565,7 @@ export default function SmartPdfEditor() {
     const toastId = toast.loading("PDF 생성 중...");
     try {
       await exportEditedPdf(pdfBuffer, textBoxes, imageOverlays, redactions, 1, finalFileName, {
-        isTrueRedaction: options.isTrueRedaction,
+        isTrueRedaction: true, // 블라인드가 있으면 자동으로 100% 영구 보안 마스킹 적용
       });
       toast.success("다운로드 완료!", { id: toastId });
       setIsProcessing(false);
@@ -753,7 +753,6 @@ export default function SmartPdfEditor() {
       <ExportModal
         isOpen={exportModal}
         defaultName={exportDefaultName}
-        hasRedactions={redactions.length > 0}
         onConfirm={handleExportConfirm}
         onCancel={() => setExportModal(false)}
       />

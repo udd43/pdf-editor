@@ -219,32 +219,28 @@ export function ConfirmModal({
 }
 
 /* ─────────────────────────────────────────
-   ExportModal – PDF Export with True Redaction option
+   ExportModal – Clean PDF Export Modal
 ───────────────────────────────────────── */
 
 interface ExportModalProps {
   isOpen: boolean;
   defaultName: string;
-  hasRedactions: boolean;
-  onConfirm: (options: { fileName: string; isTrueRedaction: boolean }) => void;
+  onConfirm: (fileName: string) => void;
   onCancel: () => void;
 }
 
 export function ExportModal({
   isOpen,
   defaultName,
-  hasRedactions,
   onConfirm,
   onCancel,
 }: ExportModalProps) {
   const [fileName, setFileName] = useState(defaultName);
-  const [isTrueRedaction, setIsTrueRedaction] = useState(true);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (isOpen) {
       setFileName(defaultName);
-      setIsTrueRedaction(true);
       setTimeout(() => inputRef.current?.select(), 100);
     }
   }, [isOpen, defaultName]);
@@ -257,14 +253,14 @@ export function ExportModal({
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, fileName, isTrueRedaction, onCancel]);
+  }, [isOpen, fileName, onCancel]);
 
   if (!isOpen) return null;
 
   const handleConfirm = () => {
     const trimmed = fileName.trim();
     const finalName = trimmed === "" ? defaultName : trimmed;
-    onConfirm({ fileName: finalName, isTrueRedaction });
+    onConfirm(finalName);
   };
 
   return (
@@ -283,7 +279,7 @@ export function ExportModal({
               PDF 내보내기
             </h3>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-              저장할 파일 이름을 확인하고 옵션을 설정하세요.
+              저장할 파일 이름을 입력하세요.
             </p>
           </div>
           <button
@@ -295,8 +291,7 @@ export function ExportModal({
         </div>
 
         {/* Body */}
-        <div className="px-6 pb-5 space-y-4">
-          {/* File Name Input */}
+        <div className="px-6 pb-5">
           <div>
             <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
               파일 이름
@@ -315,45 +310,6 @@ export function ExportModal({
               </span>
             </div>
           </div>
-
-          {/* True Redaction Option (if redactions exist) */}
-          {hasRedactions && (
-            <div className="rounded-2xl border border-emerald-200 dark:border-emerald-800/80 bg-emerald-50/70 dark:bg-emerald-950/30 p-3.5 space-y-2.5 transition-all">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-base">🛡️</span>
-                  <div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-xs font-bold text-emerald-900 dark:text-emerald-300">
-                        영구 보안 마스킹 (True Redaction)
-                      </span>
-                      <span className="px-1.5 py-0.5 text-[10px] font-bold bg-emerald-600 text-white rounded-md">
-                        권장
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-emerald-700 dark:text-emerald-400 leading-snug mt-0.5">
-                      가려진 영역 밑의 원본 텍스트를 물리적으로 파괴하여 드래그 복사를 차단합니다.
-                    </p>
-                  </div>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer shrink-0 mt-0.5">
-                  <input
-                    type="checkbox"
-                    checked={isTrueRedaction}
-                    onChange={(e) => setIsTrueRedaction(e.target.checked)}
-                    className="sr-only peer"
-                  />
-                  <div className="w-9 h-5 bg-gray-300 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600"></div>
-                </label>
-              </div>
-
-              {!isTrueRedaction && (
-                <p className="text-[10px] text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 p-2 rounded-lg border border-amber-200 dark:border-amber-800/60 leading-normal">
-                  ⚠️ 주의: 일반 마스킹은 상자만 덧씌우므로, 다른 뷰어에서 텍스트 드래그 복사 시 가려진 글자가 복사될 수 있습니다.
-                </p>
-              )}
-            </div>
-          )}
         </div>
 
         {/* Footer */}

@@ -765,10 +765,10 @@ export default function PdfEditor({ file, isCorporateMode = false }: PdfEditorPr
     setExportModal(true);
   };
 
-  const handleExportConfirm = async (options: { fileName: string; isTrueRedaction: boolean }) => {
+  const handleExportConfirm = async (exportName: string) => {
     setExportModal(false);
     if (!pdfBuffer) return;
-    const trimmed = options.fileName.trim();
+    const trimmed = exportName.trim();
     const finalFileName =
       trimmed === ""
         ? file.name
@@ -777,10 +777,10 @@ export default function PdfEditor({ file, isCorporateMode = false }: PdfEditorPr
         : `${trimmed}.pdf`;
     setStatus("rendering");
     setStatusMsg("새 PDF를 생성하는 중 (백그라운드 처리 중)...");
-    const toastId = toast.loading("PDF를 병합하고 있습니다. 잠시만 기다려주세요...");
+    const toastId = toast.loading("PDF를 생성하고 있습니다. 잠시만 기다려주세요...");
     try {
       await exportEditedPdf(pdfBuffer, textBoxes, imageOverlays, redactions, 1, finalFileName, {
-        isTrueRedaction: options.isTrueRedaction,
+        isTrueRedaction: true, // 블라인드가 있으면 자동으로 100% 영구 보안 마스킹 적용
       });
       setStatus("done");
       setStatusMsg("PDF가 다운로드되었습니다!");
@@ -1025,7 +1025,6 @@ export default function PdfEditor({ file, isCorporateMode = false }: PdfEditorPr
       <ExportModal
         isOpen={exportModal}
         defaultName={exportDefaultName}
-        hasRedactions={redactions.length > 0}
         onConfirm={handleExportConfirm}
         onCancel={() => setExportModal(false)}
       />
