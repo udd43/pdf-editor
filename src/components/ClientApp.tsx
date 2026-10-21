@@ -178,23 +178,23 @@ export default function ClientApp() {
     : "다크 모드로 전환";
 
   const tabs: { id: Tab; label: string; icon: React.ReactNode; color: string; activeBg: string }[] = [
-    { id: "pdf", label: "PDF 편집", icon: <FileText className="w-3.5 h-3.5" />, color: "text-gray-600 dark:text-gray-300", activeBg: "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm" },
-    { id: "eraser", label: "AI 지우개", icon: <Eraser className="w-3.5 h-3.5 text-rose-500" />, color: "text-rose-600 dark:text-rose-400", activeBg: "bg-rose-50 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300 shadow-sm font-bold border border-rose-200 dark:border-rose-800" },
-    { id: "bgremove", label: "누끼따기", icon: <Scissors className="w-3.5 h-3.5" />, color: "text-gray-600 dark:text-gray-300", activeBg: "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm" },
-    { id: "upscale", label: "업스케일", icon: <Sparkles className="w-3.5 h-3.5" />, color: "text-gray-600 dark:text-gray-300", activeBg: "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm" },
-    { id: "colorize", label: "색상 변경", icon: <Palette className="w-3.5 h-3.5" />, color: "text-gray-600 dark:text-gray-300", activeBg: "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm" },
-    { id: "romanize", label: "영문 변환", icon: <Languages className="w-3.5 h-3.5" />, color: "text-gray-600 dark:text-gray-300", activeBg: "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm" },
-    { id: "signature", label: "서명 그리기", icon: <PenTool className="w-3.5 h-3.5" />, color: "text-gray-600 dark:text-gray-300", activeBg: "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm" },
-    { id: "calculator", label: "계산기", icon: <Calculator className="w-3.5 h-3.5" />, color: "text-gray-600 dark:text-gray-300", activeBg: "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm" },
-    { id: "heic", label: "HEIC 변환", icon: <Smartphone className="w-3.5 h-3.5 text-sky-500" />, color: "text-sky-600 dark:text-sky-400", activeBg: "bg-sky-50 dark:bg-sky-900/30 text-sky-700 dark:text-sky-300 shadow-sm font-semibold border border-sky-200 dark:border-sky-800" },
-    { id: "smartpdf", label: "스마트 편집", icon: <Sparkles className="w-3.5 h-3.5 text-amber-500" />, color: "text-amber-600 dark:text-amber-400", activeBg: "bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 shadow-sm font-bold border border-amber-200 dark:border-amber-800" },
-    { id: "pdftools", label: "PDF 도구", icon: <Merge className="w-3.5 h-3.5" />, color: "text-gray-600 dark:text-gray-300", activeBg: "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm" },
+    { id: "pdf", label: "PDF 편집", icon: <FileText className="w-3 h-3" />, color: "text-gray-600 dark:text-gray-300", activeBg: "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm" },
+    { id: "eraser", label: "AI 지우개", icon: <Eraser className="w-3 h-3 text-rose-500" />, color: "text-rose-600 dark:text-rose-400", activeBg: "bg-rose-50 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300 shadow-sm font-bold border border-rose-200 dark:border-rose-800" },
+    { id: "bgremove", label: "누끼따기", icon: <Scissors className="w-3 h-3" />, color: "text-gray-600 dark:text-gray-300", activeBg: "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm" },
+    { id: "upscale", label: "업스케일", icon: <Sparkles className="w-3 h-3" />, color: "text-gray-600 dark:text-gray-300", activeBg: "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm" },
+    { id: "colorize", label: "색상 변경", icon: <Palette className="w-3 h-3" />, color: "text-gray-600 dark:text-gray-300", activeBg: "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm" },
+    { id: "romanize", label: "영문 변환", icon: <Languages className="w-3 h-3" />, color: "text-gray-600 dark:text-gray-300", activeBg: "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm" },
+    { id: "signature", label: "서명 그리기", icon: <PenTool className="w-3 h-3" />, color: "text-gray-600 dark:text-gray-300", activeBg: "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm" },
+    { id: "calculator", label: "계산기", icon: <Calculator className="w-3 h-3" />, color: "text-gray-600 dark:text-gray-300", activeBg: "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm" },
+    { id: "heic", label: "HEIC 변환", icon: <Smartphone className="w-3 h-3 text-sky-500" />, color: "text-sky-600 dark:text-sky-400", activeBg: "bg-sky-50 dark:bg-sky-900/30 text-sky-700 dark:text-sky-300 shadow-sm font-semibold border border-sky-200 dark:border-sky-800" },
+    { id: "smartpdf", label: "스마트 편집", icon: <Sparkles className="w-3 h-3 text-amber-500" />, color: "text-amber-600 dark:text-amber-400", activeBg: "bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 shadow-sm font-bold border border-amber-200 dark:border-amber-800" },
+    { id: "pdftools", label: "PDF 도구", icon: <Merge className="w-3 h-3" />, color: "text-gray-600 dark:text-gray-300", activeBg: "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm" },
   ];
   if (isSecretMode) {
     tabs.push({
       id: "corporate",
       label: "법인 서류",
-      icon: <Building2 className="w-3.5 h-3.5" />,
+      icon: <Building2 className="w-3 h-3" />,
       color: "text-red-600 dark:text-red-300",
       activeBg: "bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 font-bold",
     });
@@ -218,11 +218,11 @@ export default function ClientApp() {
 
       {/* ── Header ── */}
       <header className="bg-[#F9F6ED] dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-40 transition-colors duration-300">
-        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
+        <div className="w-full max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 h-14 sm:h-16 flex items-center justify-between gap-2">
           <div className="flex items-center justify-start shrink-0">
-            <button onClick={goHome} className="shrink-0 whitespace-nowrap outline-none flex items-center gap-2">
+            <button onClick={goHome} className="shrink-0 whitespace-nowrap outline-none flex items-center gap-1.5 sm:gap-2">
               <span
-                className="text-xl font-bold tracking-tight text-gray-900 dark:text-white"
+                className="text-lg sm:text-xl font-bold tracking-tight text-gray-900 dark:text-white"
                 style={{ fontFamily: "Inter, system-ui, sans-serif" }}
               >
                 PDF <span className="font-normal text-gray-500 dark:text-gray-400">Editor</span>
@@ -230,7 +230,7 @@ export default function ClientApp() {
             </button>
           </div>
 
-          <nav className="hidden lg:flex shrink min-w-0 items-center bg-gray-200/50 dark:bg-gray-800/50 rounded-full p-1 border border-gray-200 dark:border-gray-700 gap-0.5 transition-colors duration-300">
+          <nav className="hidden lg:flex shrink min-w-0 items-center bg-gray-200/50 dark:bg-gray-800/50 rounded-full p-0.5 border border-gray-200 dark:border-gray-700 gap-[2px] transition-colors duration-300 overflow-x-auto no-scrollbar">
             {tabs.map((tab) => {
               const isActive = activeTab === tab.id || (tab.id === "pdftools" && activeTab === "pdftools");
               return (
@@ -238,7 +238,7 @@ export default function ClientApp() {
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
                   title={tab.label}
-                  className={`flex items-center gap-1 px-2 py-1.5 text-[10.5px] whitespace-nowrap font-semibold rounded-full transition-all duration-200 ${
+                  className={`flex items-center gap-1 px-1.5 py-1 text-[9.5px] xl:text-[10px] whitespace-nowrap font-semibold rounded-full transition-all duration-200 ${
                     isActive
                       ? tab.activeBg
                       : "text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200/50 dark:hover:bg-gray-700/50"
@@ -251,12 +251,12 @@ export default function ClientApp() {
             })}
           </nav>
 
-          <div className="flex items-center justify-end gap-2 shrink-0">
+          <div className="flex items-center justify-end gap-1.5 shrink-0">
             {activeTab === "pdf" && file && (
               <>
                 <button
                   onClick={() => document.getElementById("ref-upload")?.click()}
-                  className="text-xs text-blue-600 bg-blue-50 dark:bg-blue-900/30 dark:text-blue-400 px-3.5 py-1.5 rounded-full border border-blue-100 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-800/50 transition-all font-semibold whitespace-nowrap shrink-0"
+                  className="text-[11px] text-blue-600 bg-blue-50 dark:bg-blue-900/30 dark:text-blue-400 px-2.5 py-1 rounded-full border border-blue-100 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-800/50 transition-all font-semibold whitespace-nowrap shrink-0"
                 >
                   대조 원본 추가
                 </button>
@@ -269,7 +269,7 @@ export default function ClientApp() {
                 />
                 <button
                   onClick={goHome}
-                  className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white px-3 py-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-all font-medium whitespace-nowrap shrink-0"
+                  className="text-[11px] text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white px-2.5 py-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-all font-medium whitespace-nowrap shrink-0"
                 >
                   처음으로
                 </button>
@@ -278,21 +278,21 @@ export default function ClientApp() {
             {!isHome && activeTab !== "pdf" && (
               <button
                 onClick={goHome}
-                className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white px-3 py-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-all font-medium whitespace-nowrap shrink-0"
+                className="text-[11px] text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white px-2.5 py-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-all font-medium whitespace-nowrap shrink-0"
               >
                 홈으로
               </button>
             )}
             <button
               onClick={cycleDarkMode}
-              className="p-2 ml-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 transition-colors shrink-0"
+              className="p-1.5 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 transition-colors shrink-0"
               title={darkModeTitle}
             >
               {darkModeIcon}
             </button>
             <button
               onClick={() => setIsMobileMenuOpen(true)}
-              className="lg:hidden p-2 ml-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 transition-colors shrink-0"
+              className="lg:hidden p-1.5 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 transition-colors shrink-0"
             >
               <Menu className="w-5 h-5" />
             </button>

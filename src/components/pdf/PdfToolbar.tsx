@@ -53,7 +53,7 @@ export default function PdfToolbar({
           {statusMsg}
         </span>
       </div>
-      <div className="flex flex-wrap items-center gap-1.5 p-2 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 w-full">
+      <div className="flex flex-wrap items-center gap-1 p-1.5 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 w-full">
     
         <style>{`
           @font-face { font-family: "NotoSansKR"; src: url("/NotoSansKR-Regular.otf"); }
@@ -62,30 +62,30 @@ export default function PdfToolbar({
         `}</style>
 
         <button onClick={handleRunOcr} disabled={status !== "done"}
-          className="flex items-center gap-1 px-2.5 py-1.5 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-[11px] font-semibold rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-30 transition-all shadow-sm whitespace-nowrap flex-shrink-0"
+          className="flex items-center gap-1 px-2 py-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-[10px] font-semibold rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-30 transition-all shadow-sm whitespace-nowrap flex-shrink-0"
           title="문서 내의 글자를 자동으로 인식하여 편집 가능한 박스로 만듭니다">
           📝 텍스트 추출
         </button>
         <button onClick={() => handleAddText(false)} disabled={status !== "done"}
-          className="flex items-center gap-1 px-2.5 py-1.5 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-[11px] font-semibold rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-30 transition-all shadow-sm whitespace-nowrap flex-shrink-0">
+          className="flex items-center gap-1 px-2 py-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-[10px] font-semibold rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-30 transition-all shadow-sm whitespace-nowrap flex-shrink-0">
           텍스트(흰배경)
         </button>
         <button onClick={() => handleAddText(true)} disabled={status !== "done"}
-          className="flex items-center gap-1 px-2.5 py-1.5 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-[11px] font-semibold rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-30 transition-all shadow-sm whitespace-nowrap flex-shrink-0">
+          className="flex items-center gap-1 px-2 py-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-[10px] font-semibold rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-30 transition-all shadow-sm whitespace-nowrap flex-shrink-0">
           텍스트(투명)
         </button>
         <button onClick={handleAddRomanizedName} disabled={status !== "done"}
-          className="flex items-center gap-1 px-2.5 py-1.5 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-400 text-[11px] font-bold rounded-md hover:bg-blue-100 dark:hover:bg-blue-800/50 disabled:opacity-30 transition-all shadow-sm whitespace-nowrap flex-shrink-0"
+          className="flex items-center gap-1 px-2 py-1 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-400 text-[10px] font-bold rounded-md hover:bg-blue-100 dark:hover:bg-blue-800/50 disabled:opacity-30 transition-all shadow-sm whitespace-nowrap flex-shrink-0"
           title="한글 이름을 입력하면 소리나는 대로 영문으로 변환하여 추가합니다">
           영문명 변환
         </button>
 
-        <div className="w-px h-5 bg-gray-200 dark:bg-gray-600 flex-shrink-0" />
+        <div className="w-px h-4 bg-gray-200 dark:bg-gray-600 flex-shrink-0" />
 
         {isCorporateDoc && (
           <>
             <button onClick={() => setIsMacroFormOpen(!isMacroFormOpen)} disabled={status !== "done"}
-              className={`flex items-center gap-1 px-2.5 py-1.5 border text-[11px] font-bold rounded-md transition-all shadow-sm whitespace-nowrap flex-shrink-0 ${
+              className={`flex items-center gap-1 px-2 py-1 border text-[10px] font-bold rounded-md transition-all shadow-sm whitespace-nowrap flex-shrink-0 ${
                 isMacroFormOpen 
                 ? 'bg-indigo-100 dark:bg-indigo-900 border-indigo-300 dark:border-indigo-700 text-indigo-800 dark:text-indigo-300' 
                 : 'bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600'
@@ -93,22 +93,22 @@ export default function PdfToolbar({
               title="매크로 양식을 열거나 닫습니다">
               🏢 매크로 폼
             </button>
-            <div className="w-px h-5 bg-gray-200 dark:bg-gray-600 flex-shrink-0" />
+            <div className="w-px h-4 bg-gray-200 dark:bg-gray-600 flex-shrink-0" />
           </>
         )}
 
         <button onClick={() => imageInputRef.current?.click()} disabled={status !== "done"}
-          className="flex items-center gap-1 px-2.5 py-1.5 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-[11px] font-semibold rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-30 transition-all shadow-sm whitespace-nowrap flex-shrink-0">
-          <ImageIcon className="w-3.5 h-3.5 text-blue-500" /> 이미지
+          className="flex items-center gap-1 px-2 py-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-[10px] font-semibold rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-30 transition-all shadow-sm whitespace-nowrap flex-shrink-0">
+          <ImageIcon className="w-3 h-3 text-blue-500" /> 이미지
         </button>
         <button onClick={() => bgRemoveInputRef.current?.click()} disabled={status !== "done" || isRemovingBg}
-          className="flex items-center gap-1 px-2.5 py-1.5 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-[11px] font-semibold rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-30 transition-all shadow-sm whitespace-nowrap flex-shrink-0">
-          {isRemovingBg ? <Loader2 className="w-3.5 h-3.5 animate-spin text-pink-500" /> : <Scissors className="w-3.5 h-3.5 text-pink-500" />}
+          className="flex items-center gap-1 px-2 py-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-[10px] font-semibold rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-30 transition-all shadow-sm whitespace-nowrap flex-shrink-0">
+          {isRemovingBg ? <Loader2 className="w-3 h-3 animate-spin text-pink-500" /> : <Scissors className="w-3 h-3 text-pink-500" />}
           누끼 이미지
         </button>
         <button onClick={() => upscaleInputRef.current?.click()} disabled={status !== "done" || isUpscaling}
-          className="flex items-center gap-1 px-2.5 py-1.5 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-[11px] font-semibold rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-30 transition-all shadow-sm whitespace-nowrap flex-shrink-0">
-          {isUpscaling ? <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-500" /> : <ZoomIn className="w-3.5 h-3.5 text-amber-500" />}
+          className="flex items-center gap-1 px-2 py-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-[10px] font-semibold rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-30 transition-all shadow-sm whitespace-nowrap flex-shrink-0">
+          {isUpscaling ? <Loader2 className="w-3 h-3 animate-spin text-amber-500" /> : <ZoomIn className="w-3 h-3 text-amber-500" />}
           업스케일
         </button>
         <input ref={imageInputRef} type="file" accept="image/*,.heic,.heif,.HEIC,.HEIF" className="hidden" onChange={handleImageUpload} />
@@ -116,45 +116,45 @@ export default function PdfToolbar({
         <input ref={upscaleInputRef} type="file" accept="image/*,.heic,.heif,.HEIC,.HEIF" className="hidden" onChange={handleUpscaleUpload} />
         
         <button onClick={handleOpenEraser} disabled={status !== "done"}
-          className="flex items-center gap-1 px-2.5 py-1.5 bg-rose-50 dark:bg-rose-900/30 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-400 text-[11px] font-bold rounded-md hover:bg-rose-100 dark:hover:bg-rose-800/50 disabled:opacity-30 transition-all shadow-sm whitespace-nowrap flex-shrink-0"
+          className="flex items-center gap-1 px-2 py-1 bg-rose-50 dark:bg-rose-900/30 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-400 text-[10px] font-bold rounded-md hover:bg-rose-100 dark:hover:bg-rose-800/50 disabled:opacity-30 transition-all shadow-sm whitespace-nowrap flex-shrink-0"
           title="문서 속 도장, 서명, 불필요한 개체를 AI로 감쪽같이 지웁니다">
-          <Eraser className="w-3.5 h-3.5 text-rose-500" /> 스마트 지우개
+          <Eraser className="w-3 h-3 text-rose-500" /> 스마트 지우개
         </button>
 
         <button onClick={() => setIsSignatureOpen(true)} disabled={status !== "done"}
-          className="flex items-center gap-1 px-2.5 py-1.5 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-[11px] font-semibold rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-30 transition-all shadow-sm whitespace-nowrap flex-shrink-0">
-          <Pen className="w-3.5 h-3.5 text-emerald-500" /> 서명/그리기
+          className="flex items-center gap-1 px-2 py-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-[10px] font-semibold rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-30 transition-all shadow-sm whitespace-nowrap flex-shrink-0">
+          <Pen className="w-3 h-3 text-emerald-500" /> 서명/그리기
         </button>
 
         <button onClick={() => onToggleRedact ? onToggleRedact("black") : setIsRedactMode?.(p => !p)} disabled={status !== "done"}
-          className={`flex items-center gap-1.5 px-2.5 py-1.5 border text-[11px] font-semibold rounded-md disabled:opacity-30 transition-all shadow-sm whitespace-nowrap flex-shrink-0 ${
+          className={`flex items-center gap-1 px-2 py-1 border text-[10px] font-semibold rounded-md disabled:opacity-30 transition-all shadow-sm whitespace-nowrap flex-shrink-0 ${
             isRedactMode && redactColor === "black" ? "bg-gray-900 text-white border-gray-900 dark:bg-gray-100 dark:text-gray-900 dark:border-gray-100" : "bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600"
           }`}
           title="검은색 블라인드로 내용을 가립니다">
-          <div className="w-3.5 h-3.5 bg-gray-900 dark:bg-gray-200 border border-white dark:border-gray-900 rounded-sm" /> 블라인드(검정)
+          <div className="w-3 h-3 bg-gray-900 dark:bg-gray-200 border border-white dark:border-gray-900 rounded-sm" /> 블라인드(검정)
         </button>
 
         <button onClick={() => onToggleRedact ? onToggleRedact("white") : setIsRedactMode?.(p => !p)} disabled={status !== "done"}
-          className={`flex items-center gap-1.5 px-2.5 py-1.5 border text-[11px] font-semibold rounded-md disabled:opacity-30 transition-all shadow-sm whitespace-nowrap flex-shrink-0 ${
+          className={`flex items-center gap-1 px-2 py-1 border text-[10px] font-semibold rounded-md disabled:opacity-30 transition-all shadow-sm whitespace-nowrap flex-shrink-0 ${
             isRedactMode && redactColor === "white" ? "bg-blue-50 text-blue-700 border-blue-500 font-bold dark:bg-gray-100 dark:text-gray-900 dark:border-gray-100" : "bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600"
           }`}
           title="흰색 블라인드(수정액 효과)로 내용을 가립니다">
-          <div className="w-3.5 h-3.5 bg-white border border-gray-400 dark:border-gray-500 rounded-sm shadow-xs" /> 블라인드(흰색)
+          <div className="w-3 h-3 bg-white border border-gray-400 dark:border-gray-500 rounded-sm shadow-xs" /> 블라인드(흰색)
         </button>
         
-        <div className="w-px h-5 bg-gray-200 dark:bg-gray-600 flex-shrink-0" />
+        <div className="w-px h-4 bg-gray-200 dark:bg-gray-600 flex-shrink-0" />
 
         {numPages > 1 && (
           <div className="flex items-center bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md overflow-hidden shadow-sm flex-shrink-0">
             <button onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))} disabled={currentPage <= 1 || status !== "done"}
-              className="px-2 py-1 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-30 text-[11px] font-bold text-gray-600 dark:text-gray-300 border-r border-gray-200 dark:border-gray-600">
+              className="px-1.5 py-1 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-30 text-[10px] font-bold text-gray-600 dark:text-gray-300 border-r border-gray-200 dark:border-gray-600">
               이전
             </button>
-            <span className="text-[10px] font-mono px-2 py-1 text-gray-800 dark:text-gray-200 bg-gray-50 dark:bg-gray-800 select-none">
+            <span className="text-[10px] font-mono px-1.5 py-1 text-gray-800 dark:text-gray-200 bg-gray-50 dark:bg-gray-800 select-none">
               {currentPage}/{numPages}
             </span>
             <button onClick={() => setCurrentPage(prev => Math.min(numPages, prev + 1))} disabled={currentPage >= numPages || status !== "done"}
-              className="px-2 py-1 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-30 text-[11px] font-bold text-gray-600 dark:text-gray-300 border-l border-gray-200 dark:border-gray-600">
+              className="px-1.5 py-1 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-30 text-[10px] font-bold text-gray-600 dark:text-gray-300 border-l border-gray-200 dark:border-gray-600">
               다음
             </button>
           </div>
@@ -163,7 +163,7 @@ export default function PdfToolbar({
         <div className="flex items-center bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md overflow-hidden shadow-sm flex-shrink-0">
           <button onClick={() => handleZoom("out")} disabled={status !== "done" || scale <= 0.5}
             className="p-1 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-30 text-gray-600 dark:text-gray-300" title="축소">
-            <Minus className="w-3 h-3" />
+            <Minus className="w-2.5 h-2.5" />
           </button>
           <span onClick={() => handleZoom("reset")} 
             className="text-[10px] font-mono px-1.5 py-1 text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-700 border-x border-gray-200 dark:border-gray-600 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-600 select-none font-bold" title="원래 크기 (1.5x)">
@@ -171,13 +171,13 @@ export default function PdfToolbar({
           </span>
           <button onClick={() => handleZoom("in")} disabled={status !== "done" || scale >= 3.0}
             className="p-1 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-30 text-gray-600 dark:text-gray-300" title="확대">
-            <Plus className="w-3 h-3" />
+            <Plus className="w-2.5 h-2.5" />
           </button>
         </div>
 
         <button onClick={handleExport} disabled={isLoading || !hasContent}
-          className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 dark:bg-blue-500 text-white text-[11px] font-semibold rounded-md shadow-sm hover:bg-blue-700 dark:hover:bg-blue-600 transition-all active:scale-95 disabled:opacity-40 disabled:pointer-events-none whitespace-nowrap flex-shrink-0">
-          <Download className="w-3.5 h-3.5" /> 내보내기
+          className="flex items-center gap-1 px-2.5 py-1 bg-blue-600 dark:bg-blue-500 text-white text-[10px] font-semibold rounded-md shadow-sm hover:bg-blue-700 dark:hover:bg-blue-600 transition-all active:scale-95 disabled:opacity-40 disabled:pointer-events-none whitespace-nowrap flex-shrink-0">
+          <Download className="w-3 h-3" /> 내보내기
         </button>
       </div>
     </div>
