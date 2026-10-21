@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { TextBox } from '@/components/PdfEditor';
+import { TextBox } from '@/types/pdf';
 
 interface MacroFormProps {
   isCorporateDoc: boolean;

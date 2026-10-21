@@ -1,7 +1,5 @@
 import { get, set, del } from "idb-keyval";
-import type { TextBox } from "@/components/PdfEditor";
-import type { ImageOverlayData } from "@/components/ImageOverlay";
-import type { RedactionData } from "@/hooks/usePdfElements";
+import type { TextBox, ImageOverlayData, RedactionData } from "@/types/pdf";
 
 const STORAGE_KEY = "pdf_editor_autosave_session";
 

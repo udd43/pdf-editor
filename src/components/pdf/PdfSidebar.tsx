@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 import * as pdfjsLib from "pdfjs-dist";
 import { Trash2, GripVertical } from "lucide-react";
 

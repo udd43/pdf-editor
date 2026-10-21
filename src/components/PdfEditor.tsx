@@ -7,7 +7,8 @@ import toast from "react-hot-toast";
 import { exportEditedPdf, exportPdfViaRasterFallback, mergePdfs, deletePdfPage, reorderPdfPages } from "@/lib/pdfUtils";
 import { PromptModal, ConfirmModal, ExportModal } from "./Modal";
 import { koreanToRoman } from "@/lib/romanize";
-import { ImageOverlayData } from "./ImageOverlay";
+import { TextBox, ImageOverlayData, RedactionData, EditorStatus } from "@/types/pdf";
+export type { TextBox, ImageOverlayData, RedactionData, EditorStatus };
 import SignaturePad from "./SignaturePad";
 import { isHeicFile, convertHeicToPng, removeImageBackground } from "@/lib/imageUtils";
 import { usePdfElements } from "@/hooks/usePdfElements";
@@ -26,22 +27,7 @@ const MagicEraser = React.lazy(() => import("./MagicEraser"));
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.mjs`;
 
-export interface TextBox {
-  id: string;
-  text: string;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  fontSize: number;
-  isEdited: boolean;
-  isNew?: boolean;
-  isTransparent?: boolean;
-  fontFamily?: string;
-  pageIndex: number;
-}
-
-type Status = "idle" | "rendering" | "ocr" | "done" | "error";
+type Status = EditorStatus;
 
 interface PdfEditorProps {
   file: File;

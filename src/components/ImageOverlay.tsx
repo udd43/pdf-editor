@@ -5,19 +5,8 @@ import { Loader2, Scissors, Palette, Trash2, Move, Download, Maximize2 } from "l
 import toast from "react-hot-toast";
 import ColorPicker from "./ColorPicker";
 import { removeImageBackground } from "@/lib/imageUtils";
-
-export interface ImageOverlayData {
-  id: string;
-  originalSrc: string;    // 원본 이미지
-  displaySrc: string;     // 화면에 보이는 이미지 (누끼/색변경 적용됨)
-  removedBgSrc: string | null; // 배경 제거된 이미지
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  pageIndex: number;
-  rotation?: number; // 0 ~ 360 degrees
-}
+import { ImageOverlayData } from "@/types/pdf";
+export type { ImageOverlayData };
 
 interface ImageOverlayProps {
   overlay: ImageOverlayData;
@@ -153,7 +142,7 @@ export default function ImageOverlay({
 
     const handleMove = (ev: MouseEvent) => {
       const currentAngle = Math.atan2(ev.clientY - cy, ev.clientX - cx) * (180 / Math.PI);
-      let delta = currentAngle - startAngle;
+      const delta = currentAngle - startAngle;
       let newRotation = startRotation + delta;
       // 정규화 0~360
       newRotation = ((newRotation % 360) + 360) % 360;

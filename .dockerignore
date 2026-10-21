@@ -5,7 +5,10 @@ npm-debug.log
 README.md
 .next
 .git
+.vscode
 .env*
 !*.env.production
 .DS_Store
 tmp-upscale
+bin/
+dist/

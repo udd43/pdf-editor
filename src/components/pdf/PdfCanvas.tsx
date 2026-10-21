@@ -1,10 +1,8 @@
-import React, { useEffect, useRef } from "react";
-import * as pdfjsLib from "pdfjs-dist";
+import React from "react";
 import { Loader2, Image as ImageIcon, Trash2 } from "lucide-react";
 import TextBoxOverlay from "../TextBoxOverlay";
-import ImageOverlayComponent, { ImageOverlayData } from "../ImageOverlay";
-import { TextBox } from "../PdfEditor";
-import { RedactionData } from "@/hooks/usePdfElements";
+import ImageOverlayComponent from "../ImageOverlay";
+import { TextBox, ImageOverlayData, RedactionData } from "@/types/pdf";
 
 interface PdfCanvasProps {
   canvasRef: React.RefObject<HTMLCanvasElement | null>;

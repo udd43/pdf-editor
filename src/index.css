@@ -2,3 +2,33 @@
 
 /* Tailwind v4: dark 모드를 CSS 클래스(.dark) 기반으로 전환 */
 @custom-variant dark (&:where(.dark, .dark *));
+
+/* 공통 폰트 정의 */
+@font-face {
+  font-family: "NotoSansKR";
+  src: url("/NotoSansKR-Regular.otf");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "NanumMyeongjo";
+  src: url("/NanumMyeongjo.ttf");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Jua";
+  src: url("/Jua.ttf");
+  font-display: swap;
+}
+
+/* 모달 및 트랜지션 애니메이션 */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(16px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}

@@ -1,6 +1,5 @@
 import { useEffect, useRef } from "react";
-import { TextBox } from "@/components/PdfEditor";
-import { ImageOverlayData } from "@/components/ImageOverlay";
+import { TextBox, ImageOverlayData, RedactionData } from "@/types/pdf";
 
 interface UseKeyboardShortcutsProps {
   status: string;
@@ -9,10 +8,10 @@ interface UseKeyboardShortcutsProps {
   selectedRedactionId: string | null;
   imageOverlays: ImageOverlayData[];
   textBoxes: TextBox[];
-  redactions: any[]; // RedactionData
+  redactions: RedactionData[];
   undo: () => void;
   redo: () => void;
-  saveHistory: (boxes: TextBox[], overlays: ImageOverlayData[], redactions: any[]) => void;
+  saveHistory: (boxes: TextBox[], overlays: ImageOverlayData[], redactions: RedactionData[]) => void;
   nextId: number;
   currentPage: number;
   setTextBoxes: React.Dispatch<React.SetStateAction<TextBox[]>>;
@@ -21,7 +20,7 @@ interface UseKeyboardShortcutsProps {
   setSelectedImageId: React.Dispatch<React.SetStateAction<string | null>>;
   setSelectedTextId: React.Dispatch<React.SetStateAction<string | null>>;
   setSelectedRedactionId: React.Dispatch<React.SetStateAction<string | null>>;
-  setRedactions: React.Dispatch<React.SetStateAction<any[]>>;
+  setRedactions: React.Dispatch<React.SetStateAction<RedactionData[]>>;
 }
 
 export function useKeyboardShortcuts({

@@ -21,6 +21,9 @@ export function usePdfRenderer({
 
   useEffect(() => {
     let isMounted = true;
+    let currentLoadingTask: pdfjsLib.PDFDocumentLoadingTask | null = null;
+    let currentPdf: pdfjsLib.PDFDocumentProxy | null = null;
+
     const loadPdf = async () => {
       try {
         setStatus("rendering");
@@ -37,24 +40,35 @@ export function usePdfRenderer({
         setPdfBuffer(editBuffer);
 
         setStatusMsg("PDF 문서를 파싱하는 중...");
-        const loadingTask = pdfjsLib.getDocument({ data: renderBuffer });
-        const pdf = await loadingTask.promise;
-        if (!isMounted) return;
+        currentLoadingTask = pdfjsLib.getDocument({ data: renderBuffer });
+        const pdf = await currentLoadingTask.promise;
+        if (!isMounted) {
+          pdf.destroy().catch(() => {});
+          return;
+        }
         
+        currentPdf = pdf;
         setPdfDoc(pdf);
         setNumPages(pdf.numPages);
         setCurrentPage(1);
       } catch (error: any) {
+        if (!isMounted) return;
         console.error("PDF 파싱 오류:", error);
-        if (isMounted) { 
-          setStatus("error"); 
-          setStatusMsg("오류 발생"); 
-          setErrorDetail(error?.message || String(error)); 
-        }
+        setStatus("error"); 
+        setStatusMsg("오류 발생"); 
+        setErrorDetail(error?.message || String(error)); 
       }
     };
     loadPdf();
-    return () => { isMounted = false; };
+    return () => { 
+      isMounted = false; 
+      if (currentLoadingTask) {
+        currentLoadingTask.destroy().catch(() => {});
+      }
+      if (currentPdf) {
+        currentPdf.destroy().catch(() => {});
+      }
+    };
   }, [file, resetElements, setExtractedTexts, setStatus, setStatusMsg, setErrorDetail]);
 
   const handleZoom = (type: "in" | "out" | "reset") => {

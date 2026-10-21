@@ -83,5 +83,5 @@ export function koreanToRoman(text: string): string {
   }
 
   // 영문 소문자로 통일하고, 파일명에 적합하지 않은 특수문자 제거
-  return result.toLowerCase().replace(/[^a-z0-9_\-\.]/g, "");
+  return result.toLowerCase().replace(/[^a-z0-9_.-]/g, "");
 }

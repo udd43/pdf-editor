@@ -5,7 +5,8 @@ import * as pdfjsLib from 'pdfjs-dist';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import fontkit from '@pdf-lib/fontkit';
 import { getFontBuffers } from '@/lib/fontCache';
-import ImageOverlayComponent, { ImageOverlayData } from './ImageOverlay';
+import ImageOverlayComponent from './ImageOverlay';
+import { TextBox, ImageOverlayData, PageInfo } from '@/types/pdf';
 import SignaturePad from './SignaturePad';
 import TextBoxOverlay from './TextBoxOverlay';
 import { usePdfElements } from '@/hooks/usePdfElements';
@@ -30,26 +31,6 @@ interface SmartCell {
   text: string; // 유저가 칸 안에 쓰는 글
   pageIndex: number;
   isDeleted: boolean;
-}
-
-interface PageInfo {
-  width: number;
-  height: number;
-}
-
-export interface TextBox {
-  id: string;
-  text: string;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  fontSize: number;
-  isEdited: boolean;
-  isNew?: boolean;
-  isTransparent?: boolean;
-  fontFamily?: string;
-  pageIndex: number;
 }
 
 export default function SmartPdfEditor() {
@@ -180,7 +161,7 @@ export default function SmartPdfEditor() {
 
         const pushMergedGroup = (groupItems: any[], pdfY: number) => {
           let mergedText = "";
-          let startX = groupItems[0].pdfX;
+          const startX = groupItems[0].pdfX;
           let totalWidth = 0;
           let maxHeight = 0;
           let maxFontSize = 0;
@@ -230,7 +211,7 @@ export default function SmartPdfEditor() {
       // --- 선분/사각형 추출 ---
       const opList = await page.getOperatorList();
       let currentTransform = [1, 0, 0, 1, 0, 0];
-      let transformStack: number[][] = [];
+      const transformStack: number[][] = [];
       let lastX: number | null = null, lastY: number | null = null;
       let subX: number | null = null, subY: number | null = null;
       const rawSegments: { x1: number; y1: number; x2: number; y2: number }[] = [];
@@ -628,11 +609,6 @@ export default function SmartPdfEditor() {
 
   return (
     <div className="flex flex-col h-full w-full max-w-full">
-      <style>{`
-        @font-face { font-family: "NotoSansKR"; src: url("/NotoSansKR-Regular.otf"); }
-        @font-face { font-family: "NanumMyeongjo"; src: url("/NanumMyeongjo.ttf"); }
-        @font-face { font-family: "Jua"; src: url("/Jua.ttf"); }
-      `}</style>
 
       {/* 툴바 */}
       <div className="flex flex-col gap-1.5 mb-2">

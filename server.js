@@ -86,6 +86,9 @@ app.post('/api/upscale', upload.single('image'), async (req, res) => {
 
   } catch (error) {
     console.error("Upscale error:", error);
+    if (req.file && req.file.path) {
+      fs.unlink(req.file.path, () => {});
+    }
     res.status(500).json({ error: error.message || "업스케일링 처리 중 오류가 발생했습니다." });
   }
 });

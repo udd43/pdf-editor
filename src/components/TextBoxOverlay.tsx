@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { Move, Minus, Plus, Trash2 } from 'lucide-react';
-import { TextBox } from './PdfEditor';
+import { Minus, Plus, Trash2 } from 'lucide-react';
+import { TextBox } from '@/types/pdf';
 
 interface TextBoxOverlayProps {
   box: TextBox;

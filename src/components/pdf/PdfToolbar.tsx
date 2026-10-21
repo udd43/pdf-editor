@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef } from 'react';
 import { Loader2, Scissors, ZoomIn, Pen, Minus, Plus, Download, Image as ImageIcon, Eraser } from 'lucide-react';
 
 interface PdfToolbarProps {
@@ -43,7 +43,6 @@ export default function PdfToolbar({
   const imageInputRef = useRef<HTMLInputElement>(null);
   const bgRemoveInputRef = useRef<HTMLInputElement>(null);
   const upscaleInputRef = useRef<HTMLInputElement>(null);
-  const [isImageMenuOpen, setIsImageMenuOpen] = useState(false);
 
   return (
     <div className="flex flex-col gap-1.5 mb-2">
@@ -55,11 +54,6 @@ export default function PdfToolbar({
       </div>
       <div className="flex flex-wrap items-center gap-1 p-1.5 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 w-full">
     
-        <style>{`
-          @font-face { font-family: "NotoSansKR"; src: url("/NotoSansKR-Regular.otf"); }
-          @font-face { font-family: "NanumMyeongjo"; src: url("/NanumMyeongjo.ttf"); }
-          @font-face { font-family: "Jua"; src: url("/Jua.ttf"); }
-        `}</style>
 
         <button onClick={handleRunOcr} disabled={status !== "done"}
           className="flex items-center gap-1 px-2 py-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-[10px] font-semibold rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-30 transition-all shadow-sm whitespace-nowrap flex-shrink-0"

@@ -1,8 +1,5 @@
 import { PDFDocument, rgb } from "pdf-lib";
-import fontkit from "@pdf-lib/fontkit";
-import { TextBox } from "@/components/PdfEditor";
-import { ImageOverlayData } from "@/components/ImageOverlay";
-import { RedactionData } from "@/hooks/usePdfElements";
+import { TextBox, ImageOverlayData, RedactionData } from "@/types/pdf";
 import * as pdfjsLib from "pdfjs-dist";
 import toast from "react-hot-toast";
 

@@ -1,16 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
-import { TextBox } from '@/components/PdfEditor';
-import { ImageOverlayData } from '@/components/ImageOverlay';
-
-export interface RedactionData {
-  id: string;
-  pageIndex: number;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  color?: string;
-}
+import { TextBox, ImageOverlayData, RedactionData } from '@/types/pdf';
+export type { RedactionData };
 
 interface HistoryState {
   textBoxes: TextBox[];

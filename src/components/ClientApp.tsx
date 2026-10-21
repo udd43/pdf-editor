@@ -4,12 +4,12 @@ import {
   Languages, PenTool, Calculator, Building2, Sparkles, Merge, Archive, Smartphone, Eraser
 } from "lucide-react";
 import PdfUploader from "@/components/PdfUploader";
-import PdfEditor from "@/components/PdfEditor";
-import ChangelogModal from "@/components/ChangelogModal";
 import HomeGrid from "@/components/HomeGrid";
 import toast, { Toaster } from "react-hot-toast";
 import { useAppStore, Tab } from "@/stores/appStore";
 
+const PdfEditor = React.lazy(() => import("@/components/PdfEditor"));
+const ChangelogModal = React.lazy(() => import("@/components/ChangelogModal"));
 const BgRemover = React.lazy(() => import("@/components/BgRemover"));
 const ImageUpscaler = React.lazy(() => import("@/components/ImageUpscaler"));
 const ImageColorizer = React.lazy(() => import("@/components/ImageColorizer"));
@@ -348,7 +348,15 @@ export default function ClientApp() {
               </div>
             )}
             <div className={`pdf-workspace ${referenceFile ? "w-1/2" : "w-full"}`}>
-              <PdfEditor file={file} isCorporateMode={isCorporateMode} />
+              <React.Suspense
+                fallback={
+                  <div className="flex items-center justify-center p-12 text-gray-500">
+                    <Loader2 className="w-8 h-8 animate-spin" />
+                  </div>
+                }
+              >
+                <PdfEditor file={file} isCorporateMode={isCorporateMode} />
+              </React.Suspense>
             </div>
           </div>
         )}
@@ -569,7 +577,11 @@ export default function ClientApp() {
         </div>
       )}
 
-      <ChangelogModal isOpen={showChangelog} onClose={() => setShowChangelog(false)} />
+      {showChangelog && (
+        <React.Suspense fallback={null}>
+          <ChangelogModal isOpen={showChangelog} onClose={() => setShowChangelog(false)} />
+        </React.Suspense>
+      )}
       <Toaster
         position="bottom-center"
         toastOptions={{
