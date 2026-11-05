@@ -333,18 +333,19 @@ export default function HeicConverter() {
   return (
     <div className="w-full max-w-4xl mx-auto flex flex-col items-center">
       {/* ── 헤더 ── */}
-      <div className="text-center mb-8">
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-sky-50 dark:bg-sky-900/30 text-sky-600 dark:text-sky-400 text-xs font-bold mb-3 border border-sky-200 dark:border-sky-800">
-          <Smartphone className="w-3.5 h-3.5" />
-          <span>아이폰 고효율 사진 (HEIC/HEIF) 전용 변환기</span>
+      <div className="w-full border-b border-[#DCD6C8] dark:border-[#2C2B28] pb-5 mb-6 flex flex-col sm:flex-row sm:items-end justify-between gap-3">
+        <div>
+          <span className="font-mono text-[10px] uppercase tracking-widest text-[#C83E2B] dark:text-[#E05A47] font-bold block mb-1">
+            STATION 06 &middot; APPLE HEIF / HEIC DECODER
+          </span>
+          <h1 className="font-editorial text-2xl sm:text-3xl font-bold text-[#161514] dark:text-[#F2EFE9] tracking-tight">
+            HEIC → PNG 무손실 변환
+          </h1>
         </div>
-        <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight mb-2">
-          HEIC → PNG 무손실 변환
-        </h1>
-        <p className="text-sm text-gray-600 dark:text-gray-400 max-w-lg mx-auto">
-          아이폰으로 촬영된 <span className="font-semibold text-gray-800 dark:text-gray-200">.heic</span> 사진을
-          윈도우, 안드로이드, 웹에서 완벽하게 호환되는 고화질 <span className="font-semibold text-gray-800 dark:text-gray-200">.png</span>로
-          서버 전송 없이 100% 브라우저에서 안전하게 변환합니다.
+        <p className="text-xs text-[#57534E] dark:text-[#A6A096] max-w-md sm:text-right">
+          아이폰으로 촬영된 <span className="font-mono font-semibold text-[#161514] dark:text-[#F2EFE9]">.heic</span> 사진을
+          표준 <span className="font-mono font-semibold text-[#161514] dark:text-[#F2EFE9]">.png</span> 또는 단일 PDF 문서로
+          브라우저에서 즉시 변환합니다.
         </p>
       </div>
 
@@ -363,10 +364,10 @@ export default function HeicConverter() {
           }
         }}
         onClick={() => fileInputRef.current?.click()}
-        className={`w-full p-8 sm:p-12 border-2 border-dashed rounded-3xl cursor-pointer transition-all duration-300 flex flex-col items-center justify-center text-center bg-white dark:bg-gray-800/80 shadow-sm ${
+        className={`w-full p-10 sm:p-14 border border-dashed cursor-pointer transition-colors flex flex-col items-center justify-center text-center bg-[#FDFBF7] dark:bg-[#1A1918] group ${
           isDragOver
-            ? "border-sky-500 bg-sky-50/50 dark:bg-sky-900/20 scale-[1.01]"
-            : "border-gray-200 dark:border-gray-700 hover:border-sky-400 dark:hover:border-sky-500 hover:bg-gray-50/50 dark:hover:bg-gray-800"
+            ? "border-[#C83E2B] bg-[#F3EFE4] dark:bg-[#22211F]"
+            : "border-[#BFB7A6] dark:border-[#3A3834] hover:border-[#161514] dark:hover:border-[#F2EFE9] hover:bg-[#F3EFE4] dark:hover:bg-[#22211F]"
         }`}
       >
         <input
@@ -383,18 +384,18 @@ export default function HeicConverter() {
           }}
         />
 
-        <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-sky-500 to-blue-600 text-white flex items-center justify-center shadow-lg shadow-sky-500/25 mb-4 group-hover:scale-105 transition-transform">
-          <Smartphone className="w-8 h-8" />
+        <div className="w-14 h-14 border border-[#DCD6C8] dark:border-[#2C2B28] bg-[#F6F3EA] dark:bg-[#121211] text-[#161514] dark:text-[#F2EFE9] group-hover:text-[#C83E2B] flex items-center justify-center mb-4 transition-colors">
+          <Smartphone className="w-6 h-6" />
         </div>
 
-        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
+        <h3 className="text-lg font-bold text-[#161514] dark:text-[#F2EFE9] mb-1">
           HEIC 파일을 끌어다 놓거나 클릭하여 선택
         </h3>
-        <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
-          여러 파일을 한 번에 선택하여 일괄 변환할 수 있습니다 (.heic, .heif 지원)
+        <p className="font-mono text-xs text-[#8A847C] dark:text-[#6E6A63] mb-6">
+          BATCH PROCESSING SUPPORTED (.HEIC / .HEIF)
         </p>
 
-        <span className="px-4 py-2 rounded-xl bg-sky-500 hover:bg-sky-600 text-white text-xs font-bold transition-all shadow-sm">
+        <span className="px-6 py-2.5 bg-[#161514] group-hover:bg-[#C83E2B] dark:bg-[#F2EFE9] dark:group-hover:bg-[#E05A47] text-[#F9F6ED] dark:text-[#161514] dark:group-hover:text-[#F9F6ED] text-xs font-bold transition-colors">
           사진 파일 선택하기
         </span>
       </div>

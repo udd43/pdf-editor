@@ -73,34 +73,33 @@ export default function PdfUploader({ onFileSelect }: PdfUploaderProps) {
   );
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center w-full max-w-4xl mx-auto px-4 py-16 relative z-10">
-      {/* 모던 클린 드롭존 카드 */}
+    <div className="flex-1 flex flex-col items-center justify-center w-full max-w-4xl mx-auto px-4 py-12 relative z-10">
       <div
-        className={`w-full max-w-4xl min-h-[400px] sm:min-h-[500px] p-12 sm:p-20 rounded-3xl transition-all duration-300 flex flex-col items-center justify-center cursor-pointer border relative overflow-hidden group bg-white dark:bg-gray-800 shadow-sm
-          ${
-            isDragging
-              ? "border-blue-500 dark:border-blue-400 bg-blue-50/50 dark:bg-blue-900/20 scale-[1.02] shadow-md"
-              : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-md"
-          }
-        `}
+        className={`w-full max-w-4xl min-h-[380px] p-12 sm:p-16 transition-colors flex flex-col items-center justify-center cursor-pointer border border-dashed relative overflow-hidden group bg-[#FDFBF7] dark:bg-[#1A1918] ${
+          isDragging
+            ? "border-[#C83E2B] bg-[#F3EFE4] dark:bg-[#22211F]"
+            : "border-[#BFB7A6] dark:border-[#3A3834] hover:border-[#161514] dark:hover:border-[#F2EFE9] hover:bg-[#F3EFE4] dark:hover:bg-[#22211F]"
+        }`}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         onClick={() => document.getElementById("file-upload")?.click()}
       >
-        <div className="w-24 h-24 mb-8 rounded-3xl bg-gray-50 dark:bg-gray-700 border border-gray-100 dark:border-gray-600 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+        <div className="w-14 h-14 mb-6 border border-[#DCD6C8] dark:border-[#2C2B28] bg-[#F6F3EA] dark:bg-[#121211] flex items-center justify-center">
           <UploadCloud
-            className={`w-12 h-12 transition-colors duration-300 ${
-              isDragging ? "text-blue-500 dark:text-blue-400" : "text-gray-400 dark:text-gray-500 group-hover:text-gray-600 dark:group-hover:text-gray-300"
+            className={`w-6 h-6 transition-colors ${
+              isDragging
+                ? "text-[#C83E2B]"
+                : "text-[#161514] dark:text-[#F2EFE9] group-hover:text-[#C83E2B]"
             }`}
           />
         </div>
 
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-3 text-center transition-colors">
+        <h3 className="font-editorial text-2xl font-bold text-[#161514] dark:text-[#F2EFE9] mb-2 text-center">
           PDF 또는 이미지 드래그 앤 드롭
         </h3>
-        <p className="text-gray-500 dark:text-gray-400 text-sm sm:text-base text-center mb-10">
-          Private by default. 편집 및 저장은 브라우저 내에서 안전하게 처리됩니다.
+        <p className="font-mono text-xs text-[#8A847C] dark:text-[#6E6A63] text-center mb-8">
+          LOCAL EXECUTION &middot; ZERO SERVER UPLOAD
         </p>
 
         <input
@@ -110,9 +109,11 @@ export default function PdfUploader({ onFileSelect }: PdfUploaderProps) {
           className="hidden"
           onChange={handleFileChange}
         />
-        
-        {/* 모던 SaaS 버튼 스타일 */}
-        <button className="px-8 py-3.5 bg-blue-600 text-white rounded-full font-semibold text-base shadow-sm hover:bg-blue-700 transition-all duration-300 hover:scale-[1.02] active:scale-95">
+
+        <button
+          type="button"
+          className="px-6 py-2.5 bg-[#161514] group-hover:bg-[#C83E2B] dark:bg-[#F2EFE9] dark:group-hover:bg-[#E05A47] text-[#F9F6ED] dark:text-[#161514] dark:group-hover:text-[#F9F6ED] font-bold text-xs transition-colors"
+        >
           파일 불러오기
         </button>
       </div>

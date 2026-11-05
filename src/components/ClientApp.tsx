@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import {
   FileText, Scissors, Palette, Moon, Sun, Menu, X,
-  Languages, PenTool, Calculator, Building2, Sparkles, Merge, Archive, Smartphone, Eraser
+  Languages, PenTool, Calculator, Building2, Sparkles, Merge, Archive, Smartphone, Eraser, Wand2
 } from "lucide-react";
-import PdfUploader from "@/components/PdfUploader";
 import HomeGrid from "@/components/HomeGrid";
 import toast, { Toaster } from "react-hot-toast";
 import { useAppStore, Tab } from "@/stores/appStore";
@@ -30,10 +29,10 @@ export default function ClientApp() {
   // Zustand store
   const {
     activeTab, setActiveTab,
-    file, setFile,
+    file,
     referenceFile, setReferenceFile,
-    isCorporateMode, setIsCorporateMode,
-    isDarkMode, setIsDarkMode, toggleDarkMode,
+    isCorporateMode,
+    isDarkMode, setIsDarkMode,
     isMobileMenuOpen, setIsMobileMenuOpen,
     isSecretMode, setIsSecretMode,
     showChangelog, setShowChangelog,
@@ -140,7 +139,7 @@ export default function ClientApp() {
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
     };
-  }, [isSecretMode]);
+  }, [isSecretMode, setIsSecretMode]);
 
   const loadCorporateDoc = async (filename: string, displayName: string) => {
     const toastId = toast.loading(`${displayName} 불러오는 중...`);
@@ -164,7 +163,6 @@ export default function ClientApp() {
 
   const [pdfSubTab, setPdfSubTab] = useState<"img2pdf" | "mergesplit" | "compress">("img2pdf");
 
-  // ── Dark mode toggle (Light <-> Dark) ──
   const cycleDarkMode = () => {
     setIsDarkMode(!isDarkMode);
   };
@@ -177,26 +175,26 @@ export default function ClientApp() {
     ? "라이트 모드로 전환"
     : "다크 모드로 전환";
 
-  const tabs: { id: Tab; label: string; icon: React.ReactNode; color: string; activeBg: string }[] = [
-    { id: "pdf", label: "PDF 편집", icon: <FileText className="w-3 h-3" />, color: "text-gray-600 dark:text-gray-300", activeBg: "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm" },
-    { id: "eraser", label: "AI 지우개", icon: <Eraser className="w-3 h-3 text-rose-500" />, color: "text-rose-600 dark:text-rose-400", activeBg: "bg-rose-50 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300 shadow-sm font-bold border border-rose-200 dark:border-rose-800" },
-    { id: "bgremove", label: "누끼따기", icon: <Scissors className="w-3 h-3" />, color: "text-gray-600 dark:text-gray-300", activeBg: "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm" },
-    { id: "upscale", label: "업스케일", icon: <Sparkles className="w-3 h-3" />, color: "text-gray-600 dark:text-gray-300", activeBg: "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm" },
-    { id: "colorize", label: "색상 변경", icon: <Palette className="w-3 h-3" />, color: "text-gray-600 dark:text-gray-300", activeBg: "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm" },
-    { id: "romanize", label: "영문 변환", icon: <Languages className="w-3 h-3" />, color: "text-gray-600 dark:text-gray-300", activeBg: "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm" },
-    { id: "signature", label: "서명 그리기", icon: <PenTool className="w-3 h-3" />, color: "text-gray-600 dark:text-gray-300", activeBg: "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm" },
-    { id: "calculator", label: "계산기", icon: <Calculator className="w-3 h-3" />, color: "text-gray-600 dark:text-gray-300", activeBg: "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm" },
-    { id: "heic", label: "HEIC 변환", icon: <Smartphone className="w-3 h-3 text-sky-500" />, color: "text-sky-600 dark:text-sky-400", activeBg: "bg-sky-50 dark:bg-sky-900/30 text-sky-700 dark:text-sky-300 shadow-sm font-semibold border border-sky-200 dark:border-sky-800" },
-    { id: "smartpdf", label: "스마트 편집", icon: <Sparkles className="w-3 h-3 text-amber-500" />, color: "text-amber-600 dark:text-amber-400", activeBg: "bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 shadow-sm font-bold border border-amber-200 dark:border-amber-800" },
-    { id: "pdftools", label: "PDF 도구", icon: <Merge className="w-3 h-3" />, color: "text-gray-600 dark:text-gray-300", activeBg: "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm" },
+  const tabs: { id: Tab; index: string; label: string; icon: React.ReactNode }[] = [
+    { id: "pdf", index: "01", label: "PDF 편집", icon: <FileText className="w-3.5 h-3.5" /> },
+    { id: "smartpdf", index: "02", label: "스마트 편집", icon: <Wand2 className="w-3.5 h-3.5" /> },
+    { id: "eraser", index: "03", label: "AI 지우개", icon: <Eraser className="w-3.5 h-3.5" /> },
+    { id: "bgremove", index: "04", label: "누끼따기", icon: <Scissors className="w-3.5 h-3.5" /> },
+    { id: "upscale", index: "05", label: "업스케일", icon: <Sparkles className="w-3.5 h-3.5" /> },
+    { id: "heic", index: "06", label: "HEIC 변환", icon: <Smartphone className="w-3.5 h-3.5" /> },
+    { id: "colorize", index: "07", label: "색상 교정", icon: <Palette className="w-3.5 h-3.5" /> },
+    { id: "pdftools", index: "08", label: "PDF 제본·압축", icon: <Merge className="w-3.5 h-3.5" /> },
+    { id: "signature", index: "09", label: "서명 제작", icon: <PenTool className="w-3.5 h-3.5" /> },
+    { id: "romanize", index: "10", label: "영문 표기", icon: <Languages className="w-3.5 h-3.5" /> },
+    { id: "calculator", index: "11", label: "계산기", icon: <Calculator className="w-3.5 h-3.5" /> },
   ];
+
   if (isSecretMode) {
     tabs.push({
       id: "corporate",
+      index: "12",
       label: "법인 서류",
-      icon: <Building2 className="w-3 h-3" />,
-      color: "text-red-600 dark:text-red-300",
-      activeBg: "bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 font-bold",
+      icon: <Building2 className="w-3.5 h-3.5" />,
     });
   }
 
@@ -204,7 +202,7 @@ export default function ClientApp() {
 
   return (
     <div
-      className={`min-h-screen bg-[#F9F6ED] dark:bg-gray-900 text-gray-900 dark:text-gray-100 flex flex-col relative font-sans antialiased transition-[colors,filter] duration-300 ${
+      className={`min-h-screen bg-[#F6F3EA] dark:bg-[#121211] text-[#161514] dark:text-[#F2EFE9] flex flex-col relative font-sans antialiased transition-[colors,filter] duration-200 ${
         isSecretMode ? "secret-mode invert hue-rotate-180" : ""
       }`}
     >
@@ -216,49 +214,65 @@ export default function ClientApp() {
         />
       )}
 
-      {/* ── Header ── */}
-      <header className="bg-[#F9F6ED] dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-40 transition-colors duration-300">
-        <div className="w-full max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 h-14 sm:h-16 flex items-center justify-between gap-2">
-          <div className="flex items-center justify-start shrink-0">
-            <button onClick={goHome} className="shrink-0 whitespace-nowrap outline-none flex items-center gap-1.5 sm:gap-2">
-              <span
-                className="text-lg sm:text-xl font-bold tracking-tight text-gray-900 dark:text-white"
-                style={{ fontFamily: "Inter, system-ui, sans-serif" }}
-              >
-                PDF <span className="font-normal text-gray-500 dark:text-gray-400">Editor</span>
+      {/* ── Architectural Workbench Header ── */}
+      <header className="bg-[#F6F3EA]/95 dark:bg-[#121211]/95 backdrop-blur-xs border-b border-[#DCD6C8] dark:border-[#2C2B28] sticky top-0 z-40 transition-colors">
+        <div className="w-full max-w-7xl mx-auto px-3 sm:px-6 h-14 flex items-center justify-between gap-3">
+          {/* Left: Editorial Brand Mark */}
+          <div className="flex items-center shrink-0">
+            <button
+              onClick={goHome}
+              className="group shrink-0 whitespace-nowrap outline-none flex items-center gap-2.5 text-left"
+            >
+              <span className="w-6 h-6 bg-[#161514] dark:bg-[#F2EFE9] text-[#F9F6ED] dark:text-[#161514] font-mono text-[11px] font-bold flex items-center justify-center tracking-tighter group-hover:bg-[#C83E2B] dark:group-hover:bg-[#E05A47] dark:group-hover:text-[#F9F6ED] transition-colors">
+                P
               </span>
+              <div className="flex items-baseline gap-1.5">
+                <span className="font-editorial text-lg font-bold tracking-tight text-[#161514] dark:text-[#F2EFE9]">
+                  PDF Studio
+                </span>
+                <span className="hidden sm:inline-block font-mono text-[10px] uppercase tracking-widest text-[#8A847C] dark:text-[#6E6A63]">
+                  / WORKBENCH
+                </span>
+              </div>
             </button>
           </div>
 
-          <nav className="hidden lg:flex shrink min-w-0 items-center bg-gray-200/50 dark:bg-gray-800/50 rounded-full p-0.5 border border-gray-200 dark:border-gray-700 gap-[2px] transition-colors duration-300 overflow-x-auto no-scrollbar">
+          {/* Center: Precision Tool Strip */}
+          <nav className="hidden lg:flex shrink min-w-0 items-center bg-[#EFECE2] dark:bg-[#1A1918] border border-[#DCD6C8] dark:border-[#2C2B28] p-0.5 gap-0.5 overflow-x-auto no-scrollbar">
             {tabs.map((tab) => {
-              const isActive = activeTab === tab.id || (tab.id === "pdftools" && activeTab === "pdftools");
+              const isActive = !isHome && activeTab === tab.id;
+              const isRestricted = tab.id === "corporate";
               return (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
                   title={tab.label}
-                  className={`flex items-center gap-1 px-1.5 py-1 text-[9.5px] xl:text-[10px] whitespace-nowrap font-semibold rounded-full transition-all duration-200 ${
+                  className={`flex items-center gap-1.5 px-2.5 py-1 text-[11px] whitespace-nowrap font-medium transition-colors cursor-pointer ${
                     isActive
-                      ? tab.activeBg
-                      : "text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200/50 dark:hover:bg-gray-700/50"
+                      ? isRestricted
+                        ? "bg-[#C83E2B] text-[#FDFBF7] font-bold"
+                        : "bg-[#161514] dark:bg-[#F2EFE9] text-[#F9F6ED] dark:text-[#161514] font-bold"
+                      : isRestricted
+                      ? "text-[#C83E2B] dark:text-[#E05A47] hover:bg-[#C83E2B]/10"
+                      : "text-[#57534E] dark:text-[#A6A096] hover:text-[#161514] dark:hover:text-[#F2EFE9] hover:bg-[#FDFBF7]/60 dark:hover:bg-[#252421]"
                   }`}
                 >
-                  <span className="hidden xl:inline-flex">{tab.icon}</span>
+                  <span className="font-mono text-[9px] opacity-60 hidden xl:inline">{tab.index}</span>
                   <span>{tab.label}</span>
                 </button>
               );
             })}
           </nav>
 
+          {/* Right: Contextual Controls */}
           <div className="flex items-center justify-end gap-1.5 shrink-0">
             {activeTab === "pdf" && file && (
               <>
                 <button
                   onClick={() => document.getElementById("ref-upload")?.click()}
-                  className="text-[11px] text-blue-600 bg-blue-50 dark:bg-blue-900/30 dark:text-blue-400 px-2.5 py-1 rounded-full border border-blue-100 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-800/50 transition-all font-semibold whitespace-nowrap shrink-0"
+                  className="text-[11px] text-[#161514] dark:text-[#F2EFE9] bg-[#FDFBF7] dark:bg-[#1A1918] px-3 py-1 border border-[#C8C1B0] dark:border-[#34322E] hover:border-[#161514] dark:hover:border-[#F2EFE9] transition-colors font-semibold whitespace-nowrap shrink-0 cursor-pointer"
                 >
-                  대조 원본 추가
+                  + 대조 원본
                 </button>
                 <input
                   id="ref-upload"
@@ -269,30 +283,30 @@ export default function ClientApp() {
                 />
                 <button
                   onClick={goHome}
-                  className="text-[11px] text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white px-2.5 py-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-all font-medium whitespace-nowrap shrink-0"
+                  className="text-[11px] text-[#57534E] dark:text-[#A6A096] hover:text-[#161514] dark:hover:text-[#F2EFE9] px-2.5 py-1 border border-transparent hover:border-[#DCD6C8] dark:hover:border-[#2C2B28] transition-colors font-medium whitespace-nowrap shrink-0 cursor-pointer"
                 >
-                  처음으로
+                  작업대 홈
                 </button>
               </>
             )}
             {!isHome && activeTab !== "pdf" && (
               <button
                 onClick={goHome}
-                className="text-[11px] text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white px-2.5 py-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-all font-medium whitespace-nowrap shrink-0"
+                className="text-[11px] font-mono uppercase tracking-wider text-[#57534E] dark:text-[#A6A096] hover:text-[#161514] dark:hover:text-[#F2EFE9] px-2.5 py-1 border border-[#DCD6C8] dark:border-[#2C2B28] bg-[#FDFBF7] dark:bg-[#1A1918] transition-colors font-semibold whitespace-nowrap shrink-0 cursor-pointer"
               >
-                홈으로
+                ← INDEX
               </button>
             )}
             <button
               onClick={cycleDarkMode}
-              className="p-1.5 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 transition-colors shrink-0"
+              className="p-1.5 border border-[#DCD6C8] dark:border-[#2C2B28] bg-[#FDFBF7] dark:bg-[#1A1918] hover:border-[#161514] dark:hover:border-[#F2EFE9] text-[#57534E] dark:text-[#A6A096] hover:text-[#161514] dark:hover:text-[#F2EFE9] transition-colors shrink-0 cursor-pointer"
               title={darkModeTitle}
             >
               {darkModeIcon}
             </button>
             <button
               onClick={() => setIsMobileMenuOpen(true)}
-              className="lg:hidden p-1.5 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 transition-colors shrink-0"
+              className="lg:hidden p-1.5 border border-[#DCD6C8] dark:border-[#2C2B28] bg-[#FDFBF7] dark:bg-[#1A1918] text-[#161514] dark:text-[#F2EFE9] transition-colors shrink-0"
             >
               <Menu className="w-5 h-5" />
             </button>
@@ -300,7 +314,7 @@ export default function ClientApp() {
         </div>
       </header>
 
-      {/* ── Main ── */}
+      {/* ── Main Workspace ── */}
       <main className="flex-1 flex flex-col items-center justify-start p-4 sm:p-8 z-10 w-full max-w-6xl mx-auto">
         {/* AutoSave recovery banner */}
         {savedSession && !file && (
@@ -311,7 +325,7 @@ export default function ClientApp() {
           />
         )}
 
-        {/* Home bento grid */}
+        {/* Home Architectural Workbench */}
         {isHome && (
           <HomeGrid
             onTabSelect={(tab) => {
@@ -331,15 +345,15 @@ export default function ClientApp() {
         {activeTab === "pdf" && file && (
           <div className={`w-full flex gap-6 ${referenceFile ? "flex-row" : "justify-center"}`}>
             {referenceFile && (
-              <div className="reference-pdf w-1/2 flex flex-col border border-gray-200 dark:border-gray-700 shadow-sm rounded-2xl overflow-hidden bg-white dark:bg-gray-800 h-[80vh] sticky top-24 transition-colors">
-                <div className="bg-[#F9F6ED] dark:bg-gray-800 px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center shrink-0">
-                  <span className="text-sm font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-1.5">
-                    <span className="inline-block w-2 h-2 rounded-full bg-blue-500" />
-                    대조 원본 PDF
+              <div className="reference-pdf w-1/2 flex flex-col border border-[#C8C1B0] dark:border-[#34322E] overflow-hidden bg-[#FDFBF7] dark:bg-[#1A1918] h-[80vh] sticky top-20 transition-colors">
+                <div className="bg-[#EFECE2] dark:bg-[#22211F] px-4 py-2.5 border-b border-[#DCD6C8] dark:border-[#2C2B28] flex justify-between items-center shrink-0">
+                  <span className="text-xs font-mono uppercase tracking-wider font-semibold text-[#161514] dark:text-[#F2EFE9] flex items-center gap-2">
+                    <span className="inline-block w-2 h-2 bg-[#C83E2B]" />
+                    REFERENCE DOCUMENT · 대조 원본
                   </span>
                   <button
                     onClick={() => setReferenceFile(null)}
-                    className="text-xs px-3 py-1 bg-white dark:bg-gray-700 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg text-red-500 border border-red-100 dark:border-red-900/50 transition-all"
+                    className="text-xs px-2.5 py-1 bg-[#FDFBF7] dark:bg-[#1A1918] hover:bg-[#C83E2B] hover:text-white text-[#C83E2B] border border-[#DCD6C8] dark:border-[#2C2B28] transition-colors font-semibold cursor-pointer"
                   >
                     닫기
                   </button>
@@ -350,8 +364,8 @@ export default function ClientApp() {
             <div className={`pdf-workspace ${referenceFile ? "w-1/2" : "w-full"}`}>
               <React.Suspense
                 fallback={
-                  <div className="flex items-center justify-center p-12 text-gray-500">
-                    <Loader2 className="w-8 h-8 animate-spin" />
+                  <div className="flex items-center justify-center p-12 text-[#57534E]">
+                    <Loader2 className="w-6 h-6 animate-spin" />
                   </div>
                 }
               >
@@ -363,8 +377,8 @@ export default function ClientApp() {
 
         <React.Suspense
           fallback={
-            <div className="flex items-center justify-center p-12 text-gray-500">
-              <Loader2 className="w-8 h-8 animate-spin" />
+            <div className="flex items-center justify-center p-12 text-[#57534E]">
+              <Loader2 className="w-6 h-6 animate-spin" />
             </div>
           }
         >
@@ -381,36 +395,36 @@ export default function ClientApp() {
           {activeTab === "pdftools" && (
             <div className="w-full max-w-4xl mx-auto flex flex-col items-center">
               {/* 서브 탭 헤더 */}
-              <div className="flex bg-gray-200/70 dark:bg-gray-800 p-1.5 rounded-2xl mb-8 gap-2 border border-gray-200 dark:border-gray-700 shadow-sm">
+              <div className="inline-flex bg-[#EFECE2] dark:bg-[#1A1918] p-1 mb-8 border border-[#DCD6C8] dark:border-[#2C2B28] gap-1">
                 <button
                   onClick={() => setPdfSubTab("img2pdf")}
-                  className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                  className={`flex items-center gap-2 px-5 py-2 text-xs font-bold transition-colors cursor-pointer ${
                     pdfSubTab === "img2pdf"
-                      ? "bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm scale-[1.02]"
-                      : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                      ? "bg-[#161514] dark:bg-[#F2EFE9] text-[#F9F6ED] dark:text-[#161514]"
+                      : "text-[#57534E] dark:text-[#A6A096] hover:text-[#161514] dark:hover:text-[#F2EFE9]"
                   }`}
                 >
-                  <FileText className="w-4 h-4" /> 이미지 → PDF
+                  <FileText className="w-3.5 h-3.5" /> 이미지 → PDF
                 </button>
                 <button
                   onClick={() => setPdfSubTab("mergesplit")}
-                  className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                  className={`flex items-center gap-2 px-5 py-2 text-xs font-bold transition-colors cursor-pointer ${
                     pdfSubTab === "mergesplit"
-                      ? "bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm scale-[1.02]"
-                      : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                      ? "bg-[#161514] dark:bg-[#F2EFE9] text-[#F9F6ED] dark:text-[#161514]"
+                      : "text-[#57534E] dark:text-[#A6A096] hover:text-[#161514] dark:hover:text-[#F2EFE9]"
                   }`}
                 >
-                  <Merge className="w-4 h-4" /> 합치기 / 분할
+                  <Merge className="w-3.5 h-3.5" /> 합치기 / 분할
                 </button>
                 <button
                   onClick={() => setPdfSubTab("compress")}
-                  className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                  className={`flex items-center gap-2 px-5 py-2 text-xs font-bold transition-colors cursor-pointer ${
                     pdfSubTab === "compress"
-                      ? "bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm scale-[1.02]"
-                      : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                      ? "bg-[#161514] dark:bg-[#F2EFE9] text-[#F9F6ED] dark:text-[#161514]"
+                      : "text-[#57534E] dark:text-[#A6A096] hover:text-[#161514] dark:hover:text-[#F2EFE9]"
                   }`}
                 >
-                  <Archive className="w-4 h-4" /> PDF 압축
+                  <Archive className="w-3.5 h-3.5" /> PDF 압축
                 </button>
               </div>
 
@@ -425,36 +439,47 @@ export default function ClientApp() {
         </React.Suspense>
 
         {activeTab === "corporate" && (
-          <div className="w-full max-w-4xl mx-auto py-8">
-            <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-gray-200 dark:border-gray-700 p-8">
-              <div className="flex items-center gap-4 mb-8 pb-6 border-b border-gray-100 dark:border-gray-700">
-                <div className="w-14 h-14 bg-blue-50 dark:bg-blue-900/30 text-blue-500 dark:text-blue-400 rounded-2xl flex items-center justify-center border border-blue-100 dark:border-blue-800/50">
-                  <Building2 className="w-7 h-7" />
-                </div>
+          <div className="w-full max-w-4xl mx-auto py-6">
+            <div className="bg-[#FDFBF7] dark:bg-[#1A1918] border border-[#C8C1B0] dark:border-[#34322E] p-8">
+              <div className="flex items-start justify-between gap-4 mb-8 pb-6 border-b border-[#DCD6C8] dark:border-[#2C2B28]">
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">
-                    법인 서류 양식
+                  <span className="font-mono text-[10px] uppercase tracking-widest text-[#C83E2B] dark:text-[#E05A47] font-bold block mb-1">
+                    RESTRICTED ARCHIVE · CORPORATE TEMPLATES
+                  </span>
+                  <h2 className="font-editorial text-2xl font-bold text-[#161514] dark:text-[#F2EFE9] tracking-tight">
+                    법인 기본 서류 양식함
                   </h2>
-                  <p className="text-gray-500 dark:text-gray-400 mt-1">
-                    프로젝트에 등록된 기본 서류 양식을 선택하여 바로 편집할 수 있습니다.
+                  <p className="text-xs text-[#57534E] dark:text-[#A6A096] mt-1">
+                    프로젝트에 등록된 기본 서류 양식을 선택하여 편집 스튜디오로 즉시 호출합니다.
                   </p>
                 </div>
+                <div className="w-11 h-11 border border-[#DCD6C8] dark:border-[#2C2B28] bg-[#F6F3EA] dark:bg-[#121211] text-[#C83E2B] flex items-center justify-center shrink-0">
+                  <Building2 className="w-5 h-5" />
+                </div>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 border border-[#DCD6C8] dark:border-[#2C2B28] bg-[#DCD6C8] dark:bg-[#2C2B28] gap-px">
                 {[
-                  { name: "개인 공동대표 서류", file: "doc_personal_rep.pdf", icon: <FileText className="w-6 h-6" /> },
-                  { name: "법인 소유 지배자 확인서", file: "doc_corp_owner.pdf", icon: <FileText className="w-6 h-6" /> },
-                  { name: "주주명부", file: "doc_shareholder.pdf", icon: <FileText className="w-6 h-6" /> },
+                  { code: "DOC-01", name: "개인 공동대표 서류", file: "doc_personal_rep.pdf" },
+                  { code: "DOC-02", name: "법인 소유 지배자 확인서", file: "doc_corp_owner.pdf" },
+                  { code: "DOC-03", name: "주주명부", file: "doc_shareholder.pdf" },
                 ].map((doc, idx) => (
                   <button
                     key={idx}
                     onClick={() => loadCorporateDoc(doc.file, doc.name)}
-                    className="flex flex-col items-center justify-center p-6 bg-[#F9F6ED] dark:bg-gray-900 hover:bg-blue-50 dark:hover:bg-blue-900/20 border-2 border-dashed border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700 rounded-2xl transition-all group text-center"
+                    className="flex flex-col items-start justify-between p-6 bg-[#FDFBF7] dark:bg-[#1A1918] hover:bg-[#F3EFE4] dark:hover:bg-[#22211F] transition-colors group text-left min-h-[140px] cursor-pointer"
                   >
-                    <div className="p-3 bg-white dark:bg-gray-800 text-blue-500 rounded-xl shadow-sm mb-4 group-hover:scale-110 transition-transform">
-                      {doc.icon}
+                    <div className="w-full flex items-center justify-between text-[11px] font-mono text-[#8A847C]">
+                      <span>{doc.code}</span>
+                      <FileText className="w-4 h-4 text-[#57534E] group-hover:text-[#C83E2B] transition-colors" />
                     </div>
-                    <span className="font-bold text-gray-800 dark:text-gray-200">{doc.name}</span>
+                    <div className="mt-6">
+                      <span className="font-bold text-sm text-[#161514] dark:text-[#F2EFE9] group-hover:text-[#C83E2B] transition-colors block">
+                        {doc.name}
+                      </span>
+                      <span className="font-mono text-[10px] text-[#8A847C] mt-1 block">
+                        {doc.file}
+                      </span>
+                    </div>
                   </button>
                 ))}
               </div>
@@ -463,50 +488,56 @@ export default function ClientApp() {
         )}
       </main>
 
-      {/* ── Footer ── */}
-      <footer className="bg-[#F9F6ED] dark:bg-gray-900 py-8 border-t border-gray-200 dark:border-gray-800 z-10 mt-12 transition-colors">
-        <div className="max-w-6xl mx-auto px-6 flex items-center justify-between text-gray-400 dark:text-gray-500 text-xs">
-          <div />
-          <span className="font-medium">&copy; 2026 PDF Editor &middot; Private by default.</span>
+      {/* ── Architectural Footer ── */}
+      <footer className="bg-[#F6F3EA] dark:bg-[#121211] py-6 border-t border-[#DCD6C8] dark:border-[#2C2B28] z-10 mt-12 transition-colors">
+        <div className="max-w-6xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-[#8A847C] dark:text-[#6E6A63] text-[11px] font-mono">
+          <span>PDF STUDIO WORKBENCH · CLIENT-SIDE DOCUMENT ENGINE</span>
+          <span>&copy; 2026 PDF Editor &middot; ZERO SERVER RETENTION</span>
         </div>
       </footer>
 
       {/* ── Mobile bottom navigation ── */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] safe-area-bottom">
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#FDFBF7] dark:bg-[#1A1918] border-t border-[#DCD6C8] dark:border-[#2C2B28] safe-area-bottom">
         <div className="flex items-center justify-around px-2 py-1.5">
           {[
-            { id: "home" as Tab, label: "홈", icon: <FileText className="w-5 h-5" /> },
-            { id: "smartpdf" as Tab, label: "스마트", icon: <Sparkles className="w-5 h-5" /> },
-            { id: "mergesplit" as Tab, label: "합치기", icon: <Merge className="w-5 h-5" />, subTab: "mergesplit" as const },
-            { id: "compress" as Tab, label: "압축", icon: <Archive className="w-5 h-5" />, subTab: "compress" as const },
-            { id: "bgremove" as Tab, label: "누끼", icon: <Scissors className="w-5 h-5" /> },
-          ].map((item) => (
-            <button
-              key={item.id}
-              onClick={() => {
-                if (item.id === "home") goHome();
-                else if ('subTab' in item && item.subTab) {
-                  setActiveTab("pdftools" as Tab);
-                  setPdfSubTab(item.subTab);
-                } else setActiveTab(item.id);
-                setIsMobileMenuOpen(false);
-              }}
-              className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all ${
-                (item.id === "home" && isHome) || activeTab === item.id || ('subTab' in item && activeTab === "pdftools" && pdfSubTab === item.subTab)
-                  ? "text-blue-600 dark:text-blue-400"
-                  : "text-gray-400 dark:text-gray-500"
-              }`}
-            >
-              {item.icon}
-              <span className="text-[10px] font-semibold">{item.label}</span>
-            </button>
-          ))}
+            { id: "home" as Tab, label: "작업대", icon: <FileText className="w-4 h-4" /> },
+            { id: "smartpdf" as Tab, label: "스마트", icon: <Wand2 className="w-4 h-4" /> },
+            { id: "mergesplit" as Tab, label: "합치기", icon: <Merge className="w-4 h-4" />, subTab: "mergesplit" as const },
+            { id: "compress" as Tab, label: "압축", icon: <Archive className="w-4 h-4" />, subTab: "compress" as const },
+            { id: "bgremove" as Tab, label: "누끼", icon: <Scissors className="w-4 h-4" /> },
+          ].map((item) => {
+            const active =
+              (item.id === "home" && isHome) ||
+              activeTab === item.id ||
+              ("subTab" in item && activeTab === "pdftools" && pdfSubTab === item.subTab);
+            return (
+              <button
+                key={item.id}
+                onClick={() => {
+                  if (item.id === "home") goHome();
+                  else if ("subTab" in item && item.subTab) {
+                    setActiveTab("pdftools" as Tab);
+                    setPdfSubTab(item.subTab);
+                  } else setActiveTab(item.id);
+                  setIsMobileMenuOpen(false);
+                }}
+                className={`flex flex-col items-center gap-1 px-3 py-1.5 transition-colors ${
+                  active
+                    ? "text-[#C83E2B] dark:text-[#E05A47] font-bold"
+                    : "text-[#8A847C] dark:text-[#6E6A63]"
+                }`}
+              >
+                {item.icon}
+                <span className="text-[10px]">{item.label}</span>
+              </button>
+            );
+          })}
           <button
             onClick={() => setIsMobileMenuOpen(true)}
-            className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-gray-400 dark:text-gray-500"
+            className="flex flex-col items-center gap-1 px-3 py-1.5 text-[#8A847C] dark:text-[#6E6A63]"
           >
-            <Menu className="w-5 h-5" />
-            <span className="text-[10px] font-semibold">더보기</span>
+            <Menu className="w-4 h-4" />
+            <span className="text-[10px]">목차</span>
           </button>
         </div>
       </nav>
@@ -521,17 +552,20 @@ export default function ClientApp() {
         >
           <style>{`
             @keyframes fadeInOut {
-              0%   { opacity:0; transform:scale(0.9) translateY(20px); filter:blur(10px); }
-              15%  { opacity:1; transform:scale(1) translateY(0); filter:blur(0px); }
-              85%  { opacity:1; transform:scale(1) translateY(0); filter:blur(0px); }
-              100% { opacity:0; transform:scale(1.1) translateY(-20px); filter:blur(10px); }
+              0%   { opacity:0; transform:scale(0.96) translateY(12px); }
+              15%  { opacity:1; transform:scale(1) translateY(0); }
+              85%  { opacity:1; transform:scale(1) translateY(0); }
+              100% { opacity:0; transform:scale(1.02) translateY(-12px); }
             }
           `}</style>
-          <div className="bg-white/90 backdrop-blur-md px-10 py-8 rounded-3xl shadow-[0_0_50px_rgba(79,70,229,0.2)] border border-indigo-100 text-center">
-            <h2 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 mb-4 tracking-tight">
+          <div className="bg-[#FDFBF7] dark:bg-[#1A1918] px-10 py-8 border-2 border-[#161514] dark:border-[#F2EFE9] shadow-2xl text-center">
+            <p className="font-mono text-[11px] uppercase tracking-widest text-[#C83E2B] mb-2">
+              COLOPHON &middot; CONTRIBUTORS
+            </p>
+            <h2 className="font-editorial text-3xl font-bold text-[#161514] dark:text-[#F2EFE9] mb-4 tracking-tight">
               Thanks to
             </h2>
-            <p className="text-xl font-bold text-gray-700 leading-relaxed max-w-2xl break-keep">
+            <p className="text-lg font-medium text-[#57534E] dark:text-[#A6A096] leading-relaxed max-w-2xl break-keep">
               현지, 요한, 지연, 시우, 비헌, 상아, 강희, 정민, 백천, 보원, 경주, 나경, 희진, 준수, 성범
             </p>
           </div>
@@ -541,20 +575,25 @@ export default function ClientApp() {
       {/* Mobile sidebar (full menu) */}
       {isMobileMenuOpen && (
         <div className="lg:hidden fixed inset-0 z-50 flex justify-end">
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsMobileMenuOpen(false)} />
-          <div className="relative w-64 bg-white dark:bg-gray-900 h-full shadow-2xl flex flex-col p-4 animate-in slide-in-from-right duration-200">
-            <div className="flex justify-between items-center mb-6">
-              <span className="font-bold text-lg text-gray-900 dark:text-white" style={{ fontFamily: "Inter, sans-serif" }}>
-                메뉴
-              </span>
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-xs" onClick={() => setIsMobileMenuOpen(false)} />
+          <div className="relative w-72 bg-[#FDFBF7] dark:bg-[#1A1918] border-l border-[#DCD6C8] dark:border-[#2C2B28] h-full shadow-2xl flex flex-col p-5">
+            <div className="flex justify-between items-center pb-4 mb-4 border-b border-[#DCD6C8] dark:border-[#2C2B28]">
+              <div>
+                <span className="font-mono text-[10px] uppercase tracking-widest text-[#8A847C] block">
+                  STATION DIRECTORY
+                </span>
+                <span className="font-editorial font-bold text-lg text-[#161514] dark:text-[#F2EFE9]">
+                  전체 도구 목차
+                </span>
+              </div>
               <button
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
+                className="p-1.5 border border-[#DCD6C8] dark:border-[#2C2B28] hover:border-[#161514]"
               >
-                <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                <X className="w-4 h-4 text-[#57534E] dark:text-[#A6A096]" />
               </button>
             </div>
-            <nav className="flex flex-col gap-2 flex-1 overflow-y-auto">
+            <nav className="flex flex-col gap-1 flex-1 overflow-y-auto">
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
@@ -562,14 +601,17 @@ export default function ClientApp() {
                     setActiveTab(tab.id);
                     setIsMobileMenuOpen(false);
                   }}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
+                  className={`flex items-center justify-between px-3 py-2.5 text-xs transition-colors ${
                     activeTab === tab.id
-                      ? "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-bold"
-                      : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 font-medium"
+                      ? "bg-[#161514] dark:bg-[#F2EFE9] text-[#F9F6ED] dark:text-[#161514] font-bold"
+                      : "text-[#57534E] dark:text-[#A6A096] hover:bg-[#EFECE2] dark:hover:bg-[#22211F] font-medium"
                   }`}
                 >
-                  {tab.icon}
-                  <span>{tab.label}</span>
+                  <span className="flex items-center gap-2.5">
+                    {tab.icon}
+                    <span>{tab.label}</span>
+                  </span>
+                  <span className="font-mono text-[10px] opacity-60">/{tab.index}</span>
                 </button>
               ))}
             </nav>
@@ -586,7 +628,13 @@ export default function ClientApp() {
         position="bottom-center"
         toastOptions={{
           duration: 3000,
-          style: { borderRadius: "10px", background: "#333", color: "#fff", fontSize: "14px" },
+          style: {
+            borderRadius: "2px",
+            background: "#161514",
+            color: "#F9F6ED",
+            fontSize: "13px",
+            border: "1px solid #34322E",
+          },
         }}
       />
     </div>

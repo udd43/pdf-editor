@@ -588,14 +588,33 @@ export default function SmartPdfEditor() {
   // ========================================
   if (!file) {
     return (
-      <div className="max-w-4xl mx-auto p-6 text-center mt-20">
-        <h1 className="text-3xl font-extrabold tracking-tight text-gray-900 dark:text-white mb-4">✨ 스마트 워드 편집기</h1>
-        <p className="text-gray-500 dark:text-gray-400 mb-10 mx-auto text-base">
-          원본 PDF를 인식하여 편집 가능한 워드파일처럼 변환합니다.
-        </p>
-        <label className="flex flex-col items-center justify-center w-full h-80 border-2 border-dashed rounded-2xl cursor-pointer bg-gray-50 dark:bg-white/5 border-gray-300 dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors">
-          <UploadCloud className="w-16 h-16 text-emerald-500 mb-4" />
-          <span className="text-xl font-medium text-gray-700 dark:text-white">PDF 파일 클릭하여 업로드</span>
+      <div className="w-full max-w-4xl mx-auto py-6 px-4">
+        <div className="border-b border-[#DCD6C8] dark:border-[#2C2B28] pb-5 mb-6 flex flex-col sm:flex-row sm:items-end justify-between gap-3">
+          <div>
+            <span className="font-mono text-[10px] uppercase tracking-widest text-[#C83E2B] dark:text-[#E05A47] font-bold block mb-1">
+              STATION 02 &middot; STRUCTURAL TABLE &amp; CELL PARSER
+            </span>
+            <h1 className="font-editorial text-2xl sm:text-3xl font-bold tracking-tight text-[#161514] dark:text-[#F2EFE9]">
+              스마트 워드·표 편집기
+            </h1>
+          </div>
+          <p className="text-xs text-[#57534E] dark:text-[#A6A096] max-w-sm sm:text-right">
+            원본 PDF의 선(Line)과 칸(Cell), 텍스트 구조를 자동 분해하여 워드 파일처럼 셀 단위로 직접 수정합니다.
+          </p>
+        </div>
+        <label className="flex flex-col items-center justify-center w-full min-h-[360px] p-10 border border-dashed border-[#BFB7A6] dark:border-[#3A3834] hover:border-[#161514] dark:hover:border-[#F2EFE9] cursor-pointer bg-[#FDFBF7] dark:bg-[#1A1918] hover:bg-[#F3EFE4] dark:hover:bg-[#22211F] transition-colors group">
+          <div className="w-14 h-14 mb-5 border border-[#DCD6C8] dark:border-[#2C2B28] bg-[#F6F3EA] dark:bg-[#121211] text-[#161514] dark:text-[#F2EFE9] group-hover:text-[#C83E2B] flex items-center justify-center transition-colors">
+            <UploadCloud className="w-6 h-6" />
+          </div>
+          <span className="text-lg font-bold text-[#161514] dark:text-[#F2EFE9] mb-1">
+            분석할 PDF 문서를 선택하세요
+          </span>
+          <span className="font-mono text-xs text-[#8A847C] dark:text-[#6E6A63] mb-6">
+            AUTOMATIC TABLE &amp; TEXT NODE EXTRACTION
+          </span>
+          <span className="px-6 py-2.5 bg-[#161514] group-hover:bg-[#C83E2B] dark:bg-[#F2EFE9] dark:group-hover:bg-[#E05A47] text-[#F9F6ED] dark:text-[#161514] dark:group-hover:text-[#F9F6ED] text-xs font-bold transition-colors">
+            PDF 파일 불러오기
+          </span>
           <input type="file" className="hidden" accept=".pdf" onChange={handleFileChange} />
         </label>
       </div>

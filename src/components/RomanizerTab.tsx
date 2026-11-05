@@ -29,65 +29,72 @@ export default function RomanizerTab() {
   };
 
   return (
-    <div className="flex flex-col items-center w-full max-w-2xl mx-auto py-12 px-4 transition-colors">
-      <div className="w-full bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-sm border border-gray-200 dark:border-gray-700">
-        <div className="flex items-center justify-center mb-8">
-          <div className="w-16 h-16 bg-blue-50 dark:bg-blue-900/30 text-blue-500 dark:text-blue-400 rounded-full flex items-center justify-center border border-blue-100 dark:border-blue-800/50">
-            <Languages className="w-8 h-8" />
+    <div className="flex flex-col items-center w-full max-w-2xl mx-auto py-8 px-4 transition-colors">
+      <div className="w-full bg-[#FDFBF7] dark:bg-[#1A1918] p-8 border border-[#C8C1B0] dark:border-[#34322E]">
+        <div className="border-b border-[#DCD6C8] dark:border-[#2C2B28] pb-5 mb-6 flex items-start justify-between gap-4">
+          <div>
+            <span className="font-mono text-[10px] uppercase tracking-widest text-[#C83E2B] dark:text-[#E05A47] font-bold block mb-1">
+              STATION 12 &middot; PASSPORT &amp; OFFICIAL ROMANIZATION
+            </span>
+            <h3 className="font-editorial text-2xl font-bold text-[#161514] dark:text-[#F2EFE9]">
+              국문 성명 로마자 변환기
+            </h3>
+            <p className="text-xs text-[#57534E] dark:text-[#A6A096] mt-1">
+              국어의 로마자 표기법 및 여권 관용 성씨 기준에 맞춰 대문자 영문 성명을 산출합니다.
+            </p>
+          </div>
+          <div className="w-11 h-11 bg-[#F6F3EA] dark:bg-[#121211] text-[#161514] dark:text-[#F2EFE9] flex items-center justify-center border border-[#DCD6C8] dark:border-[#2C2B28] shrink-0">
+            <Languages className="w-5 h-5" />
           </div>
         </div>
-        
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white text-center mb-2" style={{ fontFamily: "Inter, sans-serif" }}>
-          영문명 변환기
-        </h3>
-        <p className="text-gray-500 dark:text-gray-400 text-center mb-8 text-sm">
-          한글 이름을 입력하면 올바른 로마자 표기와 자주 쓰이는 영문 성씨로 변환해드립니다.
-        </p>
 
         <div className="space-y-6">
           <div>
-            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">한글 이름</label>
+            <label className="block font-mono text-xs font-bold uppercase tracking-wider text-[#57534E] dark:text-[#A6A096] mb-2">
+              KOREAN NAME &middot; 한글 성명
+            </label>
             <input
               type="text"
               value={koreanName}
               onChange={(e) => setKoreanName(e.target.value)}
               placeholder="예: 홍길동, 김철수"
-              className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-900/50 outline-none transition-all text-lg"
+              className="w-full px-4 py-3 border border-[#C8C1B0] dark:border-[#3A3834] bg-[#F6F3EA] dark:bg-[#121211] text-[#161514] dark:text-[#F2EFE9] focus:border-[#161514] dark:focus:border-[#F2EFE9] outline-none transition-colors text-lg"
             />
           </div>
 
-          <div className="flex justify-center text-gray-400 dark:text-gray-500">
-            <ArrowRight className="w-6 h-6 rotate-90 sm:rotate-0" />
+          <div className="flex justify-center text-[#8A847C]">
+            <ArrowRight className="w-5 h-5 rotate-90 sm:rotate-0" />
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">영문 이름</label>
+            <label className="block font-mono text-xs font-bold uppercase tracking-wider text-[#57534E] dark:text-[#A6A096] mb-2">
+              ROMANIZED OUTPUT &middot; 영문 표기
+            </label>
             <div className="relative">
               <input
                 type="text"
                 readOnly
                 value={romanized}
-                placeholder="결과가 여기에 표시됩니다"
-                className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 text-gray-900 dark:text-white font-medium text-lg outline-none"
+                placeholder="변환 결과가 표시됩니다"
+                className="w-full px-4 py-3 border border-[#DCD6C8] dark:border-[#2C2B28] bg-[#EFECE2] dark:bg-[#22211F] text-[#161514] dark:text-[#F2EFE9] font-mono font-bold tracking-wider text-lg outline-none"
               />
               {romanized && (
                 <button
                   onClick={handleCopy}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-all flex items-center gap-1.5"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-[#161514] dark:bg-[#F2EFE9] text-[#F9F6ED] dark:text-[#161514] hover:bg-[#C83E2B] dark:hover:bg-[#E05A47] dark:hover:text-[#F9F6ED] transition-colors flex items-center gap-1.5 cursor-pointer"
                 >
-                  {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
-                  <span className="text-xs font-semibold">{copied ? "복사됨" : "복사"}</span>
+                  {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                  <span className="text-xs font-bold">{copied ? "복사됨" : "복사"}</span>
                 </button>
               )}
             </div>
           </div>
         </div>
 
-        <div className="mt-8 p-4 bg-gray-50 dark:bg-gray-900/50 rounded-xl border border-gray-100 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+        <div className="mt-8 p-4 bg-[#F6F3EA] dark:bg-[#121211] border border-[#DCD6C8] dark:border-[#2C2B28] text-xs text-[#57534E] dark:text-[#A6A096] leading-relaxed">
           <ul className="list-disc pl-4 space-y-1">
-            <li>일반적으로 쓰이는 성씨(Kim, Lee, Park 등)는 널리 쓰이는 표기로 자동 변환됩니다.</li>
-            <li>이름 부분은 국어의 로마자 표기법에 따라 변환됩니다.</li>
-            <li>공백은 띄어쓰기로 처리되며, 모든 글자는 대문자로 표기됩니다.</li>
+            <li>일반적으로 쓰이는 성씨(KIM, LEE, PARK 등)는 여권 관용 표기로 자동 변환됩니다.</li>
+            <li>이름 음절은 문화체육관광부 고시 국어의 로마자 표기법에 따라 변환됩니다.</li>
           </ul>
         </div>
       </div>

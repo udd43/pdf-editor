@@ -22,6 +22,48 @@
   font-display: swap;
 }
 
+:root {
+  --paper-bg: #F6F3EA;
+  --paper-sheet: #FDFBF7;
+  --paper-tray: #EFECE2;
+  --paper-border: #DCD6C8;
+  --paper-border-strong: #BFB7A6;
+  --ink-primary: #161514;
+  --ink-secondary: #57534E;
+  --ink-muted: #8A847C;
+  --stamp-accent: #C83E2B;
+}
+
+.dark {
+  --paper-bg: #121211;
+  --paper-sheet: #1A1918;
+  --paper-tray: #22211F;
+  --paper-border: #2C2B28;
+  --paper-border-strong: #44423D;
+  --ink-primary: #F2EFE9;
+  --ink-secondary: #A6A096;
+  --ink-muted: #6E6A63;
+  --stamp-accent: #E05A47;
+}
+
+body {
+  font-family: "NotoSansKR", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  background-color: var(--paper-bg);
+  color: var(--ink-primary);
+}
+
+.font-editorial {
+  font-family: "NanumMyeongjo", "AppleMyungjo", Georgia, serif;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 /* 모달 및 트랜지션 애니메이션 */
 @keyframes fadeIn {
   from { opacity: 0; }

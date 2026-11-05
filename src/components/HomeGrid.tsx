@@ -1,5 +1,3 @@
-
-
 import React, {
   useState,
   useCallback,
@@ -14,12 +12,14 @@ import {
   Calculator,
   Building2,
   Upload,
-  ArrowRight,
-  Sparkles,
-  ChevronRight,
+  ArrowUpRight,
   Wand2,
   Smartphone,
   Eraser,
+  Merge,
+  Archive,
+  ZoomIn,
+  Layers,
 } from "lucide-react";
 import { PDFDocument } from "pdf-lib";
 import toast from "react-hot-toast";
@@ -27,12 +27,12 @@ import { isHeicFile, convertHeicToPng } from "@/lib/imageUtils";
 
 export interface FeatureCardMeta {
   id: string;
+  index: string;
+  spec: string;
   title: string;
   description: string;
   icon: React.ReactNode;
-  accent: string;
-  iconBg: string;
-  iconBgDark: string;
+  category: "primary" | "vision" | "bindery";
   action: "expand" | "upload" | "navigate";
   badge?: string;
 }
@@ -48,8 +48,7 @@ export default function HomeGrid({
   onFileSelect,
   isSecretMode,
 }: HomeGridProps) {
-  const [hoveredCard, setHoveredCard] = useState<string | null>(null);
-  const [isDragging, setIsDragging] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const processFile = async (file: File) => {
@@ -79,7 +78,7 @@ export default function HomeGrid({
         onFileSelect(newFile);
         onTabSelect("pdf");
         return;
-      } catch (e) {
+      } catch {
         toast.error("HEIC 파일 변환 실패", { id: toastId });
         return;
       }
@@ -92,7 +91,10 @@ export default function HomeGrid({
         if (file.type === "image/png") img = await pdfDoc.embedPng(ab);
         else if (file.type === "image/jpeg" || file.type === "image/jpg")
           img = await pdfDoc.embedJpg(ab);
-        else { toast.error("JPG 또는 PNG만 가능합니다."); return; }
+        else {
+          toast.error("JPG 또는 PNG만 가능합니다.");
+          return;
+        }
         const page = pdfDoc.addPage([img.width, img.height]);
         page.drawImage(img, { x: 0, y: 0, width: img.width, height: img.height });
         const bytes = await pdfDoc.save();
@@ -113,127 +115,134 @@ export default function HomeGrid({
   const CARDS: FeatureCardMeta[] = [
     {
       id: "pdf",
-      title: "PDF 편집",
-      description: "텍스트 추가, 이미지 삽입, 서명 배치 등 PDF를 자유롭게 편집하세요.",
-      icon: <FileText className="w-7 h-7" />,
-      accent: "from-blue-500 to-indigo-600",
-      iconBg: "bg-blue-50 text-blue-600 border-blue-100",
-      iconBgDark: "dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800",
+      index: "01",
+      spec: "VECTOR · PAGE STUDIO",
+      title: "PDF 문서 편집",
+      description: "텍스트 추가, 이미지·도장 배치, 보안 마스킹 및 원본 대조 작업을 수행합니다.",
+      icon: <FileText className="w-5 h-5" />,
+      category: "primary",
       action: "upload",
-      badge: "핵심 기능",
+      badge: "PRIMARY",
     },
     {
       id: "smartpdf",
-      title: "스마트 편집",
-      description: "PDF 구조를 자동 분석하여 표, 텍스트, 선을 인식하고 셀 단위로 정밀 편집할 수 있습니다.",
-      icon: <Wand2 className="w-7 h-7" />,
-      accent: "from-amber-400 via-orange-500 to-rose-500",
-      iconBg: "bg-amber-50 text-amber-600 border-amber-100",
-      iconBgDark: "dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800",
+      index: "02",
+      spec: "STRUCTURAL PARSER",
+      title: "스마트 워드·표 편집",
+      description: "PDF 내부의 표, 선, 텍스트 셀을 자동 분해하여 문서 구조 그대로 셀 단위 교정을 지원합니다.",
+      icon: <Wand2 className="w-5 h-5" />,
+      category: "primary",
       action: "upload",
-      badge: "AI 추천",
+      badge: "TABLE OCR",
     },
     {
       id: "eraser",
+      index: "03",
+      spec: "WEBGPU INPAINT",
       title: "AI 스마트 지우개",
-      description: "문서 속 도장, 서명, 불필요한 개체를 브러시로 쓱 문지르면 감쪽같이 지워집니다.",
-      icon: <Eraser className="w-6 h-6" />,
-      accent: "from-rose-500 via-pink-500 to-indigo-500",
-      iconBg: "bg-rose-50 text-rose-600 border-rose-100",
-      iconBgDark: "dark:bg-rose-900/30 dark:text-rose-400 dark:border-rose-800",
+      description: "문서 속 도장, 서명, 오타, 불필요한 흔적을 종이 질감을 유지한 채 지워냅니다.",
+      icon: <Eraser className="w-4 h-4" />,
+      category: "vision",
       action: "expand",
-      badge: "WebGPU AI",
+    },
+    {
+      id: "bgremove",
+      index: "04",
+      spec: "ALPHA MATTE",
+      title: "배경 제거 (누끼)",
+      description: "직인, 서명, 인물·사물 사진에서 배경만 정밀하게 분리하여 투명 PNG로 추출합니다.",
+      icon: <Scissors className="w-4 h-4" />,
+      category: "vision",
+      action: "expand",
     },
     {
       id: "upscale",
-      title: "이미지 업스케일",
-      description: "저화질 이미지를 AI로 선명하게 2배 확대합니다.",
-      icon: <Sparkles className="w-6 h-6" />,
-      accent: "from-amber-400 to-orange-500",
-      iconBg: "bg-amber-50 text-amber-600 border-amber-100",
-      iconBgDark: "dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800",
+      index: "05",
+      spec: "REAL-ESRGAN 2X",
+      title: "해상도 업스케일",
+      description: "저화질 스캔 문서나 흐릿한 이미지를 신경망 복원으로 2배 선명하게 확대합니다.",
+      icon: <ZoomIn className="w-4 h-4" />,
+      category: "vision",
       action: "expand",
     },
     {
       id: "heic",
-      title: "HEIC 변환",
-      description: "아이폰 고효율 사진(HEIC)을 어디서나 열리는 고화질 PNG로 변환합니다.",
-      icon: <Smartphone className="w-6 h-6" />,
-      accent: "from-sky-400 to-blue-600",
-      iconBg: "bg-sky-50 text-sky-600 border-sky-100",
-      iconBgDark: "dark:bg-sky-900/30 dark:text-sky-400 dark:border-sky-800",
-      action: "expand",
-      badge: "NEW",
-    },
-    {
-      id: "bgremove",
-      title: "누끼따기",
-      description: "AI로 이미지 배경을 자동 제거합니다.",
-      icon: <Scissors className="w-6 h-6" />,
-      accent: "from-purple-500 to-pink-500",
-      iconBg: "bg-purple-50 text-purple-600 border-purple-100",
-      iconBgDark: "dark:bg-purple-900/30 dark:text-purple-400 dark:border-purple-800",
+      index: "06",
+      spec: "APPLE HEIF → PNG",
+      title: "HEIC 무손실 변환",
+      description: "아이폰 고효율 사진(.heic)을 표준 PNG 이미지 또는 단일 PDF 문서로 즉시 변환합니다.",
+      icon: <Smartphone className="w-4 h-4" />,
+      category: "vision",
       action: "expand",
     },
     {
       id: "colorize",
-      title: "색상 변경",
-      description: "이미지 색상을 자유롭게 바꾸세요.",
-      icon: <Palette className="w-6 h-6" />,
-      accent: "from-orange-400 to-red-500",
-      iconBg: "bg-orange-50 text-orange-600 border-orange-100",
-      iconBgDark: "dark:bg-orange-900/30 dark:text-orange-400 dark:border-orange-800",
-      action: "expand",
-    },
-    {
-      id: "romanize",
-      title: "영문명 변환",
-      description: "한글 이름을 로마자로 정확하게 변환합니다.",
-      icon: <Languages className="w-6 h-6" />,
-      accent: "from-teal-500 to-cyan-500",
-      iconBg: "bg-teal-50 text-teal-600 border-teal-100",
-      iconBgDark: "dark:bg-teal-900/30 dark:text-teal-400 dark:border-teal-800",
-      action: "expand",
-    },
-    {
-      id: "signature",
-      title: "서명 그리기",
-      description: "직접 서명을 그리고 PDF에 삽입하세요.",
-      icon: <PenTool className="w-6 h-6" />,
-      accent: "from-violet-500 to-indigo-500",
-      iconBg: "bg-violet-50 text-violet-600 border-violet-100",
-      iconBgDark: "dark:bg-violet-900/30 dark:text-violet-400 dark:border-violet-800",
+      index: "07",
+      spec: "INK & TINT GRADE",
+      title: "색상 변경 · 재착색",
+      description: "도장 인주 색상 조정, 틴트 입히기, 단색 교체 등 이미지 색조를 정밀하게 제어합니다.",
+      icon: <Palette className="w-4 h-4" />,
+      category: "vision",
       action: "expand",
     },
     {
       id: "mergesplit",
-      title: "PDF 합치기 / 분할",
-      description: "여러 PDF를 하나로 병합하거나 특정 페이지를 분할 및 회전하세요.",
-      icon: <FileText className="w-6 h-6" />,
-      accent: "from-blue-600 to-indigo-600",
-      iconBg: "bg-blue-50 text-blue-600 border-blue-100",
-      iconBgDark: "dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800",
+      index: "08",
+      spec: "BIND & ROTATE",
+      title: "PDF 합치기 · 분할",
+      description: "여러 PDF 문서를 한 권으로 병합하거나 특정 페이지 추출 및 90° 회전을 처리합니다.",
+      icon: <Merge className="w-4 h-4" />,
+      category: "bindery",
       action: "expand",
-      badge: "인기",
     },
     {
       id: "compress",
-      title: "PDF 압축",
-      description: "이메일 전송을 위해 PDF 용량을 최적화하여 압축합니다.",
-      icon: <Scissors className="w-6 h-6" />,
-      accent: "from-amber-500 to-yellow-600",
-      iconBg: "bg-amber-50 text-amber-600 border-amber-100",
-      iconBgDark: "dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800",
+      index: "09",
+      spec: "SIZE OPTIMIZER",
+      title: "PDF 용량 압축",
+      description: "이메일 첨부 및 전자결재 업로드 제한에 맞춰 문서 해상도와 용량을 최적화합니다.",
+      icon: <Archive className="w-4 h-4" />,
+      category: "bindery",
+      action: "expand",
+    },
+    {
+      id: "img2pdf",
+      index: "10",
+      spec: "SHEET BINDER",
+      title: "이미지 → PDF 제본",
+      description: "여러 장의 스캔본(PNG, JPG, HEIC)을 순서대로 배열하여 하나의 PDF로 묶어냅니다.",
+      icon: <Layers className="w-4 h-4" />,
+      category: "bindery",
+      action: "expand",
+    },
+    {
+      id: "signature",
+      index: "11",
+      spec: "STROKE & SEAL",
+      title: "서명 그리기",
+      description: "직접 필기하거나 서체를 지정하여 문서 삽입용 고해상도 투명 서명 파일을 제작합니다.",
+      icon: <PenTool className="w-4 h-4" />,
+      category: "bindery",
+      action: "expand",
+    },
+    {
+      id: "romanize",
+      index: "12",
+      spec: "KR → ROMAN",
+      title: "영문 성명 표기",
+      description: "국어 로마자 표기법 및 여권 관용 성씨 기준에 맞춘 대문자 영문명을 산출합니다.",
+      icon: <Languages className="w-4 h-4" />,
+      category: "bindery",
       action: "expand",
     },
     {
       id: "calculator",
-      title: "계산기",
-      description: "빠르고 정확한 과학 계산기.",
-      icon: <Calculator className="w-6 h-6" />,
-      accent: "from-green-500 to-emerald-500",
-      iconBg: "bg-green-50 text-green-600 border-green-100",
-      iconBgDark: "dark:bg-green-900/30 dark:text-green-400 dark:border-green-800",
+      index: "13",
+      spec: "DECIMAL ENGINE",
+      title: "실무 계산기",
+      description: "문서 검산 및 공학 수식 계산을 위한 괄호·이력 지원 계산 도구입니다.",
+      icon: <Calculator className="w-4 h-4" />,
+      category: "bindery",
       action: "expand",
     },
   ];
@@ -241,28 +250,31 @@ export default function HomeGrid({
   if (isSecretMode) {
     CARDS.push({
       id: "corporate",
-      title: "법인 서류",
-      description: "등록된 법인 서류 양식을 빠르게 편집합니다.",
-      icon: <Building2 className="w-6 h-6" />,
-      accent: "from-red-500 to-rose-500",
-      iconBg: "bg-red-50 text-red-600 border-red-100",
-      iconBgDark: "dark:bg-red-900/30 dark:text-red-400 dark:border-red-800",
+      index: "14",
+      spec: "RESTRICTED ARCHIVE",
+      title: "법인 서류 양식",
+      description: "등록된 법인 기본 서류 양식을 즉시 호출하여 편집 스튜디오로 불러옵니다.",
+      icon: <Building2 className="w-4 h-4" />,
+      category: "bindery",
       action: "navigate",
-      badge: "비공개",
+      badge: "CLASSIFIED",
     });
   }
 
-  const handleCardClick = useCallback((card: FeatureCardMeta) => {
-    if (card.action === "upload") {
-      if (card.id === "smartpdf") {
-        onTabSelect("smartpdf");
+  const handleCardClick = useCallback(
+    (card: FeatureCardMeta) => {
+      if (card.action === "upload") {
+        if (card.id === "smartpdf") {
+          onTabSelect("smartpdf");
+        } else {
+          fileInputRef.current?.click();
+        }
       } else {
-        fileInputRef.current?.click();
+        onTabSelect(card.id);
       }
-    } else {
-      onTabSelect(card.id);
-    }
-  }, [onTabSelect]);
+    },
+    [onTabSelect]
+  );
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -270,257 +282,304 @@ export default function HomeGrid({
     e.target.value = "";
   };
 
-  const card = (id: string) => CARDS.find((c) => c.id === id)!;
+  const pdfStation = CARDS.find((c) => c.id === "pdf")!;
+  const smartStation = CARDS.find((c) => c.id === "smartpdf")!;
+  const visionTools = CARDS.filter((c) => c.category === "vision");
+  const binderyTools = CARDS.filter((c) => c.category === "bindery");
 
   return (
-    <div className="w-full max-w-5xl mx-auto px-4 py-8">
-      {/* Header */}
-      <div className="mb-10 text-center">
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full text-xs font-semibold border border-blue-100 dark:border-blue-800 mb-5">
-          <Sparkles className="w-3.5 h-3.5" />
-          업로드된 파일은 서버에 저장되지 않습니다
-        </div>
-        <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight mb-3">
-          원하는 기능을 선택하세요
-        </h1>
-        <p className="text-gray-500 dark:text-gray-400 text-base max-w-xl mx-auto">
-          PDF 편집부터 이미지 처리까지, 필요한 도구를 클릭하면 바로 시작됩니다.
-        </p>
-      </div>
-
+    <div className="w-full max-w-6xl mx-auto px-2 sm:px-4 py-4 sm:py-8">
       <input
         ref={fileInputRef}
         id="home-file-upload"
         type="file"
-        accept="application/pdf, image/jpeg, image/png"
+        accept="application/pdf, image/jpeg, image/png, .heic, .heif"
         className="hidden"
         onChange={handleFileChange}
       />
 
-      {/* Bento Grid */}
-      <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(12, 1fr)" }}>
-        {/* Row 1-2: PDF 편집 (xl) + 스마트 편집 (featured) */}
-        <BentoCard card={card("pdf")} isHovered={hoveredCard === "pdf"} isDragging={isDragging === "pdf"}
-          onMouseEnter={() => setHoveredCard("pdf")} onMouseLeave={() => setHoveredCard(null)}
-          onClick={() => handleCardClick(card("pdf"))}
-          onDragOver={(e) => { e.preventDefault(); setIsDragging("pdf"); }}
-          onDragLeave={() => setIsDragging(null)}
-          onDrop={(e) => { e.preventDefault(); setIsDragging(null); const f = e.dataTransfer.files[0]; if (f) processFile(f); }}
-          style={{ gridColumn: "1 / 7", gridRow: "1 / 3" }} size="xl" />
+      {/* ── Architectural Masthead ── */}
+      <div className="border-b border-[#DCD6C8] dark:border-[#2C2B28] pb-6 mb-8">
+        <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] font-mono tracking-wider uppercase text-[#8A847C] dark:text-[#6E6A63] mb-4">
+          <span>WORKBENCH INDEX · EDITION 2.8</span>
+          <span className="inline-flex items-center gap-2 text-[#161514] dark:text-[#F2EFE9]">
+            <span className="w-1.5 h-1.5 bg-[#C83E2B] dark:bg-[#E05A47] inline-block" />
+            CLIENT-SIDE EXECUTION · ZERO SERVER UPLOAD
+          </span>
+        </div>
 
-        <BentoCard card={card("smartpdf")} isHovered={hoveredCard === "smartpdf"} isDragging={false}
-          onMouseEnter={() => setHoveredCard("smartpdf")} onMouseLeave={() => setHoveredCard(null)}
-          onClick={() => handleCardClick(card("smartpdf"))}
-          onDragOver={() => {}} onDragLeave={() => {}} onDrop={() => {}}
-          style={{ gridColumn: "7 / 13", gridRow: "1 / 3" }} size="featured" />
-
-        {/* Row 3: AI 스마트 지우개 + 누끼따기 + 업스케일 */}
-        <BentoCard card={card("eraser")} isHovered={hoveredCard === "eraser"} isDragging={false}
-          onMouseEnter={() => setHoveredCard("eraser")} onMouseLeave={() => setHoveredCard(null)}
-          onClick={() => handleCardClick(card("eraser"))}
-          onDragOver={() => {}} onDragLeave={() => {}} onDrop={() => {}}
-          style={{ gridColumn: "1 / 7", gridRow: "3 / 4" }} size="md" />
-
-        <BentoCard card={card("bgremove")} isHovered={hoveredCard === "bgremove"} isDragging={false}
-          onMouseEnter={() => setHoveredCard("bgremove")} onMouseLeave={() => setHoveredCard(null)}
-          onClick={() => handleCardClick(card("bgremove"))}
-          onDragOver={() => {}} onDragLeave={() => {}} onDrop={() => {}}
-          style={{ gridColumn: "7 / 10", gridRow: "3 / 4" }} size="md" />
-
-        <BentoCard card={card("upscale")} isHovered={hoveredCard === "upscale"} isDragging={false}
-          onMouseEnter={() => setHoveredCard("upscale")} onMouseLeave={() => setHoveredCard(null)}
-          onClick={() => handleCardClick(card("upscale"))}
-          onDragOver={() => {}} onDragLeave={() => {}} onDrop={() => {}}
-          style={{ gridColumn: "10 / 13", gridRow: "3 / 4" }} size="md" />
-
-        {/* Row 4: HEIC 변환 + 색상 변경 + 서명 그리기 */}
-        <BentoCard card={card("heic")} isHovered={hoveredCard === "heic"} isDragging={false}
-          onMouseEnter={() => setHoveredCard("heic")} onMouseLeave={() => setHoveredCard(null)}
-          onClick={() => handleCardClick(card("heic"))}
-          onDragOver={() => {}} onDragLeave={() => {}} onDrop={() => {}}
-          style={{ gridColumn: "1 / 5", gridRow: "4 / 5" }} size="sm" />
-
-        <BentoCard card={card("colorize")} isHovered={hoveredCard === "colorize"} isDragging={false}
-          onMouseEnter={() => setHoveredCard("colorize")} onMouseLeave={() => setHoveredCard(null)}
-          onClick={() => handleCardClick(card("colorize"))}
-          onDragOver={() => {}} onDragLeave={() => {}} onDrop={() => {}}
-          style={{ gridColumn: "5 / 9", gridRow: "4 / 5" }} size="sm" />
-
-        <BentoCard card={card("signature")} isHovered={hoveredCard === "signature"} isDragging={false}
-          onMouseEnter={() => setHoveredCard("signature")} onMouseLeave={() => setHoveredCard(null)}
-          onClick={() => handleCardClick(card("signature"))}
-          onDragOver={() => {}} onDragLeave={() => {}} onDrop={() => {}}
-          style={{ gridColumn: "9 / 13", gridRow: "4 / 5" }} size="sm" />
-
-        {/* Row 5: 영문명 변환 + 계산기 + PDF 합치기/분할 */}
-        <BentoCard card={card("romanize")} isHovered={hoveredCard === "romanize"} isDragging={false}
-          onMouseEnter={() => setHoveredCard("romanize")} onMouseLeave={() => setHoveredCard(null)}
-          onClick={() => handleCardClick(card("romanize"))}
-          onDragOver={() => {}} onDragLeave={() => {}} onDrop={() => {}}
-          style={{ gridColumn: "1 / 5", gridRow: "5 / 6" }} size="sm" />
-
-        <BentoCard card={card("calculator")} isHovered={hoveredCard === "calculator"} isDragging={false}
-          onMouseEnter={() => setHoveredCard("calculator")} onMouseLeave={() => setHoveredCard(null)}
-          onClick={() => handleCardClick(card("calculator"))}
-          onDragOver={() => {}} onDragLeave={() => {}} onDrop={() => {}}
-          style={{ gridColumn: "5 / 9", gridRow: "5 / 6" }} size="sm" />
-
-        <BentoCard card={card("mergesplit")} isHovered={hoveredCard === "mergesplit"} isDragging={false}
-          onMouseEnter={() => setHoveredCard("mergesplit")} onMouseLeave={() => setHoveredCard(null)}
-          onClick={() => handleCardClick(card("mergesplit"))}
-          onDragOver={() => {}} onDragLeave={() => {}} onDrop={() => {}}
-          style={{ gridColumn: "9 / 13", gridRow: "5 / 6" }} size="sm" />
-
-        {/* Row 6: 이미지 → PDF */}
-        <BentoCard card={{
-            id: "img2pdf", title: "이미지 → PDF", description: "여러 장의 PNG/JPEG 이미지를 하나의 PDF로 병합합니다.",
-            icon: <FileText className="w-6 h-6" />, accent: "from-blue-400 to-cyan-500",
-            iconBg: "bg-cyan-50 text-cyan-600 border-cyan-100", iconBgDark: "dark:bg-cyan-900/30 dark:text-cyan-400 dark:border-cyan-800",
-            action: "expand"
-          }} isHovered={hoveredCard === "img2pdf"} isDragging={false}
-          onMouseEnter={() => setHoveredCard("img2pdf")} onMouseLeave={() => setHoveredCard(null)}
-          onClick={() => onTabSelect("img2pdf")}
-          onDragOver={() => {}} onDragLeave={() => {}} onDrop={() => {}}
-          style={{ gridColumn: "1 / 13", gridRow: "6 / 7" }} size="sm" />
-
-        {isSecretMode && (
-          <BentoCard card={card("corporate")} isHovered={hoveredCard === "corporate"} isDragging={false}
-            onMouseEnter={() => setHoveredCard("corporate")} onMouseLeave={() => setHoveredCard(null)}
-            onClick={() => handleCardClick(card("corporate"))}
-            onDragOver={() => {}} onDragLeave={() => {}} onDrop={() => {}}
-            style={{ gridColumn: "1 / 13", gridRow: "7 / 8" }} size="sm" />
-        )}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-end">
+          <div className="lg:col-span-7">
+            <h1 className="font-editorial text-3xl sm:text-4xl lg:text-[42px] font-bold text-[#161514] dark:text-[#F2EFE9] tracking-tight leading-[1.15]">
+              문서 교정 및 그래픽 작업대
+            </h1>
+          </div>
+          <div className="lg:col-span-5">
+            <p className="text-xs sm:text-sm text-[#57534E] dark:text-[#A6A096] leading-relaxed lg:text-right">
+              모든 PDF 벡터 조작, 표 구조 인식 및 이미지 인페인팅 연산은 외부 서버 전송 없이 브라우저 로컬 메모리에서 즉시 처리됩니다.
+            </p>
+          </div>
+        </div>
       </div>
 
-      <p className="text-center text-xs text-gray-400 dark:text-gray-600 mt-8">
-        PDF 편집 카드에 파일을 드래그 앤 드롭할 수도 있습니다 ·{" "}
-        <span className="font-semibold">Private by default</span>
-      </p>
+      {/* ── Primary Workstation Split Ledger (01 & 02) ── */}
+      <div className="mb-10">
+        <div className="flex items-center justify-between mb-2.5">
+          <span className="text-[11px] font-mono uppercase tracking-widest text-[#57534E] dark:text-[#A6A096] font-semibold">
+            I. PRIMARY DOCUMENT WORKSTATIONS
+          </span>
+          <span className="text-[11px] font-mono text-[#8A847C] dark:text-[#6E6A63]">
+            01 — 02
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 border border-[#C8C1B0] dark:border-[#34322E] bg-[#C8C1B0] dark:bg-[#34322E] gap-px shadow-[0_2px_0_rgba(22,21,20,0.04)]">
+          {/* Station 01: PDF Editor with Dropzone */}
+          <div
+            onClick={() => handleCardClick(pdfStation)}
+            onDragOver={(e) => {
+              e.preventDefault();
+              setIsDragging(true);
+            }}
+            onDragLeave={() => setIsDragging(false)}
+            onDrop={(e) => {
+              e.preventDefault();
+              setIsDragging(false);
+              const f = e.dataTransfer.files[0];
+              if (f) processFile(f);
+            }}
+            className={`lg:col-span-7 relative p-6 sm:p-8 flex flex-col justify-between cursor-pointer transition-colors group select-none ${
+              isDragging
+                ? "bg-[#EFECE2] dark:bg-[#252421]"
+                : "bg-[#FDFBF7] dark:bg-[#1A1918] hover:bg-[#F7F4EC] dark:hover:bg-[#201F1D]"
+            }`}
+          >
+            <div>
+              <div className="flex items-center justify-between gap-2 mb-5">
+                <div className="flex items-center gap-2.5">
+                  <span className="font-mono text-xs font-bold px-2 py-0.5 bg-[#161514] text-[#F9F6ED] dark:bg-[#F2EFE9] dark:text-[#161514]">
+                    {pdfStation.index}
+                  </span>
+                  <span className="font-mono text-[11px] tracking-wider uppercase text-[#57534E] dark:text-[#A6A096]">
+                    {pdfStation.spec}
+                  </span>
+                </div>
+                <span className="font-mono text-[10px] tracking-widest uppercase px-2 py-0.5 border border-[#C8C1B0] dark:border-[#3A3834] text-[#57534E] dark:text-[#A6A096]">
+                  {pdfStation.badge}
+                </span>
+              </div>
+
+              <div className="flex items-start justify-between gap-4 mb-3">
+                <h2 className="text-2xl sm:text-[26px] font-bold text-[#161514] dark:text-[#F2EFE9] tracking-tight">
+                  {pdfStation.title}
+                </h2>
+                <span className="p-2 border border-[#DCD6C8] dark:border-[#2C2B28] bg-[#F6F3EA] dark:bg-[#121211] text-[#161514] dark:text-[#F2EFE9] group-hover:border-[#161514] dark:group-hover:border-[#F2EFE9] transition-colors">
+                  {pdfStation.icon}
+                </span>
+              </div>
+
+              <p className="text-sm text-[#57534E] dark:text-[#A6A096] leading-relaxed max-w-xl mb-6">
+                {pdfStation.description}
+              </p>
+            </div>
+
+            {/* Tactile Architectural Drop Tray */}
+            <div
+              className={`border border-dashed p-4 sm:p-5 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
+                isDragging
+                  ? "border-[#C83E2B] bg-[#C83E2B]/5"
+                  : "border-[#BFB7A6] dark:border-[#3A3834] bg-[#F6F3EA]/80 dark:bg-[#121211]/70 group-hover:border-[#161514] dark:group-hover:border-[#A6A096]"
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 border border-[#DCD6C8] dark:border-[#2C2B28] bg-[#FDFBF7] dark:bg-[#1A1918] flex items-center justify-center text-[#161514] dark:text-[#F2EFE9] shrink-0">
+                  <Upload className="w-4 h-4" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-[#161514] dark:text-[#F2EFE9]">
+                    {isDragging ? "여기에 파일을 놓아 작업을 시작하세요" : "PDF 또는 이미지를 드래그하거나 클릭하여 열기"}
+                  </p>
+                  <p className="font-mono text-[10px] text-[#8A847C] dark:text-[#6E6A63] mt-0.5">
+                    ACCEPT: .PDF / .PNG / .JPG / .HEIC
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleCardClick(pdfStation);
+                }}
+                className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-[#161514] hover:bg-[#C83E2B] dark:bg-[#F2EFE9] dark:hover:bg-[#E05A47] text-[#F9F6ED] dark:text-[#161514] dark:hover:text-[#F9F6ED] text-xs font-bold tracking-tight transition-colors shrink-0"
+              >
+                <span>문서 불러오기</span>
+                <ArrowUpRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Station 02: Smart Word/Table PDF Editor */}
+          <div
+            onClick={() => handleCardClick(smartStation)}
+            className="lg:col-span-5 p-6 sm:p-8 flex flex-col justify-between cursor-pointer bg-[#FDFBF7] dark:bg-[#1A1918] hover:bg-[#F7F4EC] dark:hover:bg-[#201F1D] transition-colors group select-none"
+          >
+            <div>
+              <div className="flex items-center justify-between gap-2 mb-5">
+                <div className="flex items-center gap-2.5">
+                  <span className="font-mono text-xs font-bold px-2 py-0.5 bg-[#C83E2B] text-[#FDFBF7]">
+                    {smartStation.index}
+                  </span>
+                  <span className="font-mono text-[11px] tracking-wider uppercase text-[#C83E2B] dark:text-[#E05A47] font-semibold">
+                    {smartStation.spec}
+                  </span>
+                </div>
+                <span className="font-mono text-[10px] tracking-widest uppercase px-2 py-0.5 border border-[#C83E2B]/40 text-[#C83E2B] dark:text-[#E05A47]">
+                  {smartStation.badge}
+                </span>
+              </div>
+
+              <div className="flex items-start justify-between gap-4 mb-3">
+                <h2 className="text-2xl sm:text-[26px] font-bold text-[#161514] dark:text-[#F2EFE9] tracking-tight">
+                  {smartStation.title}
+                </h2>
+                <span className="p-2 border border-[#DCD6C8] dark:border-[#2C2B28] bg-[#F6F3EA] dark:bg-[#121211] text-[#C83E2B] dark:text-[#E05A47] group-hover:border-[#C83E2B] transition-colors">
+                  {smartStation.icon}
+                </span>
+              </div>
+
+              <p className="text-sm text-[#57534E] dark:text-[#A6A096] leading-relaxed mb-6">
+                {smartStation.description}
+              </p>
+            </div>
+
+            <div className="border border-[#DCD6C8] dark:border-[#2C2B28] bg-[#F6F3EA]/80 dark:bg-[#121211]/70 p-4 sm:p-5 flex flex-col gap-3">
+              <div className="grid grid-cols-3 gap-2 border-b border-[#DCD6C8] dark:border-[#2C2B28] pb-3 font-mono text-[10px] text-[#57534E] dark:text-[#A6A096]">
+                <div>
+                  <span className="block text-[#8A847C] dark:text-[#6E6A63]">MODE</span>
+                  <span className="font-bold text-[#161514] dark:text-[#F2EFE9]">CELL / TABLE</span>
+                </div>
+                <div>
+                  <span className="block text-[#8A847C] dark:text-[#6E6A63]">VECTOR</span>
+                  <span className="font-bold text-[#161514] dark:text-[#F2EFE9]">SVG LINES</span>
+                </div>
+                <div>
+                  <span className="block text-[#8A847C] dark:text-[#6E6A63]">REDACT</span>
+                  <span className="font-bold text-[#161514] dark:text-[#F2EFE9]">TRUE MASK</span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between pt-0.5">
+                <span className="text-xs font-medium text-[#57534E] dark:text-[#A6A096]">
+                  양식·표 문서 자동 구조화
+                </span>
+                <span className="inline-flex items-center gap-1 text-xs font-bold text-[#C83E2B] dark:text-[#E05A47] group-hover:translate-x-0.5 transition-transform">
+                  구조 분석 열기 <ArrowUpRight className="w-3.5 h-3.5" />
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Section II: AI Vision & Raster Lab (03 — 07) ── */}
+      <div className="mb-10">
+        <div className="flex items-center justify-between mb-2.5">
+          <span className="text-[11px] font-mono uppercase tracking-widest text-[#57534E] dark:text-[#A6A096] font-semibold">
+            II. VISION &amp; RASTER PROCESSING LAB
+          </span>
+          <span className="text-[11px] font-mono text-[#8A847C] dark:text-[#6E6A63]">
+            03 — 07
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 border border-[#DCD6C8] dark:border-[#2C2B28] bg-[#DCD6C8] dark:bg-[#2C2B28] gap-px">
+          {visionTools.map((tool) => (
+            <LedgerCell
+              key={tool.id}
+              card={tool}
+              onClick={() => handleCardClick(tool)}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* ── Section III: Document Bindery & Utilities (08 — 13/14) ── */}
+      <div>
+        <div className="flex items-center justify-between mb-2.5">
+          <span className="text-[11px] font-mono uppercase tracking-widest text-[#57534E] dark:text-[#A6A096] font-semibold">
+            III. DOCUMENT BINDERY &amp; STUDIO INSTRUMENTS
+          </span>
+          <span className="text-[11px] font-mono text-[#8A847C] dark:text-[#6E6A63]">
+            08 — {binderyTools[binderyTools.length - 1]?.index}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 border border-[#DCD6C8] dark:border-[#2C2B28] bg-[#DCD6C8] dark:bg-[#2C2B28] gap-px">
+          {binderyTools.map((tool) => (
+            <LedgerCell
+              key={tool.id}
+              card={tool}
+              onClick={() => handleCardClick(tool)}
+            />
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
 
-/* ───── BentoCard ───── */
+/* ───── Architectural Ledger Cell ───── */
 
-interface BentoCardProps {
+interface LedgerCellProps {
   card: FeatureCardMeta;
-  isHovered: boolean;
-  isDragging: boolean;
-  onMouseEnter: () => void;
-  onMouseLeave: () => void;
   onClick: () => void;
-  onDragOver: (e: React.DragEvent) => void;
-  onDragLeave: () => void;
-  onDrop: (e: React.DragEvent) => void;
-  style: React.CSSProperties;
-  size: "xl" | "featured" | "md" | "sm";
 }
 
-function BentoCard({ card, isHovered, isDragging, onMouseEnter, onMouseLeave, onClick, onDragOver, onDragLeave, onDrop, style, size }: BentoCardProps) {
-  const isXL = size === "xl";
-  const isFeatured = size === "featured";
-  const isMd = size === "md";
-  const isSm = size === "sm";
+function LedgerCell({ card, onClick }: LedgerCellProps) {
+  const isClassified = card.id === "corporate";
 
   return (
-    <div
-      style={style}
-      className={`
-        relative group rounded-3xl cursor-pointer overflow-hidden select-none
-        transition-all duration-300 ease-out
-        ${isHovered ? "shadow-2xl -translate-y-1 scale-[1.01]" : "shadow-sm hover:shadow-lg"}
-        ${isDragging ? "ring-4 ring-blue-400 ring-offset-2 scale-[1.02] border-blue-300 dark:border-blue-700" : ""}
-        ${isFeatured ? "border-2 border-amber-300 dark:border-amber-600" : "border border-gray-200 dark:border-gray-700/80"}
-        ${isFeatured ? "bg-gradient-to-br from-amber-50 via-white to-orange-50 dark:from-gray-800 dark:via-gray-800/95 dark:to-amber-950/30" : "bg-white dark:bg-gray-800/90"}
-        ${isXL || isFeatured ? "min-h-[280px]" : isMd ? "min-h-[130px]" : "min-h-[110px]"}
-      `}
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
+    <button
+      type="button"
       onClick={onClick}
-      onDragOver={onDragOver}
-      onDragLeave={onDragLeave}
-      onDrop={onDrop}
+      className={`group text-left p-5 sm:p-6 flex flex-col justify-between min-h-[168px] transition-colors cursor-pointer select-none ${
+        isClassified
+          ? "bg-[#FDF6F5] dark:bg-[#221615] hover:bg-[#F9EBE8] dark:hover:bg-[#2B1B19]"
+          : "bg-[#FDFBF7] dark:bg-[#1A1918] hover:bg-[#F3EFE4] dark:hover:bg-[#22211F]"
+      }`}
     >
-      {/* featured glow */}
-      {isFeatured && (
-        <div className={`absolute -inset-[1px] bg-gradient-to-br ${card.accent} rounded-3xl opacity-20 blur-sm transition-opacity duration-300 ${isHovered ? "opacity-40" : ""}`} style={{ zIndex: -1 }} />
-      )}
-      {/* hover gradient */}
-      <div className={`absolute inset-0 bg-gradient-to-br ${card.accent} opacity-0 transition-opacity duration-300 ${isHovered ? "opacity-[0.06]" : ""} ${isDragging ? "opacity-[0.1]" : ""} ${isFeatured && !isHovered ? "opacity-[0.03]" : ""}`} />
-      {/* top color bar */}
-      <div className={`absolute top-0 left-0 right-0 bg-gradient-to-r ${card.accent} transition-opacity duration-300 ${isFeatured ? "h-1.5 opacity-100" : `h-1 ${isHovered || isDragging ? "opacity-100" : "opacity-0"}`}`} />
+      <div className="w-full">
+        {/* Top index & spec row */}
+        <div className="flex items-center justify-between gap-2 mb-4">
+          <span className="font-mono text-[11px] font-bold text-[#8A847C] dark:text-[#6E6A63] group-hover:text-[#C83E2B] dark:group-hover:text-[#E05A47] transition-colors">
+            /{card.index}
+          </span>
+          <span className="font-mono text-[10px] tracking-wider uppercase text-[#8A847C] dark:text-[#6E6A63] truncate">
+            {card.spec}
+          </span>
+        </div>
 
-      <div className={`relative h-full flex flex-col ${isXL || isFeatured ? "p-8" : isMd ? "p-6" : "p-5"}`}>
-        {/* icon + badge */}
-        <div className="flex items-start justify-between mb-auto">
-          <div className={`rounded-2xl border flex items-center justify-center transition-transform duration-300 ${isHovered ? "scale-110" : ""} ${card.iconBg} ${card.iconBgDark} ${isXL || isFeatured ? "w-14 h-14" : "w-11 h-11"}`}>
+        {/* Title & icon */}
+        <div className="flex items-center justify-between gap-2 mb-2">
+          <h3 className="text-base font-bold text-[#161514] dark:text-[#F2EFE9] tracking-tight group-hover:text-[#C83E2B] dark:group-hover:text-[#E05A47] transition-colors">
+            {card.title}
+          </h3>
+          <span className="text-[#57534E] dark:text-[#A6A096] group-hover:text-[#C83E2B] dark:group-hover:text-[#E05A47] transition-colors shrink-0">
             {card.icon}
-          </div>
-          {card.badge && (
-            <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border ${
-              card.id === "corporate" ? "bg-red-50 dark:bg-red-900/30 text-red-500 dark:text-red-400 border-red-100 dark:border-red-800"
-              : card.id === "smartpdf" ? "bg-gradient-to-r from-amber-500 to-orange-500 text-white border-amber-400 dark:border-amber-600 shadow-md animate-pulse"
-              : "bg-blue-50 dark:bg-blue-900/30 text-blue-500 dark:text-blue-400 border-blue-100 dark:border-blue-800"
-            }`}>
-              {card.badge}
-            </span>
-          )}
+          </span>
         </div>
 
-        {/* text */}
-        <div className={isXL || isFeatured ? "mt-6" : "mt-4"}>
-          <h3 className={`font-bold text-gray-900 dark:text-white tracking-tight ${isXL || isFeatured ? "text-2xl mb-3" : isMd ? "text-base mb-2" : "text-sm mb-1.5"}`}>{card.title}</h3>
-          {(isXL || isFeatured || isMd) && <p className={`text-gray-500 dark:text-gray-400 leading-relaxed ${isXL || isFeatured ? "text-sm max-w-xs" : "text-xs"}`}>{card.description}</p>}
-          {isSm && <p className="text-[11px] text-gray-400 dark:text-gray-500 leading-snug line-clamp-2">{card.description}</p>}
-        </div>
-
-        {/* XL: drag hint + CTA */}
-        {isXL && (
-          <div className="mt-6 flex items-end justify-between">
-            <div className={`flex items-center gap-2 text-xs transition-all duration-300 ${isDragging ? "text-blue-600 dark:text-blue-400" : "text-gray-400 dark:text-gray-500"}`}>
-              <Upload className="w-4 h-4" />
-              <span>PDF 또는 이미지를 드래그하거나 클릭하세요</span>
-            </div>
-            <button
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold text-white bg-gradient-to-r ${card.accent} shadow-md transition-all duration-200 hover:shadow-lg hover:scale-105 active:scale-95`}
-              onClick={(e) => { e.stopPropagation(); onClick(); }}
-            >
-              시작하기 <ArrowRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        )}
-
-        {/* Featured: CTA button */}
-        {isFeatured && (
-          <div className="mt-6 flex items-end justify-between">
-            <div className="flex items-center gap-2 text-xs text-amber-500 dark:text-amber-400">
-              <Sparkles className="w-4 h-4" />
-              <span>AI가 문서 구조를 자동 분석합니다</span>
-            </div>
-            <button
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold text-white bg-gradient-to-r ${card.accent} shadow-lg transition-all duration-200 hover:shadow-xl hover:scale-105 active:scale-95`}
-              onClick={(e) => { e.stopPropagation(); onClick(); }}
-            >
-              시작하기 <ArrowRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        )}
-
-        {/* MD/SM arrow */}
-        {!isXL && !isFeatured && (
-          <div className={`absolute bottom-4 right-4 transition-all duration-300 ${isHovered ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-2"}`}>
-            <ChevronRight className="w-4 h-4 text-gray-400 dark:text-gray-500" />
-          </div>
-        )}
+        <p className="text-xs text-[#57534E] dark:text-[#A6A096] leading-relaxed">
+          {card.description}
+        </p>
       </div>
 
-      {/* drag overlay */}
-      {isDragging && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-blue-50/80 dark:bg-blue-900/30 backdrop-blur-[2px] z-10">
-          <Upload className="w-10 h-10 text-blue-500 mb-2 animate-bounce" />
-          <p className="text-sm font-bold text-blue-600 dark:text-blue-400">파일을 놓아주세요</p>
-        </div>
-      )}
-    </div>
+      {/* Bottom rule + action cue */}
+      <div className="w-full pt-4 mt-4 border-t border-[#ECE7DA] dark:border-[#262522] flex items-center justify-between text-[11px] font-mono text-[#8A847C] dark:text-[#6E6A63]">
+        <span>{card.badge || "OPEN STATION"}</span>
+        <ArrowUpRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-[#161514] dark:group-hover:text-[#F2EFE9] transition-transform" />
+      </div>
+    </button>
   );
 }
