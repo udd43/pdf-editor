@@ -215,17 +215,14 @@ export default function ClientApp() {
 
       {/* ── Impeccable Workspace Header (All nav items >= 12px text-xs) ── */}
       <header className="bg-white/95 dark:bg-[#12151C]/95 backdrop-blur-xs border-b border-[#E2E6EE] dark:border-[#232936] sticky top-0 z-40 transition-colors">
-        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-3">
-          {/* Left: Brand Mark */}
-          <div className="flex items-center shrink-0">
+        <div className="w-full max-w-6xl mx-auto px-6 sm:px-12 h-14 flex items-center justify-between gap-4">
+          {/* Left: Brand Title */}
+          <div className="flex items-center shrink-0 pl-1 sm:pl-2">
             <button
               onClick={goHome}
-              className="group shrink-0 whitespace-nowrap outline-none flex items-center gap-2.5 text-left cursor-pointer"
+              className="group shrink-0 whitespace-nowrap outline-none flex items-center text-left cursor-pointer"
             >
-              <span className="w-6 h-6 rounded-md bg-[#2563EB] text-white text-xs font-bold flex items-center justify-center">
-                P
-              </span>
-              <span className="text-base font-bold tracking-tight text-[#0F141C] dark:text-[#F3F5F8]">
+              <span className="text-base font-bold tracking-tight text-[#0F141C] dark:text-[#F3F5F8] group-hover:text-[#2563EB] dark:group-hover:text-[#3B82F6] transition-colors">
                 PDF Studio
               </span>
             </button>
