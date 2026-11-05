@@ -75,31 +75,24 @@ export default function PdfUploader({ onFileSelect }: PdfUploaderProps) {
   return (
     <div className="flex-1 flex flex-col items-center justify-center w-full max-w-4xl mx-auto px-4 py-12 relative z-10">
       <div
-        className={`w-full max-w-4xl min-h-[380px] p-12 sm:p-16 transition-colors flex flex-col items-center justify-center cursor-pointer border border-dashed relative overflow-hidden group bg-[#FDFBF7] dark:bg-[#1A1918] ${
+        className={`w-full max-w-4xl min-h-[340px] p-12 sm:p-16 rounded-xl transition-colors flex flex-col items-center justify-center cursor-pointer border border-dashed relative overflow-hidden group bg-white dark:bg-[#12151C] ${
           isDragging
-            ? "border-[#C83E2B] bg-[#F3EFE4] dark:bg-[#22211F]"
-            : "border-[#BFB7A6] dark:border-[#3A3834] hover:border-[#161514] dark:hover:border-[#F2EFE9] hover:bg-[#F3EFE4] dark:hover:bg-[#22211F]"
+            ? "border-[#2563EB] bg-[#2563EB]/5"
+            : "border-[#CBD2E0] dark:border-[#333B4D] hover:border-[#2563EB] dark:hover:border-[#3B82F6]"
         }`}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         onClick={() => document.getElementById("file-upload")?.click()}
       >
-        <div className="w-14 h-14 mb-6 border border-[#DCD6C8] dark:border-[#2C2B28] bg-[#F6F3EA] dark:bg-[#121211] flex items-center justify-center">
-          <UploadCloud
-            className={`w-6 h-6 transition-colors ${
-              isDragging
-                ? "text-[#C83E2B]"
-                : "text-[#161514] dark:text-[#F2EFE9] group-hover:text-[#C83E2B]"
-            }`}
-          />
+        <div className="flex items-center gap-2.5 mb-2">
+          <UploadCloud className="w-6 h-6 text-[#2563EB] dark:text-[#3B82F6]" />
+          <h2 className="text-xl font-bold text-[#0F141C] dark:text-[#F3F5F8]">
+            PDF 또는 이미지 드래그 앤 드롭
+          </h2>
         </div>
-
-        <h3 className="font-editorial text-2xl font-bold text-[#161514] dark:text-[#F2EFE9] mb-2 text-center">
-          PDF 또는 이미지 드래그 앤 드롭
-        </h3>
-        <p className="font-mono text-xs text-[#8A847C] dark:text-[#6E6A63] text-center mb-8">
-          LOCAL EXECUTION &middot; ZERO SERVER UPLOAD
+        <p className="text-sm text-[#4B5565] dark:text-[#94A0B8] text-center mb-6">
+          편집 및 저장은 브라우저 로컬 메모리에서 안전하게 처리됩니다.
         </p>
 
         <input
@@ -112,7 +105,7 @@ export default function PdfUploader({ onFileSelect }: PdfUploaderProps) {
 
         <button
           type="button"
-          className="px-6 py-2.5 bg-[#161514] group-hover:bg-[#C83E2B] dark:bg-[#F2EFE9] dark:group-hover:bg-[#E05A47] text-[#F9F6ED] dark:text-[#161514] dark:group-hover:text-[#F9F6ED] font-bold text-xs transition-colors"
+          className="px-5 py-2.5 rounded-lg bg-[#2563EB] group-hover:bg-[#1D4ED8] text-white font-semibold text-xs transition-colors"
         >
           파일 불러오기
         </button>

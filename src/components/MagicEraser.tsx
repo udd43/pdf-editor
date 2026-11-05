@@ -457,39 +457,36 @@ export default function MagicEraser({
 
   const uploadZone = (
     <div className="w-full max-w-4xl mx-auto">
-      <div className="border-b border-[#DCD6C8] dark:border-[#2C2B28] pb-5 mb-6 flex flex-col sm:flex-row sm:items-end justify-between gap-3">
+      <div className="border-b border-[#E2E6EE] dark:border-[#232936] pb-5 mb-6 flex flex-col sm:flex-row sm:items-end justify-between gap-3">
         <div>
-          <span className="font-mono text-[10px] uppercase tracking-widest text-[#C83E2B] dark:text-[#E05A47] font-bold block mb-1">
-            STATION 03 &middot; WEBGPU INPAINTING ENGINE
-          </span>
-          <h2 className="font-editorial text-2xl sm:text-3xl font-bold text-[#161514] dark:text-[#F2EFE9] tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-bold text-[#0F141C] dark:text-[#F3F5F8] tracking-tight">
             AI 스마트 지우개
-          </h2>
+          </h1>
+          <p className="text-sm text-[#4B5565] dark:text-[#94A0B8] mt-1">
+            문서나 사진에서 도장, 서명, 오타, 민감정보를 브러시로 칠하면 주변 배경 질감을 복원하여 자연스럽게 지웁니다.
+          </p>
         </div>
-        <p className="text-xs text-[#57534E] dark:text-[#A6A096] max-w-sm sm:text-right">
-          문서나 사진에서 도장, 서명, 오타, 민감정보를 브러시로 칠하면 주변 종이 질감을 복원하여 흔적 없이 소거합니다.
-        </p>
+        <span className="text-xs font-mono text-[#697586] dark:text-[#647087] shrink-0">
+          WebGPU / WASM 로컬 연산
+        </span>
       </div>
 
       <div
         onClick={() => fileInputRef.current?.click()}
-        className="w-full min-h-[360px] p-10 sm:p-14 border border-dashed border-[#BFB7A6] dark:border-[#3A3834] hover:border-[#161514] dark:hover:border-[#F2EFE9] bg-[#FDFBF7] dark:bg-[#1A1918] hover:bg-[#F3EFE4] dark:hover:bg-[#22211F] transition-colors cursor-pointer flex flex-col items-center justify-center group"
+        className="w-full min-h-[340px] p-10 sm:p-14 rounded-xl border border-dashed border-[#CBD2E0] dark:border-[#333B4D] hover:border-[#2563EB] dark:hover:border-[#3B82F6] bg-white dark:bg-[#12151C] transition-colors cursor-pointer flex flex-col items-center justify-center group"
       >
-        <div className="w-14 h-14 mb-5 border border-[#DCD6C8] dark:border-[#2C2B28] bg-[#F6F3EA] dark:bg-[#121211] text-[#161514] dark:text-[#F2EFE9] group-hover:text-[#C83E2B] dark:group-hover:text-[#E05A47] flex items-center justify-center transition-colors">
-          <Eraser className="w-6 h-6" />
+        <div className="flex items-center gap-2.5 mb-2">
+          <Eraser className="w-5 h-5 text-[#2563EB] dark:text-[#3B82F6]" />
+          <h2 className="text-lg font-bold text-[#0F141C] dark:text-[#F3F5F8]">
+            작업할 문서 또는 이미지를 선택하세요
+          </h2>
         </div>
-        <span className="font-mono text-[10px] uppercase tracking-widest text-[#8A847C] dark:text-[#6E6A63] mb-2">
-          LOCAL WEBGPU / WASM EXECUTION
-        </span>
-        <h3 className="text-lg font-bold text-[#161514] dark:text-[#F2EFE9] mb-2 text-center">
-          작업할 문서 또는 이미지를 선택하세요
-        </h3>
-        <p className="font-mono text-xs text-[#8A847C] dark:text-[#6E6A63] text-center mb-7">
-          SUPPORTED: .PDF / .JPG / .PNG
+        <p className="text-xs font-mono text-[#697586] dark:text-[#647087] text-center mb-6">
+          지원 포맷: PDF, JPG, PNG
         </p>
         <button
           type="button"
-          className="flex items-center gap-2 px-6 py-3 bg-[#161514] hover:bg-[#C83E2B] dark:bg-[#F2EFE9] dark:hover:bg-[#E05A47] text-[#F9F6ED] dark:text-[#161514] dark:hover:text-[#F9F6ED] font-bold text-xs transition-colors"
+          className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-semibold text-xs transition-colors"
         >
           <Upload className="w-3.5 h-3.5" /> 파일 불러오기
         </button>
@@ -500,18 +497,15 @@ export default function MagicEraser({
   const editorWorkspace = (
     <div className="w-full flex flex-col gap-4">
       {/* Top Control Bar */}
-      <div className="w-full flex flex-wrap items-center justify-between gap-3 bg-[#FDFBF7] dark:bg-[#1A1918] p-4 border border-[#DCD6C8] dark:border-[#2C2B28]">
+      <div className="w-full flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-[#12151C] p-4 rounded-xl border border-[#E2E6EE] dark:border-[#232936]">
         {/* Left: File info + reset */}
         <div className="flex items-center gap-2.5">
-          <span className="font-mono text-[10px] uppercase px-2 py-0.5 bg-[#EFECE2] dark:bg-[#22211F] text-[#57534E] dark:text-[#A6A096] border border-[#DCD6C8] dark:border-[#2C2B28]">
-            SOURCE
-          </span>
-          <span className="text-xs font-bold text-[#161514] dark:text-[#F2EFE9] truncate max-w-xs">
+          <span className="text-xs font-bold text-[#0F141C] dark:text-[#F3F5F8] truncate max-w-xs">
             {fileName}
           </span>
           <button
             onClick={handleResetToOriginal}
-            className="flex items-center gap-1 text-xs px-2.5 py-1 text-[#57534E] hover:text-[#161514] dark:text-[#A6A096] dark:hover:text-[#F2EFE9] border border-transparent hover:border-[#DCD6C8] dark:hover:border-[#2C2B28] transition-colors cursor-pointer"
+            className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-md text-[#4B5565] hover:text-[#0F141C] dark:text-[#94A0B8] dark:hover:text-[#F3F5F8] border border-[#E2E6EE] dark:border-[#232936] transition-colors cursor-pointer"
             title="처음 원본으로 복원"
           >
             <RotateCcw className="w-3 h-3" /> 원본 복원
@@ -519,10 +513,10 @@ export default function MagicEraser({
         </div>
 
         {/* Center: Brush Size Control */}
-        <div className="flex items-center gap-3 bg-[#F6F3EA] dark:bg-[#121211] px-3.5 py-1.5 border border-[#DCD6C8] dark:border-[#2C2B28]">
-          <span className="text-xs font-mono font-semibold text-[#161514] dark:text-[#F2EFE9] flex items-center gap-1.5">
-            <Sliders className="w-3.5 h-3.5 text-[#C83E2B]" />
-            BRUSH {brushSize}px
+        <div className="flex items-center gap-3 bg-[#F8F9FB] dark:bg-[#181C26] px-3.5 py-1.5 rounded-lg border border-[#E2E6EE] dark:border-[#232936]">
+          <span className="text-xs font-semibold text-[#0F141C] dark:text-[#F3F5F8] flex items-center gap-1.5">
+            <Sliders className="w-3.5 h-3.5 text-[#2563EB] dark:text-[#3B82F6]" />
+            브러시 {brushSize}px
           </span>
           <input
             type="range"
@@ -530,17 +524,17 @@ export default function MagicEraser({
             max="80"
             value={brushSize}
             onChange={(e) => setBrushSize(parseInt(e.target.value, 10))}
-            className="w-24 accent-[#C83E2B] cursor-pointer"
+            className="w-24 accent-[#2563EB] cursor-pointer"
           />
           <div className="flex gap-1">
             {[15, 30, 55].map((s) => (
               <button
                 key={s}
                 onClick={() => setBrushSize(s)}
-                className={`font-mono text-[10px] px-2 py-0.5 font-bold transition-colors cursor-pointer ${
+                className={`font-mono text-xs px-2 py-0.5 rounded-md font-semibold transition-colors cursor-pointer ${
                   brushSize === s
-                    ? "bg-[#161514] dark:bg-[#F2EFE9] text-[#F9F6ED] dark:text-[#161514]"
-                    : "bg-[#FDFBF7] dark:bg-[#1A1918] text-[#57534E] dark:text-[#A6A096] border border-[#DCD6C8] dark:border-[#2C2B28]"
+                    ? "bg-[#2563EB] text-white"
+                    : "bg-white dark:bg-[#12151C] text-[#4B5565] dark:text-[#94A0B8] border border-[#E2E6EE] dark:border-[#232936]"
                 }`}
               >
                 {s}
@@ -649,9 +643,9 @@ export default function MagicEraser({
       </div>
 
       {/* Action Toolbar */}
-      <div className="w-full flex flex-wrap items-center justify-between gap-3 bg-[#FDFBF7] dark:bg-[#1A1918] p-4 border border-[#DCD6C8] dark:border-[#2C2B28]">
-        <div className="flex items-center gap-2 text-xs text-[#57534E] dark:text-[#A6A096]">
-          <span className="inline-block w-2 h-2 bg-[#C83E2B]" />
+      <div className="w-full flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-[#12151C] p-4 rounded-xl border border-[#E2E6EE] dark:border-[#232936]">
+        <div className="flex items-center gap-2 text-xs text-[#4B5565] dark:text-[#94A0B8]">
+          <span className="inline-block w-2 h-2 rounded-full bg-[#2563EB]" />
           <span>소거할 영역을 브러시로 마스킹한 뒤 <strong>[지우기 실행]</strong>을 누르세요.</span>
         </div>
 
@@ -659,7 +653,7 @@ export default function MagicEraser({
           <button
             onClick={handleRunInpaint}
             disabled={!hasMask || isProcessing}
-            className="flex items-center gap-2 px-5 py-2.5 bg-[#C83E2B] hover:bg-[#B03220] disabled:opacity-40 text-white font-bold text-xs transition-colors cursor-pointer"
+            className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-[#2563EB] hover:bg-[#1D4ED8] disabled:opacity-40 text-white font-semibold text-xs transition-colors cursor-pointer"
           >
             {isProcessing ? (
               <>
@@ -674,13 +668,13 @@ export default function MagicEraser({
             )}
           </button>
 
-          <div className="h-6 w-px bg-[#DCD6C8] dark:bg-[#2C2B28] mx-1" />
+          <div className="h-6 w-px bg-[#E2E6EE] dark:bg-[#232936] mx-1" />
 
           {isModal && onApplyToPdfEditor ? (
             <button
               onClick={handleApplyToCurrentPage}
               disabled={isProcessing}
-              className="flex items-center gap-2 px-5 py-2.5 bg-[#161514] hover:bg-[#2C2A28] dark:bg-[#F2EFE9] dark:hover:bg-white disabled:opacity-40 text-[#F9F6ED] dark:text-[#161514] font-bold text-xs transition-colors cursor-pointer"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-[#0F141C] hover:bg-[#1E293B] dark:bg-[#F3F5F8] dark:hover:bg-white disabled:opacity-40 text-white dark:text-[#0F141C] font-semibold text-xs transition-colors cursor-pointer"
               title="지워진 영역을 현재 PDF 편집 화면에 즉시 적용합니다"
             >
               <Check className="w-4 h-4" />
@@ -690,7 +684,7 @@ export default function MagicEraser({
             <button
               onClick={handleSendToPdfEditor}
               disabled={isProcessing}
-              className="flex items-center gap-1.5 px-4 py-2.5 bg-[#161514] dark:bg-[#F2EFE9] text-[#F9F6ED] dark:text-[#161514] hover:bg-[#C83E2B] dark:hover:bg-[#E05A47] dark:hover:text-[#F9F6ED] font-bold text-xs transition-colors cursor-pointer"
+              className="flex items-center gap-1.5 px-4 py-2.5 rounded-lg bg-[#F1F3F7] dark:bg-[#181C26] text-[#0F141C] dark:text-[#F3F5F8] hover:border-[#2563EB] border border-[#E2E6EE] dark:border-[#232936] font-semibold text-xs transition-colors cursor-pointer"
             >
               PDF 편집기로 열기 →
             </button>
@@ -699,7 +693,7 @@ export default function MagicEraser({
           <button
             onClick={handleDownloadPng}
             disabled={isProcessing}
-            className="flex items-center gap-1.5 px-4 py-2.5 bg-[#F6F3EA] dark:bg-[#121211] hover:border-[#161514] dark:hover:border-[#F2EFE9] text-[#161514] dark:text-[#F2EFE9] border border-[#DCD6C8] dark:border-[#2C2B28] font-semibold text-xs transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 px-4 py-2.5 rounded-lg bg-white dark:bg-[#12151C] hover:border-[#2563EB] text-[#0F141C] dark:text-[#F3F5F8] border border-[#E2E6EE] dark:border-[#232936] font-semibold text-xs transition-colors cursor-pointer"
           >
             <Download className="w-3.5 h-3.5" /> PNG 저장
           </button>
@@ -707,7 +701,7 @@ export default function MagicEraser({
           <button
             onClick={handleDownloadPdf}
             disabled={isProcessing}
-            className="flex items-center gap-1.5 px-4 py-2.5 bg-[#F6F3EA] dark:bg-[#121211] hover:border-[#161514] dark:hover:border-[#F2EFE9] text-[#161514] dark:text-[#F2EFE9] border border-[#DCD6C8] dark:border-[#2C2B28] font-semibold text-xs transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 px-4 py-2.5 rounded-lg bg-white dark:bg-[#12151C] hover:border-[#2563EB] text-[#0F141C] dark:text-[#F3F5F8] border border-[#E2E6EE] dark:border-[#232936] font-semibold text-xs transition-colors cursor-pointer"
           >
             <FileText className="w-3.5 h-3.5" /> PDF 저장
           </button>

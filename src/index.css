@@ -23,37 +23,42 @@
 }
 
 :root {
-  --paper-bg: #F6F3EA;
-  --paper-sheet: #FDFBF7;
-  --paper-tray: #EFECE2;
-  --paper-border: #DCD6C8;
-  --paper-border-strong: #BFB7A6;
-  --ink-primary: #161514;
-  --ink-secondary: #57534E;
-  --ink-muted: #8A847C;
-  --stamp-accent: #C83E2B;
+  --surface-canvas: #F8F9FB;
+  --surface-card: #FFFFFF;
+  --surface-well: #F1F3F7;
+  --border-subtle: #E2E6EE;
+  --border-strong: #CBD2E0;
+  --ink-primary: #0F141C;
+  --ink-secondary: #4B5565;
+  --ink-muted: #697586;
+  --accent-primary: #2563EB;
 }
 
 .dark {
-  --paper-bg: #121211;
-  --paper-sheet: #1A1918;
-  --paper-tray: #22211F;
-  --paper-border: #2C2B28;
-  --paper-border-strong: #44423D;
-  --ink-primary: #F2EFE9;
-  --ink-secondary: #A6A096;
-  --ink-muted: #6E6A63;
-  --stamp-accent: #E05A47;
+  --surface-canvas: #0B0D11;
+  --surface-card: #12151C;
+  --surface-well: #181C26;
+  --border-subtle: #232936;
+  --border-strong: #333B4D;
+  --ink-primary: #F3F5F8;
+  --ink-secondary: #94A0B8;
+  --ink-muted: #647087;
+  --accent-primary: #3B82F6;
 }
 
 body {
   font-family: "NotoSansKR", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-  background-color: var(--paper-bg);
+  background-color: var(--surface-canvas);
   color: var(--ink-primary);
+  line-height: 1.5;
 }
 
-.font-editorial {
-  font-family: "NanumMyeongjo", "AppleMyungjo", Georgia, serif;
+h1, h2, h3, h4 {
+  text-wrap: balance;
+}
+
+p {
+  text-wrap: pretty;
 }
 
 .no-scrollbar::-webkit-scrollbar {

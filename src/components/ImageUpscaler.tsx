@@ -80,38 +80,38 @@ export default function ImageUpscaler() {
 
   return (
     <div className="flex flex-col items-center w-full max-w-4xl mx-auto px-4 py-6">
-      <div className="w-full border-b border-[#DCD6C8] dark:border-[#2C2B28] pb-5 mb-6 flex flex-col sm:flex-row sm:items-end justify-between gap-3">
+      <div className="w-full border-b border-[#E2E6EE] dark:border-[#232936] pb-5 mb-6 flex flex-col sm:flex-row sm:items-end justify-between gap-3">
         <div>
-          <span className="font-mono text-[10px] uppercase tracking-widest text-[#C83E2B] dark:text-[#E05A47] font-bold block mb-1">
-            STATION 05 &middot; REAL-ESRGAN SUPER RESOLUTION
-          </span>
-          <h1 className="font-editorial text-2xl sm:text-3xl font-bold text-[#161514] dark:text-[#F2EFE9] tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-bold text-[#0F141C] dark:text-[#F3F5F8] tracking-tight">
             해상도 2배 업스케일
           </h1>
+          <p className="text-sm text-[#4B5565] dark:text-[#94A0B8] mt-1">
+            저해상도 스캔 문서나 흐릿한 사진을 신경망 기반으로 복원하여 2배 해상도로 선명하게 확대합니다.
+          </p>
         </div>
-        <p className="text-xs text-[#57534E] dark:text-[#A6A096] max-w-sm sm:text-right">
-          저해상도 스캔 문서나 흐릿한 사진을 신경망 기반으로 복원하여 2배 해상도로 선명하게 확대합니다.
-        </p>
+        <span className="text-xs font-mono text-[#697586] dark:text-[#647087] shrink-0">
+          Real-ESRGAN 2x
+        </span>
       </div>
 
       {/* 업로드 영역 */}
       {!originalSrc && (
         <div
           onClick={() => fileInputRef.current?.click()}
-          className="w-full min-h-[360px] p-10 sm:p-14 border border-dashed border-[#BFB7A6] dark:border-[#3A3834] hover:border-[#161514] dark:hover:border-[#F2EFE9] bg-[#FDFBF7] dark:bg-[#1A1918] hover:bg-[#F3EFE4] dark:hover:bg-[#22211F] transition-colors cursor-pointer flex flex-col items-center justify-center group"
+          className="w-full min-h-[340px] p-10 sm:p-14 rounded-xl border border-dashed border-[#CBD2E0] dark:border-[#333B4D] hover:border-[#2563EB] dark:hover:border-[#3B82F6] bg-white dark:bg-[#12151C] transition-colors cursor-pointer flex flex-col items-center justify-center group"
         >
-          <div className="w-14 h-14 mb-5 border border-[#DCD6C8] dark:border-[#2C2B28] bg-[#F6F3EA] dark:bg-[#121211] text-[#161514] dark:text-[#F2EFE9] group-hover:text-[#C83E2B] flex items-center justify-center transition-colors">
-            <ZoomIn className="w-6 h-6" />
+          <div className="flex items-center gap-2.5 mb-2">
+            <ZoomIn className="w-5 h-5 text-[#2563EB] dark:text-[#3B82F6]" />
+            <h2 className="text-lg font-bold text-[#0F141C] dark:text-[#F3F5F8]">
+              업스케일할 이미지를 선택하세요
+            </h2>
           </div>
-          <h3 className="text-lg font-bold text-[#161514] dark:text-[#F2EFE9] mb-1 text-center">
-            업스케일할 이미지를 선택하세요
-          </h3>
-          <p className="font-mono text-xs text-[#8A847C] dark:text-[#6E6A63] mb-6">
-            ENGINE: REAL-ESRGAN X4PLUS (2X OUTPUT)
+          <p className="font-mono text-xs text-[#697586] dark:text-[#647087] mb-6">
+            일반 문서, 사진, 일러스트 2배 확대 지원
           </p>
           <button
             type="button"
-            className="px-6 py-2.5 bg-[#161514] group-hover:bg-[#C83E2B] dark:bg-[#F2EFE9] dark:group-hover:bg-[#E05A47] text-[#F9F6ED] dark:text-[#161514] dark:group-hover:text-[#F9F6ED] font-bold text-xs transition-colors"
+            className="px-5 py-2.5 rounded-lg bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-semibold text-xs transition-colors"
           >
             이미지 선택
           </button>
@@ -122,27 +122,22 @@ export default function ImageUpscaler() {
       {originalSrc && (
         <>
           {/* 상단 도구 바 */}
-          <div className="w-full flex flex-wrap justify-between items-center mb-6 bg-[#FDFBF7] dark:bg-[#1A1918] p-4 border border-[#DCD6C8] dark:border-[#2C2B28] gap-3 transition-colors">
-            <div className="flex items-center gap-2">
-              <span className="font-mono text-[10px] uppercase px-2 py-0.5 bg-[#EFECE2] dark:bg-[#22211F] text-[#57534E] dark:text-[#A6A096] border border-[#DCD6C8] dark:border-[#2C2B28]">
-                FILE
-              </span>
-              <h3 className="text-xs font-bold text-[#161514] dark:text-[#F2EFE9] truncate max-w-xs">
-                {fileName}
-              </h3>
-            </div>
+          <div className="w-full flex flex-wrap justify-between items-center mb-6 bg-white dark:bg-[#12151C] p-4 rounded-xl border border-[#E2E6EE] dark:border-[#232936] gap-3 transition-colors">
+            <h2 className="text-sm font-bold text-[#0F141C] dark:text-[#F3F5F8] truncate max-w-xs">
+              {fileName}
+            </h2>
             <div className="flex gap-2 flex-wrap items-center">
               <button onClick={handleReset}
-                className="flex items-center gap-1.5 px-3.5 py-2 bg-[#F6F3EA] dark:bg-[#121211] border border-[#DCD6C8] dark:border-[#2C2B28] text-[#161514] dark:text-[#F2EFE9] text-xs font-semibold hover:border-[#161514] dark:hover:border-[#F2EFE9] transition-colors cursor-pointer">
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#F8F9FB] dark:bg-[#181C26] border border-[#E2E6EE] dark:border-[#232936] text-[#0F141C] dark:text-[#F3F5F8] text-xs font-semibold hover:border-[#2563EB] transition-colors cursor-pointer">
                 <RotateCcw className="w-3.5 h-3.5" /> 초기화
               </button>
               <button onClick={() => fileInputRef.current?.click()}
-                className="flex items-center gap-1.5 px-3.5 py-2 bg-[#F6F3EA] dark:bg-[#121211] border border-[#DCD6C8] dark:border-[#2C2B28] text-[#161514] dark:text-[#F2EFE9] text-xs font-semibold hover:border-[#161514] dark:hover:border-[#F2EFE9] transition-colors cursor-pointer">
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#F8F9FB] dark:bg-[#181C26] border border-[#E2E6EE] dark:border-[#232936] text-[#0F141C] dark:text-[#F3F5F8] text-xs font-semibold hover:border-[#2563EB] transition-colors cursor-pointer">
                 <Upload className="w-3.5 h-3.5" /> 다른 이미지
               </button>
               {resultSrc && (
                 <button onClick={handleDownload}
-                  className="flex items-center gap-2 px-5 py-2 bg-[#161514] hover:bg-[#C83E2B] dark:bg-[#F2EFE9] dark:hover:bg-[#E05A47] text-[#F9F6ED] dark:text-[#161514] dark:hover:text-[#F9F6ED] text-xs font-bold transition-colors cursor-pointer">
+                  className="flex items-center gap-2 px-5 py-2 rounded-lg bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-semibold transition-colors cursor-pointer">
                   <Download className="w-3.5 h-3.5" /> 다운로드
                 </button>
               )}
@@ -150,15 +145,15 @@ export default function ImageUpscaler() {
           </div>
 
           {/* 설정 패널 */}
-          <div className="w-full mb-6 p-4 bg-[#FDFBF7] dark:bg-[#1A1918] border border-[#DCD6C8] dark:border-[#2C2B28] flex flex-col sm:flex-row justify-between items-center gap-4">
+          <div className="w-full mb-6 p-4 rounded-xl bg-white dark:bg-[#12151C] border border-[#E2E6EE] dark:border-[#232936] flex flex-col sm:flex-row justify-between items-center gap-4">
             <div className="flex items-center gap-3 w-full sm:w-auto">
-              <label className="font-mono text-xs font-bold uppercase tracking-wider text-[#57534E] dark:text-[#A6A096] whitespace-nowrap">
-                MODEL
+              <label className="text-xs font-semibold text-[#4B5565] dark:text-[#94A0B8] whitespace-nowrap">
+                복원 모델
               </label>
               <select 
                 value={model} 
                 onChange={(e) => setModel(e.target.value as UpscaleModel)}
-                className="bg-[#F6F3EA] dark:bg-[#121211] border border-[#DCD6C8] dark:border-[#2C2B28] text-[#161514] dark:text-[#F2EFE9] text-xs font-medium p-2.5 min-w-[220px] outline-none focus:border-[#161514]"
+                className="rounded-lg bg-[#F8F9FB] dark:bg-[#181C26] border border-[#E2E6EE] dark:border-[#232936] text-[#0F141C] dark:text-[#F3F5F8] text-xs font-medium p-2.5 min-w-[220px] outline-none focus:border-[#2563EB]"
               >
                 <option value="realesrgan-x4plus">일반 사진/문서 (RealESRGAN, 권장)</option>
                 <option value="realesrgan-x4plus-anime">일러스트/애니 (Anime)</option>
@@ -167,20 +162,20 @@ export default function ImageUpscaler() {
             </div>
             
             <button onClick={handleUpscale} disabled={isProcessing}
-              className="flex items-center justify-center gap-2 px-6 py-2.5 bg-[#C83E2B] hover:bg-[#B03220] text-white text-xs font-bold disabled:opacity-50 transition-colors w-full sm:w-auto cursor-pointer">
+              className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-semibold disabled:opacity-50 transition-colors w-full sm:w-auto cursor-pointer">
               {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <ZoomIn className="w-4 h-4" />}
               {isProcessing ? "처리 중..." : "2배 업스케일링 실행"}
             </button>
           </div>
 
           {/* 비교 뷰 */}
-          <div className="w-full grid grid-cols-1 md:grid-cols-2 border border-[#DCD6C8] dark:border-[#2C2B28] bg-[#DCD6C8] dark:bg-[#2C2B28] gap-px">
+          <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* 원본 */}
-            <div className="bg-[#FDFBF7] dark:bg-[#1A1918] overflow-hidden">
-              <div className="px-4 py-2.5 bg-[#EFECE2] dark:bg-[#22211F] border-b border-[#DCD6C8] dark:border-[#2C2B28] font-mono text-[11px] font-bold text-[#57534E] dark:text-[#A6A096] flex justify-between items-center">
-                <span>SOURCE &middot; 원본</span>
+            <div className="bg-white dark:bg-[#12151C] rounded-xl border border-[#E2E6EE] dark:border-[#232936] overflow-hidden">
+              <div className="px-4 py-2.5 bg-[#F1F3F7] dark:bg-[#181C26] border-b border-[#E2E6EE] dark:border-[#232936] text-xs font-semibold text-[#4B5565] dark:text-[#94A0B8] flex justify-between items-center">
+                <span>원본 이미지</span>
                 {originalSize.w > 0 && (
-                  <span className="text-[10px] text-[#161514] dark:text-[#F2EFE9] bg-[#FDFBF7] dark:bg-[#1A1918] px-2 py-0.5 border border-[#DCD6C8] dark:border-[#2C2B28]">{originalSize.w} × {originalSize.h}px</span>
+                  <span className="font-mono text-xs text-[#0F141C] dark:text-[#F3F5F8]">{originalSize.w} × {originalSize.h}px</span>
                 )}
               </div>
               <div className="p-4 flex items-center justify-center min-h-[350px]">
@@ -189,23 +184,23 @@ export default function ImageUpscaler() {
             </div>
 
             {/* 결과 */}
-            <div className="bg-[#FDFBF7] dark:bg-[#1A1918] overflow-hidden">
-              <div className="px-4 py-2.5 bg-[#EFECE2] dark:bg-[#22211F] border-b border-[#DCD6C8] dark:border-[#2C2B28] font-mono text-[11px] font-bold text-[#161514] dark:text-[#F2EFE9] flex justify-between items-center">
-                <span>UPSCALED &middot; 2X 결과</span>
+            <div className="bg-white dark:bg-[#12151C] rounded-xl border border-[#E2E6EE] dark:border-[#232936] overflow-hidden">
+              <div className="px-4 py-2.5 bg-[#F1F3F7] dark:bg-[#181C26] border-b border-[#E2E6EE] dark:border-[#232936] text-xs font-semibold text-[#0F141C] dark:text-[#F3F5F8] flex justify-between items-center">
+                <span>2배 확대 결과</span>
                 {resultSize.w > 0 && (
-                  <span className="text-[10px] text-[#C83E2B] dark:text-[#E05A47] bg-[#FDFBF7] dark:bg-[#1A1918] px-2 py-0.5 border border-[#C83E2B]/40">{resultSize.w} × {resultSize.h}px (2X)</span>
+                  <span className="font-mono text-xs text-[#2563EB] dark:text-[#3B82F6]">{resultSize.w} × {resultSize.h}px (2x)</span>
                 )}
               </div>
               <div className="p-4 flex items-center justify-center min-h-[350px]">
                 {isProcessing ? (
                   <div className="flex flex-col items-center">
-                    <Loader2 className="w-8 h-8 text-[#C83E2B] animate-spin mb-3" />
-                    <p className="text-xs font-mono font-semibold text-[#57534E] dark:text-[#A6A096]">{progress}</p>
+                    <Loader2 className="w-8 h-8 text-[#2563EB] animate-spin mb-3" />
+                    <p className="text-xs font-semibold text-[#4B5565] dark:text-[#94A0B8]">{progress}</p>
                   </div>
                 ) : resultSrc ? (
                   <img src={resultSrc} alt="결과" className="max-w-full max-h-[450px] object-contain" />
                 ) : (
-                  <p className="text-[#8A847C] text-xs font-mono">{progress || "READY FOR 2X UPSCALE"}</p>
+                  <p className="text-[#697586] text-xs">{progress || "업스케일링을 실행하세요"}</p>
                 )}
               </div>
             </div>
@@ -213,7 +208,7 @@ export default function ImageUpscaler() {
 
           {/* 완료 메시지 */}
           {resultSrc && !isProcessing && (
-            <div className="w-full mt-4 bg-[#FDFBF7] dark:bg-[#1A1918] border border-[#DCD6C8] dark:border-[#2C2B28] border-l-4 border-l-[#C83E2B] text-[#161514] dark:text-[#F2EFE9] px-4 py-3 text-xs font-medium">
+            <div className="w-full mt-4 rounded-xl bg-white dark:bg-[#12151C] border border-[#E2E6EE] dark:border-[#232936] text-[#0F141C] dark:text-[#F3F5F8] px-4 py-3 text-xs font-medium">
               업스케일링 완료 ({originalSize.w}×{originalSize.h} &rarr; {resultSize.w}×{resultSize.h}). 상단 <strong>다운로드</strong> 버튼으로 고해상도 이미지를 저장하세요.
             </div>
           )}

@@ -188,8 +188,8 @@ export default function PdfCanvas({
           textBoxes.length === 0 &&
           imageOverlays.length === 0 &&
           redactions.length === 0 && (
-            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 px-4 py-2 bg-gray-900/80 text-white text-xs font-semibold rounded-full shadow-lg backdrop-blur-sm pointer-events-none animate-bounce z-50">
-              💡 빈 공간을 더블클릭하여 텍스트를 추가하세요
+            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 px-4 py-2 bg-[#0F141C]/85 text-white text-xs font-medium rounded-lg shadow-md backdrop-blur-xs pointer-events-none z-50 transition-opacity duration-200">
+              빈 공간을 더블클릭하여 텍스트를 추가하세요
             </div>
           )}
 
