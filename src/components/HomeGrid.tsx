@@ -328,7 +328,7 @@ export default function HomeGrid({
           >
             <div>
               {/* Side-by-side icon + heading (satisfies icon-tile-stack rule) */}
-              <div className="flex items-center justify-between gap-3 mb-3">
+              <div className="flex flex-col items-start sm:flex-row sm:items-center sm:justify-between gap-1.5 sm:gap-3 mb-3">
                 <div className="flex items-center gap-2.5">
                   <span className="text-[#2563EB] dark:text-[#3B82F6]">
                     {pdfStation.icon}
@@ -375,7 +375,7 @@ export default function HomeGrid({
             className="lg:col-span-5 rounded-xl border border-[#E2E6EE] dark:border-[#232936] hover:border-[#2563EB] dark:hover:border-[#3B82F6] bg-white dark:bg-[#12151C] p-6 sm:p-7 flex flex-col justify-between cursor-pointer transition-colors select-none group"
           >
             <div>
-              <div className="flex items-center justify-between gap-3 mb-3">
+              <div className="flex flex-col items-start sm:flex-row sm:items-center sm:justify-between gap-1.5 sm:gap-3 mb-3">
                 <div className="flex items-center gap-2.5">
                   <span className="text-[#2563EB] dark:text-[#3B82F6]">
                     {smartStation.icon}

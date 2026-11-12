@@ -3,6 +3,7 @@
 import React, { useRef, useState } from "react";
 import { ZoomIn, Download, Loader2, Upload, RotateCcw } from "lucide-react";
 import { upscaleImage, type UpscaleModel } from "@/lib/upscale";
+import { saveFile } from "@/lib/saveFile";
 
 export default function ImageUpscaler() {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -58,14 +59,13 @@ export default function ImageUpscaler() {
     }
   };
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     if (!resultSrc) return;
-    const link = document.createElement("a");
-    link.href = resultSrc;
-    link.download = `${fileName || "image"}_2x.png`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    try {
+      await saveFile(resultSrc, `${fileName || "image"}_2x.png`, "image/png");
+    } catch (err) {
+      console.error("저장 실패:", err);
+    }
   };
 
   const handleReset = () => {

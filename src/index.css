@@ -69,6 +69,23 @@ p {
   scrollbar-width: none;
 }
 
+/* 모바일 하단 고정 내비게이션: iOS 홈 인디케이터 영역 확보 */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  overflow-x: hidden;
+  /* 한글을 음절 중간이 아닌 단어 단위로 줄바꿈 (모바일 가독성) */
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
 /* 모달 및 트랜지션 애니메이션 */
 @keyframes fadeIn {
   from { opacity: 0; }

@@ -4,6 +4,7 @@ import React, { useRef, useState, useEffect, useCallback } from "react";
 import { Trash2, Undo2, Download, PenTool, Type, Edit3 } from "lucide-react";
 import toast from "react-hot-toast";
 import { ConfirmModal } from "./Modal";
+import { saveFile } from "@/lib/saveFile";
 
 interface Point {
   x: number;
@@ -280,13 +281,12 @@ export default function SignatureTab() {
     cropCtx.putImageData(ctx.getImageData(minX, minY, cropW, cropH), 0, 0);
 
     const dataUrl = cropCanvas.toDataURL("image/png");
-    const link = document.createElement("a");
-    link.href = dataUrl;
-    link.download = `signature-${Date.now()}.png`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast.success("투명 PNG 이미지가 다운로드되었습니다!");
+    saveFile(dataUrl, `signature-${Date.now()}.png`, "image/png")
+      .then((result) => {
+        if (result === "shared") toast.success("공유 창에서 '이미지 저장'을 선택해 주세요.");
+        else if (result === "downloaded") toast.success("투명 PNG 이미지가 다운로드되었습니다!");
+      })
+      .catch(() => toast.error("저장 중 오류가 발생했습니다."));
   };
 
   return (

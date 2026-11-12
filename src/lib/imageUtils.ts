@@ -3,6 +3,8 @@
  * PdfEditor와 ImageOverlay에서 중복되던 배경 제거 로직을 통합
  */
 
+import { saveFile, type SaveResult } from "./saveFile";
+
 /**
  * 이미지 Blob에서 AI 기반 배경 제거를 수행합니다.
  * 축소 이미지로 AI 처리 후 원본 해상도에 마스크를 적용하여 품질을 유지합니다.
@@ -115,3 +117,10 @@ export async function convertHeicToPng(file: Blob | File): Promise<Blob> {
   return Array.isArray(result) ? result[0] : result;
 }
 
+
+/**
+ * 이미지(Blob URL / data URL)를 기기에 저장합니다. (모바일은 공유 시트, 데스크톱은 다운로드)
+ */
+export async function saveImageFile(src: string, filename: string): Promise<SaveResult> {
+  return saveFile(src, filename, "image/png");
+}

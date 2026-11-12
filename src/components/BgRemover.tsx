@@ -3,7 +3,8 @@
 import React, { useRef, useState } from "react";
 import { Scissors, Download, Loader2, Upload, RotateCcw } from "lucide-react";
 import ColorPicker from "./ColorPicker";
-import { removeImageBackground } from "@/lib/imageUtils";
+import toast from "react-hot-toast";
+import { removeImageBackground, saveImageFile } from "@/lib/imageUtils";
 
 export default function BgRemover() {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -43,14 +44,16 @@ export default function BgRemover() {
     }
   };
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     if (!resultSrc) return;
-    const link = document.createElement("a");
-    link.href = resultSrc;
-    link.download = `${fileName || "image"}_누끼.png`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    try {
+      const result = await saveImageFile(resultSrc, `${fileName || "image"}_누끼.png`);
+      if (result === "shared") toast.success("공유 창에서 '이미지 저장'을 선택해 주세요.");
+      else if (result === "opened") toast("새 탭에서 이미지를 길게 눌러 저장해 주세요.");
+    } catch (err) {
+      console.error("다운로드 실패:", err);
+      toast.error("저장 중 오류가 발생했습니다.");
+    }
   };
 
   const handleColorChange = (color: string, opacity: number) => {

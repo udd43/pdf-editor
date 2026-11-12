@@ -20,6 +20,7 @@ import {
 import toast from "react-hot-toast";
 import { isHeicFile, convertHeicToPng } from "@/lib/imageUtils";
 import { useAppStore } from "@/stores/appStore";
+import { saveFile, isMobileDevice } from "@/lib/saveFile";
 
 interface HeicItem {
   id: string;
@@ -140,15 +141,15 @@ export default function HeicConverter() {
   };
 
   // 파일 다운로드
-  const downloadPng = (item: HeicItem) => {
+  const downloadPng = async (item: HeicItem) => {
     if (!item.pngUrl) return;
     const baseName = item.name.replace(/\.[^/.]+$/, "");
-    const a = document.createElement("a");
-    a.href = item.pngUrl;
-    a.download = `${baseName}.png`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    try {
+      await saveFile(item.pngBlob ?? item.pngUrl, `${baseName}.png`, "image/png");
+    } catch (err) {
+      console.error(err);
+      toast.error("저장 중 오류가 발생했습니다.");
+    }
   };
 
   // 전체 다운로드
@@ -159,10 +160,32 @@ export default function HeicConverter() {
       return;
     }
 
+    if (isMobileDevice()) {
+      // 모바일: 공유 시트 한 번에 여러 파일 저장
+      try {
+        const files = doneItems.map((it) => {
+          const baseName = it.name.replace(/\.[^/.]+$/, "");
+          return new File([it.pngBlob as Blob], `${baseName}.png`, { type: "image/png" });
+        });
+        if (
+          files.every((f) => f.size > 0) &&
+          typeof navigator.canShare === "function" &&
+          navigator.canShare({ files })
+        ) {
+          navigator.share({ files, title: "변환된 PNG" }).catch((err) => {
+            if ((err as DOMException)?.name !== "AbortError") toast.error("공유에 실패했습니다.");
+          });
+          return;
+        }
+      } catch (err) {
+        console.warn(err);
+      }
+    }
+
     doneItems.forEach((it, idx) => {
       setTimeout(() => {
         downloadPng(it);
-      }, idx * 200);
+      }, idx * 400);
     });
     toast.success(`${doneItems.length}개 PNG 파일을 다운로드합니다.`);
   };
@@ -275,15 +298,9 @@ export default function HeicConverter() {
 
       if (action === "download") {
         const blob = new Blob([pdfBytes as any], { type: "application/pdf" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        toast.success(`총 ${validItems.length}장의 사진이 담긴 PDF가 다운로드되었습니다!`, { id: toastId });
+        const result = await saveFile(blob, filename, "application/pdf");
+        if (result === "cancelled") toast.dismiss(toastId);
+        else toast.success(`총 ${validItems.length}장의 사진이 담긴 PDF가 ${result === "shared" ? "준비되었습니다!" : "다운로드되었습니다!"}`, { id: toastId });
       } else {
         const blob = new Blob([pdfBytes as any], { type: "application/pdf" });
         const pdfFile = new File([blob], filename, { type: "application/pdf" });

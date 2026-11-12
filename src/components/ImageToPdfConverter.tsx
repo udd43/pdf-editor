@@ -3,6 +3,7 @@ import { UploadCloud, Download, Trash2, ArrowUp, ArrowDown, FileImage, Loader2 }
 import toast from 'react-hot-toast';
 import { PDFDocument } from 'pdf-lib';
 import { isHeicFile, convertHeicToPng } from '@/lib/imageUtils';
+import { saveFile } from '@/lib/saveFile';
 
 interface ImageFile {
   id: string;
@@ -106,15 +107,9 @@ export default function ImageToPdfConverter() {
 
       const pdfBytes = await pdfDoc.save();
       const blob = new Blob([pdfBytes as any], { type: 'application/pdf' });
-      const url = URL.createObjectURL(blob);
-      
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `merged_images_${Date.now()}.pdf`;
-      a.click();
-      URL.revokeObjectURL(url);
-
-      toast.success('PDF 변환 완료!', { id: toastId });
+      const result = await saveFile(blob, `merged_images_${Date.now()}.pdf`, 'application/pdf');
+      if (result === 'cancelled') toast.dismiss(toastId);
+      else toast.success(result === 'shared' ? 'PDF 변환 완료! 공유 창에서 저장해 주세요.' : 'PDF 변환 완료!', { id: toastId });
     } catch (error) {
       console.error(error);
       toast.error('PDF 변환 중 오류가 발생했습니다.', { id: toastId });

@@ -5,6 +5,7 @@ import { Loader2, Scissors, Palette, Trash2, Move, Download, Maximize2 } from "l
 import toast from "react-hot-toast";
 import ColorPicker from "./ColorPicker";
 import { removeImageBackground } from "@/lib/imageUtils";
+import { saveFile } from "@/lib/saveFile";
 import { ImageOverlayData } from "@/types/pdf";
 export type { ImageOverlayData };
 
@@ -216,12 +217,9 @@ export default function ImageOverlay({
   };
 
   const handleDownload = () => {
-    const link = document.createElement("a");
-    link.href = overlay.displaySrc;
-    link.download = `overlay-${overlay.id}.png`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    saveFile(overlay.displaySrc, `overlay-${overlay.id}.png`, "image/png").catch(() =>
+      toast.error("저장 중 오류가 발생했습니다.")
+    );
   };
 
   const rotation = overlay.rotation || 0;

@@ -5,6 +5,7 @@ import { Merge, Split, RotateCw, Upload, FileText, Download, Trash2, ArrowUp, Ar
 import toast from "react-hot-toast";
 import * as pdfjsLib from "pdfjs-dist";
 import { mergeMultiplePdfs, extractPdfPages, rotatePdfPages } from "@/lib/pdfUtils";
+import { saveFile } from "@/lib/saveFile";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.mjs`;
 
@@ -92,16 +93,10 @@ export default function PdfMergeSplit() {
       const mergedBuffer = await mergeMultiplePdfs(buffers);
 
       const blob = new Blob([mergedBuffer], { type: "application/pdf" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `merged_${Date.now()}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
+      const result = await saveFile(blob, `merged_${Date.now()}.pdf`, "application/pdf");
 
-      toast.success("성공적으로 합쳐졌습니다!", { id: toastId });
+      if (result === "cancelled") toast.dismiss(toastId);
+      else toast.success(result === "shared" ? "합치기 완료! 공유 창에서 저장해 주세요." : "성공적으로 합쳐졌습니다!", { id: toastId });
     } catch (err: any) {
       console.error(err);
       toast.error("PDF 합치기 실패", { id: toastId });
@@ -206,16 +201,10 @@ export default function PdfMergeSplit() {
       }
 
       const blob = new Blob([newBuffer], { type: "application/pdf" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `${splitFile.file.name.replace(/\.pdf$/i, "")}_selected.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
+      const result = await saveFile(blob, `${splitFile.file.name.replace(/\.pdf$/i, "")}_selected.pdf`, "application/pdf");
 
-      toast.success("성공적으로 다운로드되었습니다!", { id: toastId });
+      if (result === "cancelled") toast.dismiss(toastId);
+      else toast.success(result === "shared" ? "준비 완료! 공유 창에서 저장해 주세요." : "성공적으로 다운로드되었습니다!", { id: toastId });
     } catch (err: any) {
       console.error(err);
       toast.error("페이지 추출 실패", { id: toastId });

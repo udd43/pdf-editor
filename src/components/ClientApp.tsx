@@ -220,7 +220,7 @@ export default function ClientApp() {
           <div className="flex items-center shrink-0 pl-1 sm:pl-2">
             <button
               onClick={goHome}
-              className="group shrink-0 whitespace-nowrap outline-none flex items-center text-left cursor-pointer"
+              className="group shrink-0 whitespace-nowrap outline-none flex items-center text-left cursor-pointer min-h-10"
             >
               <span className="text-base font-bold tracking-tight text-[#0F141C] dark:text-[#F3F5F8] group-hover:text-[#2563EB] dark:group-hover:text-[#3B82F6] transition-colors">
                 PDF Studio
@@ -268,7 +268,7 @@ export default function ClientApp() {
                 />
                 <button
                   onClick={goHome}
-                  className="text-xs text-[#4B5565] dark:text-[#94A0B8] hover:text-[#0F141C] dark:hover:text-[#F3F5F8] px-3 py-1.5 rounded-lg hover:bg-[#F1F3F7] dark:hover:bg-[#181C26] transition-colors font-medium whitespace-nowrap shrink-0 cursor-pointer"
+                  className="text-xs text-[#4B5565] dark:text-[#94A0B8] hover:text-[#0F141C] dark:hover:text-[#F3F5F8] px-3 py-2.5 sm:py-1.5 rounded-lg hover:bg-[#F1F3F7] dark:hover:bg-[#181C26] transition-colors font-medium whitespace-nowrap shrink-0 cursor-pointer"
                 >
                   처음으로
                 </button>
@@ -277,7 +277,7 @@ export default function ClientApp() {
             {!isHome && activeTab !== "pdf" && (
               <button
                 onClick={goHome}
-                className="text-xs text-[#4B5565] dark:text-[#94A0B8] hover:text-[#0F141C] dark:hover:text-[#F3F5F8] px-3 py-1.5 rounded-lg border border-[#E2E6EE] dark:border-[#232936] bg-white dark:bg-[#12151C] transition-colors font-medium whitespace-nowrap shrink-0 cursor-pointer"
+                className="text-xs text-[#4B5565] dark:text-[#94A0B8] hover:text-[#0F141C] dark:hover:text-[#F3F5F8] px-3 py-2.5 sm:py-1.5 rounded-lg border border-[#E2E6EE] dark:border-[#232936] bg-white dark:bg-[#12151C] transition-colors font-medium whitespace-nowrap shrink-0 cursor-pointer"
               >
                 홈으로
               </button>
@@ -456,7 +456,7 @@ export default function ClientApp() {
       </main>
 
       {/* ── Footer (12px text-xs minimum floor) ── */}
-      <footer className="bg-white dark:bg-[#12151C] py-6 border-t border-[#E2E6EE] dark:border-[#232936] z-10 mt-12 transition-colors">
+      <footer className="bg-white dark:bg-[#12151C] pt-6 pb-24 lg:pb-6 border-t border-[#E2E6EE] dark:border-[#232936] z-10 mt-12 transition-colors">
         <div className="max-w-6xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-[#697586] dark:text-[#647087] text-xs">
           <span>PDF Studio &middot; 브라우저 로컬 문서 편집 스튜디오</span>
           <span>&copy; 2026 PDF Editor &middot; Private by default</span>

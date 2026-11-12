@@ -3,6 +3,7 @@
 import React, { useRef, useState, useEffect, useCallback } from "react";
 import { X, Trash2, Check, Undo2, Download } from "lucide-react";
 import toast from "react-hot-toast";
+import { saveFile } from "@/lib/saveFile";
 
 interface SignaturePadProps {
   isOpen: boolean;
@@ -297,13 +298,12 @@ export default function SignaturePad({ isOpen, onClose, onSave }: SignaturePadPr
     }
 
     const dataUrl = cropCanvas.toDataURL("image/png");
-    const link = document.createElement("a");
-    link.href = dataUrl;
-    link.download = `signature-${Date.now()}.png`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast.success("이미지가 다운로드되었습니다.");
+    saveFile(dataUrl, `signature-${Date.now()}.png`, "image/png")
+      .then((result) => {
+        if (result === "shared") toast.success("공유 창에서 '이미지 저장'을 선택해 주세요.");
+        else if (result === "downloaded") toast.success("이미지가 다운로드되었습니다.");
+      })
+      .catch(() => toast.error("저장 중 오류가 발생했습니다."));
   };
 
   if (!isOpen) return null;

@@ -2,6 +2,7 @@
 
 import React, { useRef, useState } from "react";
 import { Palette, Download, Loader2, Upload, RotateCcw } from "lucide-react";
+import { saveFile } from "@/lib/saveFile";
 
 const PRESET_COLORS = [
   { hex: "#EF4444", label: "빨강" },
@@ -112,14 +113,13 @@ export default function ImageColorizer() {
     }, 30);
   };
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     if (!resultSrc) return;
-    const link = document.createElement("a");
-    link.href = resultSrc;
-    link.download = `${fileName || "image"}_색변경.png`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    try {
+      await saveFile(resultSrc, `${fileName || "image"}_색변경.png`, "image/png");
+    } catch (err) {
+      console.error("저장 실패:", err);
+    }
   };
 
   const handleReset = () => {

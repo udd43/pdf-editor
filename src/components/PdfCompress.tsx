@@ -5,6 +5,7 @@ import { Archive, Upload, Download, Share2, Mail, FileText, Loader2, CheckCircle
 import toast from "react-hot-toast";
 import * as pdfjsLib from "pdfjs-dist";
 import { compressPdfBuffer } from "@/lib/pdfUtils";
+import { saveFile } from "@/lib/saveFile";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.mjs`;
 
@@ -95,14 +96,9 @@ export default function PdfCompress() {
   const handleDownload = () => {
     if (!compressedResult) return;
     const blob = new Blob([compressedResult.buffer], { type: "application/pdf" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = compressedResult.filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    saveFile(blob, compressedResult.filename, "application/pdf").catch(() =>
+      toast.error("저장 중 오류가 발생했습니다.")
+    );
   };
 
   const handleShareOrMail = async () => {

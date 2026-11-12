@@ -17,6 +17,7 @@ import {
 import toast from "react-hot-toast";
 import { runInpainting } from "@/lib/inpaintEngine";
 import { useAppStore } from "@/stores/appStore";
+import { saveFile } from "@/lib/saveFile";
 import { PDFDocument } from "pdf-lib";
 import * as pdfjsLib from "pdfjs-dist";
 
@@ -386,16 +387,17 @@ export default function MagicEraser({
     onApplyToPdfEditor(fullDataUrl, patchInfo);
   };
 
-  const handleDownloadPng = () => {
+  const handleDownloadPng = async () => {
     const imgCanvas = imageCanvasRef.current;
     if (!imgCanvas) return;
-    const link = document.createElement("a");
-    link.href = imgCanvas.toDataURL("image/png");
-    link.download = `${fileName}_지우개.png`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast.success("PNG 파일이 다운로드되었습니다.");
+    try {
+      const result = await saveFile(imgCanvas.toDataURL("image/png"), `${fileName}_지우개.png`, "image/png");
+      if (result === "shared") toast.success("공유 창에서 '이미지 저장'을 선택해 주세요.");
+      else if (result === "downloaded") toast.success("PNG 파일이 다운로드되었습니다.");
+    } catch (err) {
+      console.error(err);
+      toast.error("저장 중 오류가 발생했습니다.");
+    }
   };
 
   const handleDownloadPdf = async () => {
@@ -414,15 +416,9 @@ export default function MagicEraser({
 
       const pdfBytes = await pdfDoc.save({ useObjectStreams: false });
       const blob = new Blob([pdfBytes as any], { type: "application/pdf" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `${fileName}_지우개.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-      toast.success("PDF가 다운로드되었습니다!", { id: toastId });
+      const result = await saveFile(blob, `${fileName}_지우개.pdf`, "application/pdf");
+      if (result === "cancelled") toast.dismiss(toastId);
+      else toast.success(result === "shared" ? "공유 창에서 저장 위치를 선택해 주세요." : "PDF가 다운로드되었습니다!", { id: toastId });
     } catch (err) {
       console.error(err);
       toast.error("PDF 생성 실패", { id: toastId });

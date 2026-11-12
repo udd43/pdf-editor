@@ -4,6 +4,7 @@ import * as pdfjsLib from "pdfjs-dist";
 import toast from "react-hot-toast";
 
 import { getFontBuffers } from "./fontCache";
+import { saveFile } from "./saveFile";
 
 /**
  * PDF 내보내기 함수
@@ -121,14 +122,7 @@ export async function exportEditedPdf(
 
   // 5. 다운로드
   const blob = new Blob([finalBytes as any], { type: "application/pdf" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
+  await saveFile(blob, filename, "application/pdf");
 }
 
 /**
@@ -462,14 +456,7 @@ export async function exportPdfViaRasterFallback(
 
   // 6. 다운로드 트리거
   const blob = new Blob([finalBytes as any], { type: "application/pdf" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
+  await saveFile(blob, filename, "application/pdf");
 }
 
 /**
